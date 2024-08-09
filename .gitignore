@@ -1,0 +1,5 @@
+.pytest_cache
+.env
+.venv
+__pycache__
+dump.rdb

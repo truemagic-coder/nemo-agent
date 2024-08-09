@@ -1,0 +1,17 @@
+[tool.poetry]
+name = "nemo-agent"
+version = "0.0.1"
+description = "A tool for running ColabFold batch processing on RunPod"
+authors = ["Bevan Hunt"]
+packages = [{include = "nemo_agent"}]
+
+[tool.poetry.dependencies]
+python = "^3.12.4"
+ToolAgents = "^0.0.11"
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.poetry.scripts]
+colabfold-runpod = "cyberchipped_run.main:cli"
