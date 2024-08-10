@@ -9,6 +9,7 @@ packages = [{include = "nemo_agent"}]
 python = "^3.12.4"
 phidata = "^2.4.29"
 click = "^8.1.7"
+torch = "^2.4.0"
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]
