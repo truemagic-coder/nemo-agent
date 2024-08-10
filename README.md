@@ -2,7 +2,7 @@
 
 [![PyPI - Version](https://img.shields.io/pypi/v/nemo-agent)](https://pypi.org/project/nemo-agent/)
 
-Nemo Agent is a blazing fast local AI Agent for Python coding.
+Nemo Agent is a blazing fast local AI Agent for Python coding
 
 ## Features
 * Runs blazing fast locally
@@ -39,7 +39,7 @@ Develop a basic API:
 
 ## How It Works
 
-Nemo Agent uses the Mistral-Nemo language model to interpret your task description.
+Nemo Agent uses the mistral-nemo LLM to interpret your task description.
 It generates a project structure and necessary files based on the task.
 The AI writes Python code to implement the requested functionality.
 Nemo Agent can execute various development tasks like creating virtual environments, installing dependencies, and running tests.
@@ -63,4 +63,4 @@ Contributions to Nemo Agent are welcome! Please feel free to submit a Pull Reque
 This project is licensed under the MIT License - see the LICENSE file for details.
 
 ## Disclaimer
-Nemo Agent generates code using AI. While it strives for accuracy and best practices, the generated code should be reviewed and tested before use in production environments.
+Nemo Agent generates code using AI. While it strives for accuracy and best practices, the generated code should be reviewed and tested before being used in a production environment.
