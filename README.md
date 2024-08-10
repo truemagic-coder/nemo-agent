@@ -1,19 +1,19 @@
-# NemoAgent
+# Nemo Agent
 
 [![PyPI - Version](https://img.shields.io/pypi/v/nemo-agent)](https://pypi.org/project/nemo-agent/)
 
-NemoAgent is an AI Agent for Python codegen using the Mistral-Nemo Ollama framework. It creates project structures, writes code, writes tests, runs tests, and performs development tasks based on natural language prompts.
+Nemo Agent is an AI Agent for Python codegen using the Mistral-Nemo Ollama framework. It creates project structures, writes code, writes tests, runs tests, and performs development tasks based on natural language prompts.
 
 ## Features
 * Runs completely local and very fast
 * Generates Python project structures automatically
 * Writes Python code based on task descriptions
 * Executes development tasks using AI-generated commands
-* Utilizes the Mistral-Nemo language model for intelligent code generation and testing
+* Utilizes the Mistral-Nemo language model for intelligent code generation
 * Implements best practices in Python development automatically
 
 ## Installation
-You can install NemoAgent using pip:
+You can install Nemo Agent using pip:
 
 `pip install nemo-agent`
 
@@ -38,10 +38,10 @@ Develop a basic API:
 
 ## How It Works
 
-NemoAgent uses the Mistral-Nemo language model to interpret your task description.
+Nemo Agent uses the Mistral-Nemo language model to interpret your task description.
 It generates a project structure and necessary files based on the task.
 The AI writes Python code to implement the requested functionality.
-NemoAgent can execute various development tasks like creating virtual environments, installing dependencies, and running tests.
+Nemo Agent can execute various development tasks like creating virtual environments, installing dependencies, and running tests.
 
 ## Requirements
 * Python 3.12.4 or higher
@@ -56,9 +56,10 @@ Contributions to NemoAgent are welcome! Please feel free to submit a Pull Reques
 * Support current folder structure of projects for refactoring []
 * Support poetry []
 * Get all files in a folder recursive and put them into context for analysis []
+* Conversational interface [] 
 
 ## License
 This project is licensed under the MIT License - see the LICENSE file for details.
 
 ## Disclaimer
-NemoAgent generates code using AI. While it strives for accuracy and best practices, the generated code should be reviewed and tested before use in production environments.
+Nemo Agent generates code using AI. While it strives for accuracy and best practices, the generated code should be reviewed and tested before use in production environments.
