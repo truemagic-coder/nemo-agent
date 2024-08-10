@@ -5,6 +5,7 @@ description = "An AI Agent for python code gen using the Mistral-Nemo Ollama fra
 authors = ["Bevan Hunt <bevan@bevanhunt.com>"]
 license = "MIT"
 readme = "README.md"
+repository = "https://github.com/truemagic-coder/nemo-agent"
 keywords = ["ai", "agent", "ai agent"]
 classifiers = [
     "Programming Language :: Python :: 3 :: Only",
