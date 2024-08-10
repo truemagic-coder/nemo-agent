@@ -8,10 +8,11 @@ packages = [{include = "nemo_agent"}]
 [tool.poetry.dependencies]
 python = "^3.12.4"
 ToolAgents = "^0.0.11"
+click = "^8.1.7"
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]
 build-backend = "poetry.core.masonry.api"
 
 [tool.poetry.scripts]
-colabfold-runpod = "cyberchipped_run.main:cli"
+colabfold-runpod = "nemo_agent.main:cli"

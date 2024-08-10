@@ -5,6 +5,7 @@ from datetime import datetime
 from ToolAgents.agents import OllamaAgent
 from ToolAgents.utilities import ChatHistory
 from ToolAgents import FunctionTool
+import click
 
 SYSTEM_PROMPT = """
 You are NemoAgent, a highly skilled software developer with extensive knowledge in many programming languages, frameworks, design patterns, and best practices.
@@ -165,11 +166,17 @@ class NemoAgent:
         else:
             return f"Unknown tool: {tool_name}"
 
+@click.command()
+@click.argument('task', required=False)
+def cli(task: str = None):
+    """
+    Run Nemo Agent tasks.
+    If no task is provided, it will prompt the user for input.
+    """
+    if task is None:
+        task = click.prompt("Please enter the task for Nemo Agent")
+    
+    nemo_agent = NemoAgent(task=task)
+
 if __name__ == "__main__":
-    import argparse
-
-    parser = argparse.ArgumentParser(description="Run Nemo Agent tasks")
-    parser.add_argument("task", type=str, help="The task to run")
-    args = parser.parse_args()
-
-    claude_dev = NemoAgent(task=args.task)
+    cli()
