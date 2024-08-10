@@ -20,12 +20,13 @@ You are NemoAgent, an expert Python developer. Follow these rules strictly:
 4. Provide complete, fully functional code when creating or editing files.
 5. Use markdown and include language specifiers in code blocks.
 6. If a library is required, install it using `pip` as needed.
-7. CRITICAL: Never execute the code you created.
+7. CRITICAL: Never execute the code you created other than tests.
 8. Always create an venv for the Python project.
 9. Include proper error handling, comments, and follow Python best practices.
 10. IMPORTANT: Write to disk after EVERY step, no matter how small.
-11. Never override the user requirements including library choices. Always follow the user's instructions.
-12. Always use absolute paths when referring to files and directories.
+11. Use absolute paths when referring to files and directories when required.
+12. Always use type hints in your Python code.
+13. Always use pytest for testing and make sure it is installed before using it.
 
 Current working directory: {cwd}
 """
@@ -174,7 +175,7 @@ class NemoAgent:
         return command
 
     def validate_command(self, command):
-        allowed_commands = ['cat', 'ls', 'cd', 'mkdir', 'sed', 'pip', 'echo', 'venv', 'python3', 'source']
+        allowed_commands = ['cat', 'ls', 'cd', 'mkdir', 'sed', 'pip', 'echo', 'venv', 'python3', 'source', 'pytest', 'python']
         command_parts = command.strip().split()
         if command_parts:
             return command_parts[0] in allowed_commands
@@ -194,7 +195,7 @@ class NemoAgent:
 
                 if corrected_command.strip().startswith('cat >'):
                     self.execute_heredoc_command(corrected_command)
-                elif corrected_command.startswith(('ls', 'cd', 'mkdir', 'sed', 'cat', 'echo', 'venv', 'python3', 'source')):
+                elif corrected_command.startswith(('ls', 'cd', 'mkdir', 'pip', 'sed', 'cat', 'echo', 'venv', 'python3', 'source', 'pytest', 'python')):
                     result = subprocess.run(
                         corrected_command, shell=True, check=True, capture_output=True, text=True, cwd=self.cwd)
                     print(result.stdout)
@@ -209,7 +210,17 @@ class NemoAgent:
                 print(f"Error: {str(e)}")
 
     def create_project_folder(self, project_name):
-        project_name = "snake_game"  # Use a fixed name for this specific task
+        # Generate a project name based on the task
+        words = self.task.lower().split()
+        clean_words = [word for word in words if word.isalnum()]
+        
+        if len(clean_words) == 0:
+            project_name = "python_project"  # Fallback name if no valid words are found
+        elif len(clean_words) == 1:
+            project_name = clean_words[0]
+        else:
+            project_name = f"{clean_words[0]}_{clean_words[1]}"
+        
         project_path = os.path.join(self.cwd, project_name)
         try:
             os.makedirs(project_path, exist_ok=True)
