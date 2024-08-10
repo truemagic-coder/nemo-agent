@@ -228,7 +228,7 @@ class NemoAgent:
             self.cwd = project_path
             print(f"Created and moved to project folder: {project_path}")
             print(f"Current working directory: {os.getcwd()}")
-            print(f"Contents of the directory:")
+            print("Contents of the directory:")
             print(os.listdir(self.cwd))
         except Exception as e:
             print(f"Error creating project folder: {e}")
