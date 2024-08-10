@@ -11,6 +11,7 @@ Nemo Agent is an AI Agent for Python codegen using the Mistral-Nemo Ollama frame
 * Executes development tasks using AI-generated commands
 * Utilizes the Mistral-Nemo language model for intelligent code generation
 * Implements best practices in Python development automatically
+* Writes and runs tests
 
 ## Installation
 You can install Nemo Agent using pip:
