@@ -853,6 +853,17 @@ mpmath = ">=1.1.0,<1.4"
 dev = ["hypothesis (>=6.70.0)", "pytest (>=7.1.0)"]
 
 [[package]]
+name = "toml"
+version = "0.10.2"
+description = "Python Library for Tom's Obvious, Minimal Language"
+optional = false
+python-versions = ">=2.6, !=3.0.*, !=3.1.*, !=3.2.*"
+files = [
+    {file = "toml-0.10.2-py2.py3-none-any.whl", hash = "sha256:806143ae5bfb6a3c6e736a764057db0e6a0e05e338b5630894a5f779cabb4f9b"},
+    {file = "toml-0.10.2.tar.gz", hash = "sha256:b3bda1d108d5dd99f4a20d24d9c348e91c4db7ab1b749200bded2f839ccbe68f"},
+]
+
+[[package]]
 name = "tomli"
 version = "2.0.1"
 description = "A lil' TOML parser"
@@ -974,4 +985,4 @@ files = [
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.12.4"
-content-hash = "52ce414332c67ebc43c1563f54cf48c3799eb075deaed4864c3b7b1d69d44dc5"
+content-hash = "a4b8fe4e326ae9b9f47de55cf761b497afba48a6a4d90d42d5e8e14c58ab26db"

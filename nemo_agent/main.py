@@ -6,6 +6,7 @@ from phi.assistant import Assistant
 from phi.llm.ollama import Ollama
 from phi.tools.file import FileTools
 import click
+import toml
 
 SYSTEM_PROMPT = """
 You are NemoAgent, an expert Python developer. Follow these rules strictly:
@@ -19,14 +20,15 @@ You are NemoAgent, an expert Python developer. Follow these rules strictly:
    sed -i 's/old_text/new_text/g' filename.py
 4. Provide complete, fully functional code when creating or editing files.
 5. Use markdown and include language specifiers in code blocks.
-6. If a library is required, install it using `pip` as needed.
+6. If a library is required, add it to the pyproject.toml file using Poetry.
 7. CRITICAL: Never execute the code you created other than tests.
-8. Always create an venv for the Python project.
+8. Always use Poetry for managing dependencies and virtual environments.
 9. Include proper error handling, comments, and follow Python best practices.
 10. IMPORTANT: Write to disk after EVERY step, no matter how small.
 11. Use absolute paths when referring to files and directories when required.
 12. Always use type hints in your Python code.
 13. Always use pytest for testing and make sure it is installed before using it.
+14. When refactoring, analyze existing code before making changes.
 
 Current working directory: {cwd}
 """
@@ -44,9 +46,10 @@ class CustomSystemTools:
             return f"Error executing command: {e.stderr}"
 
 class NemoAgent:
-    def __init__(self, task: str):
+    def __init__(self, task: str, existing_project_path: str = None):
         self.cwd = os.getcwd()
         self.task = task
+        self.existing_project_path = existing_project_path
         self.assistant = self.setup_assistant()
 
     def setup_assistant(self):
@@ -72,6 +75,75 @@ class NemoAgent:
         project_name = self.task.split()[0].lower()
         self.create_project_folder(project_name)
         self.get_initial_solution()
+
+    def create_new_project(self):
+        project_name = self.task.split()[0].lower()
+        self.create_project_folder(project_name)
+        self.initialize_poetry_project()
+        self.get_initial_solution()
+
+    def refactor_existing_project(self):
+        if not os.path.exists(self.existing_project_path):
+            print(f"Error: The specified project path does not exist: {self.existing_project_path}")
+            return
+
+        os.chdir(self.existing_project_path)
+        self.cwd = self.existing_project_path
+        print(f"Changed to existing project directory: {self.cwd}")
+
+        self.analyze_existing_project()
+        self.get_refactoring_solution()
+
+    def analyze_existing_project(self):
+        prompt = f"""
+        Analyze the existing project structure and code in the directory: {self.cwd}
+        Provide a summary of the project structure, main files, and any areas that might need refactoring.
+        Use the `ls` and `cat` commands to inspect the project files.
+        """
+        analysis = self.get_response(prompt)
+        print("Project Analysis:")
+        print(analysis)
+
+    def get_refactoring_solution(self):
+        prompt = f"""
+        Based on the project analysis and the given task: {self.task}
+        Provide a step-by-step refactoring plan for the existing project.
+        Include all necessary code modifications, file creations, or deletions.
+        Remember to use Poetry for managing dependencies if needed.
+        """
+        refactoring_solution = self.get_response(prompt)
+        self.execute_solution(refactoring_solution)
+
+    def initialize_poetry_project(self):
+        print("Initializing Poetry project...")
+        self.execute_command("poetry init --no-interaction")
+        self.update_pyproject_toml()
+
+    def update_pyproject_toml(self):
+        pyproject_path = os.path.join(self.cwd, "pyproject.toml")
+        if os.path.exists(pyproject_path):
+            with open(pyproject_path, "r") as f:
+                pyproject_data = toml.load(f)
+
+            # Add or update project configuration
+            pyproject_data["tool"]["poetry"].update({
+                "description": f"A Python project for: {self.task}",
+                "authors": ["NemoAgent <nemo@example.com>"],
+                "readme": "README.md",
+                "packages": [{"include": "src"}],
+            })
+
+            # Ensure pytest is added as a development dependency
+            if "dev-dependencies" not in pyproject_data["tool"]["poetry"]:
+                pyproject_data["tool"]["poetry"]["dev-dependencies"] = {}
+            pyproject_data["tool"]["poetry"]["dev-dependencies"]["pytest"] = "^6.2.5"
+
+            with open(pyproject_path, "w") as f:
+                toml.dump(pyproject_data, f)
+
+            print("Updated pyproject.toml file")
+        else:
+            print("Error: pyproject.toml not found")
 
     def get_initial_solution(self):
         prompt = f"""
@@ -309,17 +381,18 @@ class NemoAgent:
 
 @click.command()
 @click.argument('task', required=False)
-def cli(task: str = None):
+@click.option('--refactor', '-r', help='Path to existing project for refactoring')
+def cli(task: str = None, refactor: str = None):
     """
-    Run Nemo Agent tasks to create Python projects without executing scripts.
+    Run Nemo Agent tasks to create or refactor Python projects using Poetry.
     If no task is provided, it will prompt the user for input.
+    Use --refactor or -r option to specify an existing project path for refactoring.
     """
     if task is None:
         task = click.prompt("Please enter the task for Nemo Agent")
 
-    nemo_agent = NemoAgent(task=task)
+    nemo_agent = NemoAgent(task=task, existing_project_path=refactor)
     nemo_agent.run_task()
 
 if __name__ == "__main__":
     cli()
-
