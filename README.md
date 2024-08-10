@@ -1,21 +1,22 @@
-# NemoAgent
+# Nemo Agent
 
 [![PyPI - Version](https://img.shields.io/pypi/v/nemo-agent)](https://pypi.org/project/nemo-agent/)
 
-NemoAgent is an AI Agent for Python codegen using the Mistral-Nemo Ollama framework. It creates project structures, writes code, writes tests, runs tests, and performs development tasks based on natural language prompts. Now with support for refactoring existing projects and Poetry integration!
+Nemo Agent is a local fast AI Agent Python coding CLI. It creates project structures, writes code, writes tests, runs tests, and performs development tasks based on natural language prompts. Now with support for refactoring existing projects and Poetry integration!
 
 ## Features
-* Runs completely local
+* Runs completely local and very fast
 * Generates Python project structures automatically
 * Writes Python code based on task descriptions
 * Executes development tasks using AI-generated commands
 * Utilizes the Mistral-Nemo language model for intelligent code generation and testing
 * Implements best practices in Python development automatically
 * Refactors existing Python projects
+* Writes and runs tests
 * Integrates Poetry for dependency management and virtual environments
 
 ## Installation
-You can install NemoAgent using pip:
+You can install Nemo Agent using pip:
 
 `pip install nemo-agent`
 
@@ -62,15 +63,15 @@ Refactor an existing project:
 ## Requirements
 * Python 3.12.4 or higher
 * Ollama running mistral-nemo
-* Linux
-* Minimum of an RTX 4070
+* Linux with a minimum of an RTX 4070 or;
+* Mac M2 Pro with 16GB RAM
 * Poetry (automatically used for dependency management)
 
 ## Contributing
-Contributions to NemoAgent are welcome! Please feel free to submit a Pull Request.
+Contributions to Nemo Agent are welcome! Please feel free to submit a Pull Request.
 
 ## License
 This project is licensed under the MIT License - see the LICENSE file for details.
 
 ## Disclaimer
-NemoAgent generates and modifies code using AI. While it strives for accuracy and best practices, the generated or refactored code should be reviewed and tested before use in production environments.
+Nemo Agent generates code using AI. While it strives for accuracy and best practices, the generated code should be reviewed and tested before use in production environments.
