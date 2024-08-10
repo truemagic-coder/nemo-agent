@@ -57,7 +57,7 @@ Contributions to NemoAgent are welcome! Please feel free to submit a Pull Reques
 * Support current folder structure of projects for refactoring []
 * Support poetry []
 * Get all files in a folder recursive and put them into context for analysis []
-* Conversational interface [] 
+* Conversational interface with history [] 
 
 ## License
 This project is licensed under the MIT License - see the LICENSE file for details.
