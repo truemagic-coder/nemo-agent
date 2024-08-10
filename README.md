@@ -5,12 +5,12 @@
 NemoAgent is an AI Agent for Python codegen using the Mistral-Nemo Ollama framework. It creates project structures, writes code, writes tests, runs tests, and performs development tasks based on natural language prompts.
 
 ## Features
-* Runs completely local
-* Generate Python project structures automatically
-* Write Python code based on task descriptions
-* Execute development tasks using AI-generated commands
-* Utilize the Mistral-Nemo language model for intelligent code generation and testing
-* Implement best practices in Python development automatically
+* Runs completely local and very fast
+* Generates Python project structures automatically
+* Writes Python code based on task descriptions
+* Executes development tasks using AI-generated commands
+* Utilizes the Mistral-Nemo language model for intelligent code generation and testing
+* Implements best practices in Python development automatically
 
 ## Installation
 You can install NemoAgent using pip:
