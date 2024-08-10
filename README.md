@@ -9,7 +9,7 @@ Nemo Agent is a local fast AI Agent Python coding CLI. It creates project struct
 * Generates Python project structures automatically
 * Writes Python code based on task descriptions
 * Executes development tasks using AI-generated commands
-* Utilizes the Mistral-Nemo language model for intelligent code generation and testing
+* Utilizes the Mistral-Nemo language model for intelligent code generation
 * Implements best practices in Python development automatically
 * Refactors existing Python projects
 * Writes and runs tests
