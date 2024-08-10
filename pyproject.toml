@@ -3,6 +3,13 @@ name = "nemo-agent"
 version = "0.0.1"
 description = "An AI Agent for python code gen using the Mistral-Nemo Ollama framework."
 authors = ["Bevan Hunt <bevan@bevanhunt.com>"]
+license = "MIT"
+readme = "README.md"
+keywords = ["ai", "agent", "ai agent"]
+classifiers = [
+    "Programming Language :: Python :: 3 :: Only",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+]
 packages = [{include = "nemo_agent"}]
 
 [tool.poetry.dependencies]
