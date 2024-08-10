@@ -621,6 +621,20 @@ files = [
 ]
 
 [[package]]
+name = "ollama"
+version = "0.3.1"
+description = "The official Python client for Ollama."
+optional = false
+python-versions = "<4.0,>=3.8"
+files = [
+    {file = "ollama-0.3.1-py3-none-any.whl", hash = "sha256:db50034c73d6350349bdfba19c3f0d54a3cea73eb97b35f9d7419b2fc7206454"},
+    {file = "ollama-0.3.1.tar.gz", hash = "sha256:032572fb494a4fba200c65013fe937a65382c846b5f358d9e8918ecbc9ac44b5"},
+]
+
+[package.dependencies]
+httpx = ">=0.27.0,<0.28.0"
+
+[[package]]
 name = "phidata"
 version = "2.4.29"
 description = "Memory, knowledge and tools for LLMs."
@@ -1111,4 +1125,4 @@ zstd = ["zstandard (>=0.18.0)"]
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.12.4"
-content-hash = "12fabb55204bc7af5fa362a30f1534caed375713f72d97bdec32d821b903b147"
+content-hash = "9e14efcab6d1abaf6422f2297851efc805b91729e5034db38c3836ec432f8b9c"
