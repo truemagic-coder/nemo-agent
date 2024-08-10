@@ -1,8 +1,8 @@
 [tool.poetry]
 name = "nemo-agent"
 version = "0.0.1"
-description = "A tool for running ColabFold batch processing on RunPod"
-authors = ["Bevan Hunt"]
+description = "An AI Agent for python code gen using the Mistral-Nemo Ollama framework."
+authors = ["Bevan Hunt <bevan@bevanhunt.com>"]
 packages = [{include = "nemo_agent"}]
 
 [tool.poetry.dependencies]
@@ -15,4 +15,4 @@ requires = ["poetry-core>=1.0.0"]
 build-backend = "poetry.core.masonry.api"
 
 [tool.poetry.scripts]
-agent = "nemo_agent.main:cli"
+nemo-agent = "nemo_agent.main:cli"
