@@ -8,7 +8,7 @@ from phi.tools.file import FileTools
 import click
 
 SYSTEM_PROMPT = """
-You are NemoAgent, an expert Python developer. Follow these rules strictly:
+You are Nemo Agent, an expert Python developer specializing in Flask applications. Follow these rules strictly:
 
 1. Always use your tools to get file and directory context before executing commands and writing code.
 2. Always use `cat` with heredoc syntax to create files. Example:
@@ -18,18 +18,30 @@ You are NemoAgent, an expert Python developer. Follow these rules strictly:
 3. Use `sed` for making specific modifications to existing files:
    sed -i 's/old_text/new_text/g' filename.py
 4. Provide complete, fully functional code when creating or editing files.
-5. Use markdown and include language specifiers in code blocks.
-6. If a library is required, install it using `pip` as needed.
-7. CRITICAL: Never execute the code you created other than tests.
-8. Always create an venv for the Python project.
-9. Include proper error handling, comments, and follow Python best practices.
-10. IMPORTANT: Write to disk after EVERY step, no matter how small.
-11. Use absolute paths when referring to files and directories when required.
-12. Always use type hints in your Python code.
-13. Always use pytest for testing and make sure it is installed before using it.
+5. Always install packages using `pip` into the venv created for the project at the start.
+6. CRITICAL: Never execute the code you created other than tests.
+7. Always create a venv for the Python project.
+8. Include proper error handling, comments, and follow Python best practices.
+9. IMPORTANT: Write to disk after EVERY step, no matter how small.
+10. Use absolute paths when referring to files and directories when required.
+11. Always use type hints in your Python code.
+12. Always use pytest for testing.
+13. Follow the TDD red-green-refactor cycle:
+    a. Write a failing test (red).
+    b. Write the minimum code to make the test pass (green).
+    c. Refactor the code if necessary.
+14. Always write tests before implementing the actual code.
+15. Keep modifying the code until all tests pass.
+16. Run tests after each code change using the command: pytest test_filename.py
+17. Use Pylint to check code quality before running tests.
+18. Address any Pylint warnings or errors before proceeding with tests.
 
-Current working directory: {cwd}
+Current working directory: {{cwd}}
+Operating System: {{os_name}}
+Default Shell: {{default_shell}}
+Home Directory: {{home_dir}}
 """
+
 
 class CustomSystemTools:
     def __init__(self):
@@ -71,7 +83,111 @@ class NemoAgent:
     def run_task(self):
         project_name = self.task.split()[0].lower()
         self.create_project_folder(project_name)
-        self.get_initial_solution()
+        self.create_virtual_environment()
+        self.install_pytest_and_pylint()
+        self.tdd_cycle()
+
+    def create_virtual_environment(self):
+        venv_command = "python3 -m venv venv"
+        self.validate_and_execute_commands(venv_command)
+        activate_command = "source venv/bin/activate"
+        self.validate_and_execute_commands(activate_command)
+        self.venv_path = os.path.join(self.cwd, "venv")
+
+    def install_pytest_and_pylint(self):
+        install_command = "pip install pytest pylint"
+        self.validate_and_execute_commands(install_command)
+
+    def tdd_cycle(self):
+        while True:
+            # Write failing test
+            self.write_test()
+            
+            # Run Pylint on test file
+            if not self.run_pylint("test_*.py"):
+                continue
+            
+            # Run test (should fail)
+            if not self.run_tests():
+                # Write code to make test pass
+                self.write_code()
+                
+                # Run Pylint on implementation file
+                if not self.run_pylint("*.py"):
+                    continue
+                
+                # Run test again (should pass)
+                if self.run_tests():
+                    # Refactor if necessary
+                    self.refactor()
+                else:
+                    print("Test still failing. Continuing TDD cycle.")
+            else:
+                print("All tests passing. TDD cycle complete.")
+                break
+
+    def run_pylint(self, file_pattern):
+        pylint_command = f"{os.path.join(self.venv_path, 'bin', 'pylint')} --output-format=json {file_pattern}"
+        result = subprocess.run(pylint_command, shell=True, capture_output=True, text=True, cwd=self.cwd)
+        
+        if result.returncode != 0:
+            print("Pylint found issues. Attempting to fix them.")
+            self.fix_pylint_issues(result.stdout, file_pattern)
+            return False
+        return True
+
+    def fix_pylint_issues(self, pylint_output, file_pattern):
+        import json
+        
+        try:
+            issues = json.loads(pylint_output)
+        except json.JSONDecodeError:
+            print("Error parsing Pylint output. Skipping automatic fixes.")
+            return
+
+        files_to_fix = {}
+        for issue in issues:
+            filename = issue['path']
+            if filename not in files_to_fix:
+                with open(filename, 'r') as f:
+                    files_to_fix[filename] = f.readlines()
+
+            line = issue['line'] - 1  # Pylint uses 1-based line numbers
+            message = issue['message']
+            
+            prompt = f"Fix the following Pylint issue in file {filename} at line {line + 1}:\n\n{message}\n\nCurrent line: {files_to_fix[filename][line].strip()}\n\nProvide the corrected line of code."
+            corrected_line = self.get_response(prompt).strip()
+            
+            files_to_fix[filename][line] = corrected_line + '\n'
+
+        for filename, lines in files_to_fix.items():
+            with open(filename, 'w') as f:
+                f.writelines(lines)
+            print(f"Updated file: {filename}")
+
+        print("Pylint issues have been addressed. Running Pylint again to verify.")
+        self.run_pylint(file_pattern)
+
+    def write_test(self):
+        prompt = f"Write a failing test for the following task: {self.task}"
+        test_code = self.get_response(prompt)
+        self.validate_and_execute_commands(test_code)
+
+    def write_code(self):
+        prompt = f"Write the minimum code to make the test pass for the task: {self.task}"
+        code = self.get_response(prompt)
+        self.validate_and_execute_commands(code)
+
+    def run_tests(self):
+        test_command = "pytest"
+        result = subprocess.run(test_command, shell=True, capture_output=True, text=True, cwd=self.cwd)
+        print(result.stdout)
+        return result.returncode == 0
+
+    def refactor(self):
+        prompt = f"Refactor the code if necessary for the task: {self.task}"
+        refactored_code = self.get_response(prompt)
+        self.validate_and_execute_commands(refactored_code)
 
     def get_initial_solution(self):
         prompt = f"""
@@ -175,7 +291,7 @@ class NemoAgent:
         return command
 
     def validate_command(self, command):
-        allowed_commands = ['cat', 'ls', 'cd', 'mkdir', 'sed', 'pip', 'echo', 'venv', 'python3', 'source', 'pytest', 'python']
+        allowed_commands = ['cat', 'ls', 'cd', 'mkdir', 'sed', 'pip', 'echo', 'venv', 'python3', 'source', 'pytest', 'python', 'pylint', 'touch']
         command_parts = command.strip().split()
         if command_parts:
             return command_parts[0] in allowed_commands
@@ -195,7 +311,7 @@ class NemoAgent:
 
                 if corrected_command.strip().startswith('cat >'):
                     self.execute_heredoc_command(corrected_command)
-                elif corrected_command.startswith(('ls', 'cd', 'mkdir', 'pip', 'sed', 'cat', 'echo', 'venv', 'python3', 'source', 'pytest', 'python')):
+                elif corrected_command.startswith(('ls', 'cd', 'mkdir', 'pip', 'sed', 'cat', 'echo', 'venv', 'python3', 'source', 'pytest', 'python', 'pylint', 'touch')):
                     result = subprocess.run(
                         corrected_command, shell=True, check=True, capture_output=True, text=True, cwd=self.cwd)
                     print(result.stdout)
