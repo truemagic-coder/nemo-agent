@@ -7,7 +7,7 @@ packages = [{include = "nemo_agent"}]
 
 [tool.poetry.dependencies]
 python = "^3.12.4"
-ToolAgents = "^0.0.11"
+phidata = "^2.4.29"
 click = "^8.1.7"
 
 [build-system]
