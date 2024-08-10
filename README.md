@@ -51,7 +51,7 @@ Nemo Agent can execute various development tasks like creating virtual environme
 * Minimum of an RTX 4070
 
 ## Contributing
-Contributions to NemoAgent are welcome! Please feel free to submit a Pull Request.
+Contributions to Nemo Agent are welcome! Please feel free to submit a Pull Request.
 
 ## Roadmap
 * Support current folder structure of projects for refactoring []

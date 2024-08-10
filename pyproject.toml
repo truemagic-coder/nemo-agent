@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "nemo-agent"
-version = "0.0.5"
+version = "0.0.6"
 description = "An AI Agent for python code gen using the Mistral-Nemo Ollama framework"
 authors = ["Bevan Hunt <bevan@bevanhunt.com>"]
 license = "MIT"
