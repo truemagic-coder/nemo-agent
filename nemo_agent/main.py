@@ -25,7 +25,7 @@ You are NemoAgent, an expert Python developer. Follow these rules strictly:
 9. Include proper error handling, comments, and follow Python best practices.
 10. IMPORTANT: Write to disk after EVERY step, no matter how small.
 11. Never override the user requirements including library choices. Always follow the user's instructions.
-12. Always write into only one file for the whole solution.
+12. Always use absolute paths when referring to files and directories.
 
 Current working directory: {cwd}
 """
