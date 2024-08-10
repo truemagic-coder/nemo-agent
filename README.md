@@ -1,4 +1,7 @@
 # NemoAgent
+
+[![PyPI - Version](https://img.shields.io/pypi/v/nemo-agent)](https://pypi.org/project/nemo-agent/)
+
 NemoAgent is an AI Agent for Python codegen using the Mistral-Nemo Ollama framework. It creates project structures, writes code, writes tests, runs tests, and performs development tasks based on natural language prompts.
 
 ## Features
