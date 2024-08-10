@@ -2,7 +2,7 @@
 
 [![PyPI - Version](https://img.shields.io/pypi/v/nemo-agent)](https://pypi.org/project/nemo-agent/)
 
-Nemo Agent is an AI Agent for Python codegen using the Mistral-Nemo Ollama framework. It creates project structures, writes code, writes tests, runs tests, and performs development tasks based on natural language prompts.
+Nemo Agent is a blazing fast local AI Agent for Python coding.
 
 ## Features
 * Runs completely local and very fast
@@ -47,8 +47,8 @@ Nemo Agent can execute various development tasks like creating virtual environme
 ## Requirements
 * Python 3.12.4 or higher
 * Ollama running mistral-nemo
-* Linux
-* Minimum of an RTX 4070
+* Linux with a minimum of an RTX 4070 or;
+* Mac with a minimum of an M2 Pro with 16GB RAM
 
 ## Contributing
 Contributions to Nemo Agent are welcome! Please feel free to submit a Pull Request.

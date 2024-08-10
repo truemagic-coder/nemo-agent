@@ -1,15 +1,17 @@
 [tool.poetry]
 name = "nemo-agent"
-version = "0.0.6"
-description = "An AI Agent for python code gen using the Mistral-Nemo Ollama framework"
+version = "0.0.7"
+description = "Blazing fast local AI Agent for Python coding"
 authors = ["Bevan Hunt <bevan@bevanhunt.com>"]
 license = "MIT"
 readme = "README.md"
 repository = "https://github.com/truemagic-coder/nemo-agent"
-keywords = ["ai", "agent", "ai agent"]
+keywords = ["ai", "agent", "ai agent", "local ai agent", "python ai agent"]
 classifiers = [
     "Programming Language :: Python :: 3 :: Only",
     "Topic :: Scientific/Engineering :: Artificial Intelligence",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
 ]
 packages = [{include = "nemo_agent"}]
 
@@ -18,6 +20,7 @@ python = "^3.12.4"
 phidata = "^2.4.29"
 click = "^8.1.7"
 torch = "^2.4.0"
+requests = "^2.32.3"
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]
