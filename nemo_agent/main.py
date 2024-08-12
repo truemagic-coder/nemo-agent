@@ -154,6 +154,8 @@ class NemoAgent:
         10. IMPORTANT: Provide all necessary commands to create and modify files, including `cat` commands for file creation and `sed` commands for modifications.
         11. After providing the implementation, include commands to install any necessary dependencies using Poetry.
         12. Keep the project structure simple with 1-2 files in the code directory and 1-2 files in the tests directory.
+        13. IMPORTANT: Only use Streamlit for web applications. Do not use FastAPI, Django, Flask, or any other web framework.
+        14. NEVER include commands to run Streamlit apps or any other apps - only include commands to run tests.
 
         Current working directory: {self.cwd}
         Code directory: {self.project_name}/{self.project_name}
@@ -166,6 +168,7 @@ class NemoAgent:
 
         # Install dependencies
         try:
+            subprocess.run(["poetry", "add", "streamlit"], check=True, cwd=self.cwd)
             subprocess.run(["poetry", "install"], check=True, cwd=self.cwd)
             print("Dependencies installed successfully.")
         except subprocess.CalledProcessError as e:
@@ -173,7 +176,7 @@ class NemoAgent:
 
         # Update pyproject.toml if necessary
         pyproject_update = self.get_response(
-            "Provide any necessary updates to pyproject.toml, including adding pytest as a dev dependency if it's not already there.")
+            "Provide any necessary updates to pyproject.toml, including adding pytest and streamlit as dependencies if they're not already there.")
         self.validate_and_execute_commands(pyproject_update)
 
         # Run poetry update to ensure all dependencies are installed
@@ -275,7 +278,11 @@ class NemoAgent:
                             'poetry', 'echo', 'python3', 'source', 'pytest', 'python']
         command_parts = command.strip().split()
         if command_parts:
-            return command_parts[0] in allowed_commands
+            if command_parts[0] in allowed_commands:
+                if command_parts[0] == 'poetry' and 'run' in command_parts and 'streamlit' in command_parts:
+                    print("Warning: Running Streamlit apps is not allowed. Skipping this command.")
+                    return False
+                return True
         return False
 
     def validate_and_execute_commands(self, response):
@@ -417,7 +424,7 @@ class NemoAgent:
 @click.argument('task', required=False)
 def cli(task: str = None):
     """
-    Run Nemo Agent tasks to create Python projects using Poetry.
+    Run Nemo Agent tasks to create Python projects using Poetry and Streamlit.
     If no task is provided, it will prompt the user for input.
     """
     if task is None:
@@ -425,7 +432,6 @@ def cli(task: str = None):
 
     nemo_agent = NemoAgent(task=task)
     nemo_agent.run_task()
-
 
 if __name__ == "__main__":
     cli()
