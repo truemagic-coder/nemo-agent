@@ -23,30 +23,28 @@ You are Nemo Agent, an expert Python developer. Follow these rules strictly:
 8. IMPORTANT: Write to disk after EVERY step, no matter how small.
 9. Use type hints in your Python code when appropriate.
 10. Only use pytest for testing - never use unittest.
-11. Always run the tests using `poetry run pytest` with no options.
-12. Always use module imports when referring to files in tests.
-13. Use the following format for creating files:
+11. Always use module imports when referring to files in tests.
+12. Use the following format for creating files:
     For code files with inline tests: cat > {project_name}/filename.py << EOL
-14. IMPORTANT: Write to disk after EVERY step, no matter how small.
-15. Always break up tests into multiple test functions for better organization.
-16. Once the tests pass, the task is complete.
-17. Always mock external services, database calls, and APIs.
-18. Always include module docstrings at the beginning of Python files, unless they are test files or __init__.py files.
-19. You use your tools like `ls` and `cat` to verify and understand the contents of files and directories.
-20. Always use `cat` with heredoc syntax to create files. Example:
+13. IMPORTANT: Write to disk after EVERY step, no matter how small.
+14. Always break up tests into multiple test functions for better organization.
+15. Always mock external services, database calls, and APIs.
+16. Always include module docstrings at the beginning of Python files, unless they are test files or __init__.py files.
+17. You use your tools like `ls` and `cat` to verify and understand the contents of files and directories.
+18. Always use `cat` with heredoc syntax to create files. Example:
    cat > filename.py << EOL
    # File content here
    EOL
-21. Use `sed` for making specific modifications to existing files:
+19. Use `sed` for making specific modifications to existing files:
    sed -i 's/old_text/new_text/g' filename.py
-22. Use the following format for creating files:
+20. Use the following format for creating files:
             For code files: cat > {project_name}/filename.py << EOL
             For test files: cat > tests/test_filename.py << EOL
-23. Only create an __init__.py file the project code directory {pwd}/{project_name}.
-24. Never create an __init__.py file in the tests directory.
-25. Create a simple test plan to ensure that all requirements are met.
-26. Don't use print statements as return values.
-27. Write testable code from the start.
+21. Never use `poetry shell` only use `poetry run` for running commands.
+22. The test command is `poetry run pytest --cov={project_name} --cov-config=.coveragerc`
+23. IMPORTANT: Write to disk after EVERY step, no matter how small.
+24. You write code to the code directory on disk: {project_name}
+25. You write tests to the tests directory on disk: tests
 
 Current working directory: {pwd}
 """
@@ -138,11 +136,10 @@ class NemoAgent:
     def run_task(self):
         self.ensure_poetry_installed()
         self.create_project_with_poetry()
-        self.setup_init_files()
         self.implement_solution()
-        tests_passed = self.run_tests()
-        if not tests_passed:
-            self.improve_test_coverage()
+        tests_passed, coverage = self.run_tests()
+        if not tests_passed or coverage < 80:
+            self.improve_test_coverage(initial_coverage=coverage)
 
         print("Task completed. Please review the output and make any necessary manual adjustments.")
 
@@ -179,12 +176,6 @@ class NemoAgent:
 
             self.pwd = os.path.join(self.pwd, self.project_name)
             os.chdir(self.pwd)
-
-            # Delete __init__.py from the tests folder
-            tests_init_file = os.path.join(self.pwd, 'tests', '__init__.py')
-            if os.path.exists(tests_init_file):
-                os.remove(tests_init_file)
-                print(f"Deleted {tests_init_file}")
 
             # Update the system prompt with the new working directory
             self.update_system_prompt()
@@ -226,176 +217,19 @@ class NemoAgent:
     def implement_solution(self):
         prompt = f"""
         Create a comprehensive test plan and implementation for the task: {self.task}
+        You follow these rules strictly:
+            1. Use TDD (Test-Driven Development) with red-green refactor to guide your implementation.
+            2. CRITICAL: Write to disk after EVERY step, no matter how small.
+            3. CRITICAL: The correct import statements for local files looks like `from {self.project_name}.module_name import method_name`.
+            4. You write code to the code directory on disk: {self.project_name}
+            5. You write tests to the tests directory on disk: tests
+            6. The test command is `poetry run pytest --cov={self.project_name} --cov-config=.coveragerc`
+            7. You only use pytest for testing - never use unittest
+            8. Use OOP, DRY, KISS, SOLID, SRP, and other best practices.
+            9. IMPORTANT: Always include docstrings for all functions, classes, files, and modules.
+            10. IMPORTANT: Follow PEP8 style guide and use type hints when appropriate.
 
-        Follow these guidelines:
-        1. Use Object-Oriented Programming (OOP) principles.
-        2. Apply SOLID principles:
-        - Single Responsibility Principle (SRP)
-        - Open-Closed Principle (OCP)
-        - Liskov Substitution Principle (LSP)
-        - Interface Segregation Principle (ISP)
-        - Dependency Inversion Principle (DIP)
-        3. Implement Dependency Injection (DI) where appropriate.
-        4. Ensure each class and method has a single responsibility.
-        5. Use abstract base classes or interfaces to define contracts.
-        6. Implement a simple Dependency Injection Container if needed.
-        7. Write unit tests for each class and method.
-        8. Use type hints for all method parameters and return values.
-        9. Include proper error handling and input validation.
-        10. Follow PEP 8 style guidelines.
-
-        Test Plan:
-        1. Unit tests for each class and method.
-        2. Integration tests for the entire system.
-        3. Edge case tests:
-        - Test with minimum and maximum valid inputs.
-        - Test with invalid inputs.
-        4. Performance tests (if applicable).
-        5. Exception handling tests.
-        6. Dependency Injection tests.
-
-        Implement the solution following this structure:
-        1. Create an abstract base class or interface for the main functionality.
-        2. Implement concrete classes that inherit from the base class or implement the interface.
-        3. Use dependency injection for any dependencies.
-        4. Implement a simple DI container if needed.
-        5. Create a main function that demonstrates the usage of the classes.
-        6. Write comprehensive unit tests for each class and method.
-
-        Use pytest for all tests. Follow all the rules and guidelines provided in the system prompt.
-
-        Now, create the test file:
-
-        cat > tests/test_main.py << EOL
-        '''This module contains tests for the main implementation.'''
-        import pytest
-        from {self.project_name}.main import FactorialCalculator, CalculatorFactory, DIContainer, Calculator
-
-        @pytest.fixture
-        def factorial_calculator():
-            return FactorialCalculator()
-
-        @pytest.fixture
-        def di_container():
-            container = DIContainer()
-            container.register(Calculator, FactorialCalculator())
-            return container
-
-        def test_factorial_zero(factorial_calculator):
-            assert factorial_calculator.calculate(0) == 1
-
-        def test_factorial_one(factorial_calculator):
-            assert factorial_calculator.calculate(1) == 1
-
-        def test_factorial_positive_integer(factorial_calculator):
-            assert factorial_calculator.calculate(5) == 120
-
-        def test_factorial_large_number(factorial_calculator):
-            assert factorial_calculator.calculate(20) == 2432902008176640000
-
-        def test_factorial_negative_integer(factorial_calculator):
-            with pytest.raises(ValueError):
-                factorial_calculator.calculate(-1)
-
-        def test_factorial_float(factorial_calculator):
-            with pytest.raises(ValueError):
-                factorial_calculator.calculate(5.5)
-
-        def test_factorial_string(factorial_calculator):
-            with pytest.raises(ValueError):
-                factorial_calculator.calculate("5")
-
-        def test_calculator_factory_valid():
-            calculator = CalculatorFactory.create_calculator("factorial")
-            assert isinstance(calculator, FactorialCalculator)
-
-        def test_calculator_factory_invalid():
-            with pytest.raises(ValueError):
-                CalculatorFactory.create_calculator("invalid_type")
-
-        def test_di_container_registration_and_resolution(di_container):
-            calculator = di_container.resolve(Calculator)
-            assert isinstance(calculator, FactorialCalculator)
-
-        def test_di_container_unregistered_service():
-            container = DIContainer()
-            with pytest.raises(ValueError):
-                container.resolve(str)
-
-        def test_factorial_performance(factorial_calculator):
-            import time
-            start_time = time.time()
-            factorial_calculator.calculate(1000)
-            end_time = time.time()
-            assert end_time - start_time < 1, "Factorial calculation took too long"
-        EOL
-
-        Now run the tests using pytest:
-
-        poetry run pytest tests/test_main.py -v
-
-        It should fail initially. Implement the main functionality in the main.py file.
-        
-        Follow this example structure for the main.py file:
-
-        cat > {self.project_name}/main.py << EOL
-        '''This module contains the main implementation for {self.project_name}.'''
-        from abc import ABC, abstractmethod
-        from typing import Protocol, Any
-
-        class Calculator(Protocol):
-            def calculate(self, n: int) -> int:
-                ...
-
-        class FactorialCalculator:
-            def calculate(self, n: int) -> int:
-                if not isinstance(n, int):
-                    raise ValueError("Input must be a non-negative integer")
-                if n < 0:
-                    raise ValueError("Input must be a non-negative integer")
-                if n == 0 or n == 1:
-                    return 1
-                return n * self.calculate(n - 1)
-
-        class CalculatorFactory:
-            @staticmethod
-            def create_calculator(calculator_type: str) -> Calculator:
-                if calculator_type == "factorial":
-                    return FactorialCalculator()
-                raise ValueError(
-                    f"Unknown calculator type: {{calculator_type}}")
-
-        class DIContainer:
-            def __init__(self):
-                self._services = {{}}
-
-            def register(self, service_type: type, implementation: Any):
-                self._services[service_type] = implementation
-
-            def resolve(self, service_type: type) -> Any:
-                if service_type not in self._services:
-                    raise ValueError(
-                        f"Service {{service_type}} not registered")
-                return self._services[service_type]
-
-        def main(container: DIContainer) -> None:
-            calculator = container.resolve(Calculator)
-            result = calculator.calculate(5)
-            print(f"Factorial of 5 is: {{result}}")
-
-        if __name__ == "__main__":
-            container = DIContainer()
-            container.register(
-                Calculator, CalculatorFactory.create_calculator("factorial"))
-            main(container)
-        EOL
-
-        Now run the tests using pytest:
-
-        poetry run pytest tests/test_main.py -v
-
-        And keep refining the implementation until all tests pass.
-
+        Working directory: {self.pwd}
         """
 
         solution = self.get_response(prompt)
@@ -478,18 +312,6 @@ class NemoAgent:
             print(current_line)
 
         return full_response.strip()
-
-    def setup_init_files(self):
-        print("Setting up __init__.py file in the project directory...")
-        init_file = os.path.join(self.pwd, self.project_name, '__init__.py')
-        if not os.path.exists(init_file):
-            with open(init_file, 'w') as f:
-                f.write('"""This module is part of the {} project."""\n'.format(
-                    self.project_name))
-            print(f"Created {init_file}")
-        else:
-            print(f"{init_file} already exists")
-        print("Finished setting up __init__.py file.")
 
     def clean_code_with_pylint(self, file_path):
         try:
@@ -595,6 +417,8 @@ class NemoAgent:
 
         Provide specific code changes to improve the score. Use the appropriate commands (cat, sed) to modify the file.
         Focus on addressing the issues reported by pylint, such as unused imports, code style issues, etc.
+        IMPORTANT: Always include docstrings for all functions, classes, files, and modules.
+        IMPORTANT: Follow PEP8 style guide and use type hints when appropriate.
         {'For test files, focus on improving code quality without adding unnecessary docstrings.' if is_test_file else ''}
         {'For __init__.py files, focus on improving code quality while considering its special purpose.' if is_init_file else ''}
         """
@@ -609,12 +433,12 @@ class NemoAgent:
             self.improve_code(file_path, new_score, pylint_output,
                               is_test_file, is_init_file, attempt + 1)
 
-    def improve_test_coverage(self, attempt=1):
+    def improve_test_coverage(self, attempt=1, initial_coverage=0):
         if attempt > self.MAX_IMPROVEMENT_ATTEMPTS:
             print("Maximum test coverage improvement attempts reached. Moving on.")
             return
 
-        coverage_result = self.get_current_coverage()
+        coverage_result = initial_coverage if attempt == 1 else self.get_current_coverage()
         if coverage_result >= 80:
             print(f"Test coverage is already at {
                   coverage_result}%. No improvements needed.")
@@ -630,6 +454,9 @@ class NemoAgent:
         3. Ensuring all code paths in the main implementation are tested.
         4. Use pytest fixtures where appropriate to set up test data.
         5. Use parametrized tests to cover multiple scenarios efficiently.
+        6. Use OOP, DRY, KISS, SOLID, SRP, and other best practices to write clean and efficient tests.
+        7. IMPORTANT: Always include docstrings for all functions, classes, files, and modules.
+        8. IMPORTANT: Follow PEP8 style guide and use type hints when appropriate.
 
         Provide specific code changes or additional tests to improve the coverage.
         Use the following format for creating or modifying test files:
@@ -650,7 +477,7 @@ class NemoAgent:
         if new_coverage < 80:
             print(f"Coverage is still below 80% (current: {
                   new_coverage}%). Attempting another improvement (attempt {attempt + 1})...")
-            self.improve_test_coverage(attempt + 1)
+            self.improve_test_coverage(attempt + 1, new_coverage)
         else:
             print(f"Coverage goal achieved. Current coverage: {new_coverage}%")
 
@@ -658,7 +485,7 @@ class NemoAgent:
         try:
             result = subprocess.run(
                 ["poetry", "run", "pytest", "--cov=" + self.project_name,
-                    "--cov-report=term-missing", "--cov-fail-under=0"],
+                 "--cov-config=.coveragerc"],
                 capture_output=True,
                 text=True,
                 cwd=self.pwd
@@ -759,9 +586,6 @@ class NemoAgent:
                 corrected_command = self.auto_correct_command(command)
 
                 if corrected_command.strip().startswith('cat >'):
-                    if 'tests/__init__.py' in corrected_command:
-                        print("Skipping creation of __init__.py in tests directory")
-                        continue
                     self.execute_heredoc_command(corrected_command)
                 elif corrected_command.startswith(('ls', 'cd', 'mkdir', 'poetry', 'sed', 'cat', 'echo', 'python3', 'source', 'pytest', 'python')):
                     result = subprocess.run(
@@ -803,9 +627,6 @@ class NemoAgent:
 
             # Ensure the file path is within the project directory
             if file_path.startswith('tests/'):
-                if file_path.endswith('__init__.py'):
-                    print("Skipping creation of __init__.py in tests directory")
-                    return
                 full_file_path = os.path.join(self.pwd, file_path)
             elif file_path.startswith(f'{self.project_name}/'):
                 full_file_path = os.path.join(self.pwd, file_path)
@@ -874,12 +695,6 @@ class NemoAgent:
     def run_tests(self):
         print("Running tests and checking code quality...")
         try:
-            # Delete tests/__init__.py if it exists
-            tests_init_file = os.path.join(self.pwd, 'tests', '__init__.py')
-            if os.path.exists(tests_init_file):
-                os.remove(tests_init_file)
-                print(f"Deleted {tests_init_file}")
-
             # Run pylint only on non-test Python files in the project
             for root, dirs, files in os.walk(self.pwd):
                 if 'tests' not in root:  # Skip the tests directory
@@ -889,7 +704,7 @@ class NemoAgent:
                             self.clean_code_with_pylint(file_path)
 
             # Create a .coveragerc file to exclude empty files and __init__.py
-            coveragerc_content = """
+            coveragerc_content = f"""
     [run]
     source = {self.project_name}
     omit =
@@ -913,8 +728,8 @@ class NemoAgent:
 
             # Run pytest with coverage
             result = subprocess.run(
-                ["poetry", "run", "pytest", "--cov=fizzbuzz_456", "--cov-config=.coveragerc", 
-                "--cov-report=term-missing", "--cov-fail-under=80"],
+                ["poetry", "run", "pytest", "--cov=" + self.project_name, "--cov-config=.coveragerc",
+                 "--cov-report=term-missing"],
                 capture_output=True,
                 text=True,
                 cwd=self.pwd
@@ -925,23 +740,31 @@ class NemoAgent:
 
             # Check if coverage report was generated
             if "No data to report." in result.stdout or "No data to report." in result.stderr:
-                print("No coverage data was collected. Ensure that the tests are running correctly.")
-                return False
+                print(
+                    "No coverage data was collected. Ensure that the tests are running correctly.")
+                return False, 0
 
-            if result.returncode == 0:
-                print("All tests passed successfully and coverage is at least 80%.")
-                return True
+            # Extract coverage percentage
+            coverage_match = re.search(
+                r'TOTAL\s+\d+\s+\d+\s+(\d+)%', result.stdout)
+            coverage_percentage = int(
+                coverage_match.group(1)) if coverage_match else 0
+
+            if result.returncode == 0 and coverage_percentage >= 80:
+                print(f"All tests passed successfully and coverage is {
+                    coverage_percentage}%.")
+                return True, coverage_percentage
             else:
-                print("Tests failed or coverage is below 80%. Please review the output above.")
-                return False
+                print(f"Tests failed or coverage is below 80%. Current coverage: {
+                    coverage_percentage}%")
+                return False, coverage_percentage
 
         except subprocess.CalledProcessError as e:
             print(f"Error running tests: {e}")
-            return False
+            return False, 0
         except Exception as e:
             print(f"An unexpected error occurred: {e}")
-            return False
-
+            return False, 0
 
 
 @click.command()
