@@ -13,7 +13,7 @@ SYSTEM_PROMPT = """
 You are Nemo Agent, an expert Python developer. Follow these rules strictly:
 
 1. The project has been created using `poetry new {project_name}`. Use this layout to write code in the proper directories.
-2. Provide complete, fully functional code when creating or editing files.
+2. Always provide complete, fully functional code when creating or editing files.
 3. Use markdown and include language specifiers in code blocks.
 4. If a library is required, add it to the pyproject.toml and run `poetry update`.
 5. CRITICAL: Never execute the code you created other than tests.
@@ -43,6 +43,18 @@ You are Nemo Agent, an expert Python developer. Follow these rules strictly:
             For code files: cat > {project_name}/filename.py << EOL
             For test files: cat > tests/test_filename.py << EOL
 24. Prefer functions over classes. Use classes only when necessary.
+25. For API testing, use pytest-flask for Flask applications or fastapi.testclient for FastAPI applications.
+26. When testing Flask APIs:
+    - Use the `client` fixture provided by pytest-flask.
+    - Make requests using client.get(), client.post(), etc.
+    - Assert on the response status code and content.
+27. When testing FastAPI APIs:
+    - Create a TestClient instance in your tests.
+    - Make requests using client.get(), client.post(), etc.
+    - Assert on the response status code and content.
+28. For both Flask and FastAPI, test all endpoints, including error cases and edge cases.
+29. Use parametrized tests to test multiple input scenarios for each endpoint.
+30. Mock any external services or database calls in your API tests.
 
 Current working directory: {pwd}
 """
@@ -182,10 +194,9 @@ class NemoAgent:
             print("Added [tool.pytest.ini-options] section to pyproject.toml")
 
             try:
-                subprocess.run(["poetry", "add", "--dev", "pytest@*", "pylint@*",
-                               "autopep8@*", "pytest-cov@*", "flask-testing@*"], check=True, cwd=self.pwd)
-                print(
-                    "Added pytest, pylint, autopep8, and pytest-cov as development dependencies with latest versions.")
+                subprocess.run(["poetry", "add", "--dev", "pytest@*", "pylint@*", "autopep8@*", 
+                                "pytest-cov@*", "pytest-flask@*", "httpx@*"], check=True, cwd=self.pwd)
+                print("Added pytest, pylint, autopep8, pytest-cov, pytest-flask, and httpx as development dependencies with latest versions.")
             except subprocess.CalledProcessError as e:
                 print(f"Error adding development dependencies: {e}")
 
@@ -200,7 +211,7 @@ class NemoAgent:
         IMPORTANT: Stay focused on this specific task and do not default to a generic or "Hello World" example.
         Follow these rules strictly:
         1. The project has been created using `poetry new {self.project_name}`.
-        4. Provide complete, fully functional code when creating or editing files.
+        4. Always provide complete, fully functional code when creating or editing files.
         5. Use markdown and include language specifiers in code blocks.
         6. Include proper error handling, comments, and follow Python best practices.
         7. Use absolute paths when referring to files and directories especially in tests.
@@ -230,7 +241,12 @@ class NemoAgent:
             For test files: cat > tests/test_filename.py << EOL
         29. Prefer functions over classes. Use classes only when necessary.
         30. Only use pytest for testing - never use unittest.
-
+        31. For API testing, use pytest-flask for Flask apps or fastapi.testclient for FastAPI apps.
+        32. Test all API endpoints thoroughly, including success and error cases.
+        33. Use parametrized tests to cover multiple scenarios for each endpoint.
+        34. Mock any external services or database calls in your API tests.
+        35. Once you've completed the main implementation, end your response with the exact phrase: "MAIN IMPLEMENTATION COMPLETE".
+    
         Current working directory: {self.pwd}
         """
         solution = self.get_response(prompt)
@@ -449,36 +465,44 @@ class NemoAgent:
             print("Maximum test coverage improvement attempts reached. Moving on.")
             return
 
-        # Check current coverage
         coverage_result = self.get_current_coverage()
         if coverage_result >= 80:
-            print(f"Test coverage is already at {
-                  coverage_result}%. No improvements needed.")
+            print(f"Test coverage is already at {coverage_result}%. No improvements needed.")
             return
 
         prompt = f"""
-        The current test coverage for the project is {coverage_result}%, which is below the target of 80%. Please analyze the coverage report and suggest improvements to increase the coverage to at least 80%.
-
-        Note that __init__.py files and test files are excluded from the coverage calculation.
-
+        The current test coverage for the project is {coverage_result}%, which is below the target of 80%. 
+        Please analyze the coverage report and suggest improvements to increase the coverage to at least 80%.
+        
         Focus on:
-        1. Adding test cases for untested functions or methods in the main implementation files.
+        1. Adding new test cases for untested functions or methods.
         2. Testing edge cases and boundary conditions.
         3. Ensuring all code paths in the main implementation are tested.
+        4. Use pytest fixtures where appropriate to set up test data.
+        5. Use parametrized tests to cover multiple scenarios efficiently.
 
-        Provide specific code changes or additional tests to improve the coverage. Use the appropriate commands (cat, sed) to modify or create test files.
+        Provide specific code changes or additional tests to improve the coverage. 
+        Use the following format for creating or modifying test files:
+        cat > tests/test_filename.py << EOL
+        # Test file content
+        EOL
+
+        or
+
+        sed -i 's/old_content/new_content/g' tests/test_filename.py
+
+        REMEMBER: Do not modify any files outside the 'tests' directory.
         """
         improvements = self.get_response(prompt)
         self.validate_and_execute_commands(improvements)
 
-        # Run tests again to check if coverage improved
         new_coverage = self.get_current_coverage()
         if new_coverage < 80:
-            print(f"Coverage is still below 80% (current: {
-                  new_coverage}%). Attempting another improvement (attempt {attempt + 1})...")
+            print(f"Coverage is still below 80% (current: {new_coverage}%). Attempting another improvement (attempt {attempt + 1})...")
             self.improve_test_coverage(attempt + 1)
         else:
             print(f"Coverage goal achieved. Current coverage: {new_coverage}%")
+
 
     def get_current_coverage(self):
         try:
