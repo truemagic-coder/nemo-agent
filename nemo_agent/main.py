@@ -114,8 +114,8 @@ class NemoAgent:
         segments = project_name.split('_')
         if len(segments) != 2:
             # If not, generate a default name
-            project_name = f"task_{
-                segments[0]}" if segments else "default_project"
+            project_name = (f"task_{segments[0]}" if segments
+                            else "default_project")
 
         # Add a random 3-digit number as the third segment
         random_number = random.randint(100, 999)
