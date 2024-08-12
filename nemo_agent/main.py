@@ -1,5 +1,6 @@
 import ast
 import os
+import random
 import re
 import subprocess
 import time
@@ -12,32 +13,36 @@ SYSTEM_PROMPT = """
 You are Nemo Agent, an expert Python developer. Follow these rules strictly:
 
 1. The project has been created using `poetry new {project_name}`. Use this layout to write code in the proper directories.
-2. Only use the `json` module for reading and writing JSON files. Never use `jsonify` or `json.dumps`.
-3. Always use `cat` with heredoc syntax to create files. Example:
+2. Provide complete, fully functional code when creating or editing files.
+3. Use markdown and include language specifiers in code blocks.
+4. If a library is required, add it to the pyproject.toml and run `poetry update`.
+5. CRITICAL: Never execute the code you created other than tests.
+6. Always use Poetry for project setup and dependency management - never use requirements.txt.
+7. Include proper error handling, comments, and follow Python best practices.
+8. IMPORTANT: Write to disk after EVERY step, no matter how small.
+9. Use type hints in your Python code when appropriate.
+10. Only use pytest for testing - never use unittest.
+11. Always run the tests using `poetry run pytest` with no options.
+12. Always use module imports when referring to files in tests.
+13. Use the following format for creating files:
+    For code files with inline tests: cat > {project_name}/filename.py << EOL
+14. IMPORTANT: Write to disk after EVERY step, no matter how small.
+15. Always break up tests into multiple test functions for better organization.
+16. Once the tests pass, the task is complete.
+17. Always mock external services and APIs.
+18. Mock any external services or database calls in your tests.
+19. Always include module docstrings at the beginning of Python files, unless they are test files or __init__.py files.
+20. You use your tools like `ls` and `cat` to verify and understand the contents of files and directories.
+21. Always use `cat` with heredoc syntax to create files. Example:
    cat > filename.py << EOL
    # File content here
    EOL
-4. Use `sed` for making specific modifications to existing files:
+22. Use `sed` for making specific modifications to existing files:
    sed -i 's/old_text/new_text/g' filename.py
-5. Provide complete, fully functional code when creating or editing files.
-6. Use markdown and include language specifiers in code blocks.
-7. If a library is required, add it to the pyproject.toml and run `poetry update`.
-8. CRITICAL: Never execute the code you created other than tests.
-9. Always use Poetry for project setup and dependency management - never use requirements.txt.
-10. Include proper error handling, comments, and follow Python best practices.
-11. IMPORTANT: Write to disk after EVERY step, no matter how small.
-12. Use type hints in your Python code when appropriate.
-13. Always use pytest for testing.
-14. Keep the project structure simple with 1 file in the code directory and 1 file in the tests directory.
-15. Always run the tests using `poetry run pytest` with no options.
-16. Always use module imports when referring to files in tests.
-17. Use the following format for creating files:
-    For code files: cat > {project_name}/filename.py << EOL
-    For test files: cat > tests/test_filename.py << EOL
-18. IMPORTANT: Write to disk after EVERY step, no matter how small.
-19. Break up tests into multiple test functions for better organization.
-20. Once the tests pass, the task is complete.
-21. Only mock external services or APIs if absolutely necessary.
+23. Use the following format for creating files:
+            For code files: cat > {project_name}/filename.py << EOL
+            For test files: cat > tests/test_filename.py << EOL
+24. Prefer functions over classes. Use classes only when necessary.
 
 Current working directory: {pwd}
 """
@@ -57,6 +62,8 @@ class CustomSystemTools:
 
 
 class NemoAgent:
+    MAX_IMPROVEMENT_ATTEMPTS = 3
+
     def __init__(self, task: str):
         self.pwd = os.getcwd()
         self.task = task
@@ -95,10 +102,24 @@ class NemoAgent:
         {self.task}
 
         The project name should be descriptive and relevant to the task.
+        It must be exactly two words in snake_case format.
         Return only the project name, nothing else.
         """
         response = self.get_response(prompt, assistant=temp_assistant)
-        return response.strip().lower().replace(" ", "_")
+        project_name = response.strip().lower().replace(" ", "_")
+
+        # Ensure the project name has exactly two segments
+        segments = project_name.split('_')
+        if len(segments) != 2:
+            # If not, generate a default name
+            project_name = f"task_{
+                segments[0]}" if segments else "default_project"
+
+        # Add a random 3-digit number as the third segment
+        random_number = random.randint(100, 999)
+        project_name = f"{project_name}_{random_number}"
+
+        return project_name
 
     def update_system_prompt(self):
         updated_prompt = SYSTEM_PROMPT.format(
@@ -112,11 +133,13 @@ class NemoAgent:
 
     def run_task(self):
         self.create_project_with_poetry()
+        self.setup_init_files()
         self.implement_solution()
-        if self.run_tests():
-            print("Task completed successfully. All tests passed.")
-            return
-        print("Task completed, but some tests failed.")
+        tests_passed = self.run_tests()
+        if not tests_passed:
+            self.improve_test_coverage()
+
+        print("Task completed. Please review the output and make any necessary manual adjustments.")
 
     def create_project_with_poetry(self):
         print(f"Creating new Poetry project: {self.project_name}")
@@ -140,11 +163,29 @@ class NemoAgent:
             print("Contents of the directory:")
             print(os.listdir(self.pwd))
 
+            subprocess.run(
+                f"sed -i '/^\\[tool.poetry\\]/a packages = [{{include = \"{
+                    self.project_name}\"}}]' pyproject.toml",
+                shell=True,
+                check=True,
+                cwd=self.pwd
+            )
+            print("Added packages variable to pyproject.toml")
+
+            # Add [tool.pytest.ini-options] section to pyproject.toml
+            subprocess.run(
+                "sed -i '$a\\[tool.pytest.ini-options]\\npython_paths = [\".\", \"tests\"]' pyproject.toml",
+                shell=True,
+                check=True,
+                cwd=self.pwd
+            )
+            print("Added [tool.pytest.ini-options] section to pyproject.toml")
+
             try:
-                subprocess.run(["poetry", "add", "--dev", "pytest@*",
-                            "pylint@*", "autopep8@*"], check=True, cwd=self.pwd)
+                subprocess.run(["poetry", "add", "--dev", "pytest@*", "pylint@*",
+                               "autopep8@*", "pytest-cov@*", "flask-testing@*"], check=True, cwd=self.pwd)
                 print(
-                    "Added pytest, pylint, and autopep8 as development dependencies with latest versions.")
+                    "Added pytest, pylint, autopep8, and pytest-cov as development dependencies with latest versions.")
             except subprocess.CalledProcessError as e:
                 print(f"Error adding development dependencies: {e}")
 
@@ -156,29 +197,39 @@ class NemoAgent:
     def implement_solution(self):
         prompt = f"""
         Provide a complete solution for the task: {self.task}
-        Follow the rules strictly:
+        IMPORTANT: Stay focused on this specific task and do not default to a generic or "Hello World" example.
+        Follow these rules strictly:
         1. The project has been created using `poetry new {self.project_name}`.
-        2. CRITICAL: Never use `jsonify` or `json.dumps` in your code.
-        3. Provide complete, fully functional code when creating or editing files.
-        4. Use markdown and include language specifiers in code blocks.
-        5. Include proper error handling, comments, and follow Python best practices.
-        6. Use absolute paths when referring to files and directories especially in tests.
-        7. Use type hints in your Python code when appropriate.
-        8. IMPORTANT: Provide all necessary commands to create and modify files, including `cat` commands for file creation and `sed` commands for modifications.
-        9. After providing the implementation, include commands to install any necessary dependencies using Poetry.
-        10. Keep the project structure simple with 1 file in the code directory and 1 file in the tests directory.
-        11. IMPORTANT: Only use Streamlit for web applications if explicitly required. Do not use FastAPI, Django, Flask, or any other web framework unless specified.
-        12. NEVER include commands to run apps - only include commands to run tests.
-        13. Always use module imports when referring to files in tests.
-        14. Use the following format for creating files:
+        4. Provide complete, fully functional code when creating or editing files.
+        5. Use markdown and include language specifiers in code blocks.
+        6. Include proper error handling, comments, and follow Python best practices.
+        7. Use absolute paths when referring to files and directories especially in tests.
+        8. Use type hints in your Python code when appropriate.
+        9. IMPORTANT: Provide all necessary commands to create and modify files, including `cat` commands for file creation and `sed` commands for modifications.
+        10. After providing the implementation, include commands to install any necessary dependencies using Poetry.
+        11. NEVER include commands to run apps - only include commands to run tests.
+        12. Always use module imports when referring to files in tests.
+        13. Use the following format for creating files:
+            For code files with inline tests: cat > {self.project_name}/filename.py << EOL
+        14. IMPORTANT: Write to disk after EVERY step, no matter how small.
+        15. CRITICAL: pytest is already installed as a development dependency. Do not install it again.
+        16. If additional dependencies are required, provide Poetry commands to add them.
+        17. Always break up tests into multiple test functions for better organization.
+        18. Once the tests pass, the task is complete.
+        19. Write comprehensive tests to achieve at least 80% code coverage.
+        20. Use pytest-cov to measure code coverage.
+        21. Mock any external services or database calls in your tests.
+        22. Ensure that you're testing all API endpoints and their different possible responses (success, error, etc.).
+        23. Use pytest.fixture to set up any necessary test data or configurations.
+        24. Test both valid and invalid inputs for each API endpoint.
+        25. For POST or PUT requests, include tests with different payload structures.
+        26. Test authentication and authorization if applicable to the API.
+        27. You use your tools like `ls` and `cat` to verify and understand the contents of files and directories.
+        28. Use the following format for creating files:
             For code files: cat > {self.project_name}/filename.py << EOL
             For test files: cat > tests/test_filename.py << EOL
-        15. IMPORTANT: Write to disk after EVERY step, no matter how small.
-        16. CRITICAL: pytest is already installed as a development dependency. Do not install it again.
-        17. If additional dependencies are required, provide Poetry commands to add them.
-        18. Break up tests into multiple test functions for better organization.
-        19. Once the tests pass, the task is complete.
-        20. Only mock external services or APIs if absolutely necessary.
+        29. Prefer functions over classes. Use classes only when necessary.
+        30. Only use pytest for testing - never use unittest.
 
         Current working directory: {self.pwd}
         """
@@ -187,9 +238,13 @@ class NemoAgent:
         print(solution)
         self.validate_and_execute_commands(solution)
 
+        # Validate that the implementation matches the original task
+        if not self.validate_implementation():
+            self.recover_implementation()
+
         # Update pyproject.toml if necessary
         pyproject_update = self.get_response(
-            "Provide necessary updates to pyproject.toml, including adding any required dependencies if they're not already there. Also, add a [tool.pytest.ini_options] section with pythonpath = '.' if it doesn't exist.")
+            f"Provide necessary updates to pyproject.toml for the task: {self.task}, including adding any required dependencies if they're not already there. Also, add a [tool.pytest.ini_options] section with pythonpath = '.' if it doesn't exist.")
         self.validate_and_execute_commands(pyproject_update)
 
         # Run poetry update to ensure all dependencies are installed
@@ -198,6 +253,38 @@ class NemoAgent:
             print("Poetry update completed successfully.")
         except subprocess.CalledProcessError as e:
             print(f"Error updating dependencies: {e}")
+
+    def validate_implementation(self):
+        prompt = f"""
+        Review the current implementation and confirm if it correctly addresses the original task: {self.task}
+        If the implementation is correct, respond with 'VALID'.
+        If the implementation does not match the task or is a generic example, respond with 'INVALID'.
+        Provide a brief explanation for your decision.
+        """
+        response = self.get_response(prompt)
+        if "VALID" in response.upper():
+            print("Implementation validated successfully.")
+            return True
+        else:
+            print("Implementation does not match the original task.")
+            return False
+
+    def recover_implementation(self):
+        prompt = f"""
+        The current implementation does not correctly address the original task: {self.task}
+        Please provide a corrected implementation that focuses specifically on this task.
+        Do not default to a generic or "Hello World" example.
+        Follow all the rules and guidelines provided in the original implementation prompt.
+        """
+        corrected_solution = self.get_response(prompt)
+        print("Executing corrected solution:")
+        print(corrected_solution)
+        self.validate_and_execute_commands(corrected_solution)
+
+        # Validate the corrected implementation
+        if not self.validate_implementation():
+            print(
+                "Failed to recover implementation. Manual intervention may be required.")
 
     def get_response(self, prompt, assistant=None):
         if assistant is None:
@@ -227,12 +314,33 @@ class NemoAgent:
 
         return full_response.strip()
 
+    def setup_init_files(self):
+        print("Setting up __init__.py file in the project directory...")
+        init_file = os.path.join(self.pwd, self.project_name, '__init__.py')
+        if not os.path.exists(init_file):
+            with open(init_file, 'w') as f:
+                f.write('"""This module is part of the {} project."""\n'.format(
+                    self.project_name))
+            print(f"Created {init_file}")
+        else:
+            print(f"{init_file} already exists")
+        print("Finished setting up __init__.py file.")
+
     def clean_code_with_pylint(self, file_path):
         try:
             # Check if the file is empty
             if os.path.getsize(file_path) == 0:
-                print(f"File {file_path} is empty. Skipping pylint check.")
+                print(
+                    f"File {file_path} is empty. Skipping autopep8 and pylint check.")
                 return 10.0  # Assume perfect score for empty files
+
+            # Run autopep8 to automatically fix style issues
+            print(f"Running autopep8 on {file_path}")
+            autopep8_cmd = ["poetry", "run", "autopep8",
+                            "--in-place", "--aggressive", "--aggressive", file_path]
+            subprocess.run(autopep8_cmd, check=True,
+                           capture_output=True, text=True, cwd=self.pwd)
+            print("autopep8 completed successfully.")
 
             # Determine if the file is a special file
             file_name = os.path.basename(file_path)
@@ -266,15 +374,50 @@ class NemoAgent:
                 print(f"Score is below 6.0. Attempting to improve the code...")
                 self.improve_code(file_path, score, output,
                                   is_test_file, is_init_file)
+
+            elif 'missing-module-docstring' in output and not is_test_file and not is_init_file:
+                self.add_module_docstring(file_path)
+                # Re-run pylint after adding the docstring
+                return self.clean_code_with_pylint(file_path)
+
             else:
                 print(f"Code quality is good. Score: {score}/10")
 
             return score
         except subprocess.CalledProcessError as e:
-            print(f"Error running pylint: {e}")
+            print(f"Error running autopep8 or pylint: {e}")
             return 0.0
 
-    def improve_code(self, file_path, current_score, pylint_output, is_test_file, is_init_file):
+    def add_module_docstring(self, file_path):
+        with open(file_path, 'r') as file:
+            content = file.read()
+
+        if not content.startswith('"""'):
+            module_name = os.path.basename(file_path).replace('.py', '')
+            docstring = f'"""\nThis module contains the implementation for {
+                module_name}.\n"""\n\n'
+            with open(file_path, 'w') as file:
+                file.write(docstring + content)
+            print(f"Added module docstring to {file_path}")
+
+    def improve_code(self, file_path, current_score, pylint_output, is_test_file, is_init_file, attempt=1):
+        if current_score >= 6.0:
+            print(f"Code quality is already good. Score: {current_score}/10")
+            return
+
+        if attempt > self.MAX_IMPROVEMENT_ATTEMPTS:
+            print(f"Maximum improvement attempts reached for {
+                  file_path}. Moving on.")
+            return
+
+        # Run autopep8 again before manual improvements
+        print(f"Running autopep8 on {file_path}")
+        autopep8_cmd = ["poetry", "run", "autopep8",
+                        "--in-place", "--aggressive", "--aggressive", file_path]
+        subprocess.run(autopep8_cmd, check=True,
+                       capture_output=True, text=True, cwd=self.pwd)
+        print("autopep8 completed successfully.")
+
         file_type = "test file" if is_test_file else "init file" if is_init_file else "regular Python file"
         prompt = f"""
         The current pylint score for {file_path} (a {file_type}) is {current_score:.2f}/10. Please analyze the pylint output and suggest improvements to reach a score of at least 6/10.
@@ -296,9 +439,66 @@ class NemoAgent:
         # Run pylint again to check if the score improved
         new_score = self.clean_code_with_pylint(file_path)
         if new_score < 6.0:
-            print(f"Score is still below 6.0. Attempting another improvement...")
-            self.improve_code(file_path, new_score,
-                              pylint_output, is_test_file, is_init_file)
+            print(f"Score is still below 6.0. Attempting another improvement (attempt {
+                  attempt + 1})...")
+            self.improve_code(file_path, new_score, pylint_output,
+                              is_test_file, is_init_file, attempt + 1)
+
+    def improve_test_coverage(self, attempt=1):
+        if attempt > self.MAX_IMPROVEMENT_ATTEMPTS:
+            print("Maximum test coverage improvement attempts reached. Moving on.")
+            return
+
+        # Check current coverage
+        coverage_result = self.get_current_coverage()
+        if coverage_result >= 80:
+            print(f"Test coverage is already at {
+                  coverage_result}%. No improvements needed.")
+            return
+
+        prompt = f"""
+        The current test coverage for the project is {coverage_result}%, which is below the target of 80%. Please analyze the coverage report and suggest improvements to increase the coverage to at least 80%.
+
+        Note that __init__.py files and test files are excluded from the coverage calculation.
+
+        Focus on:
+        1. Adding test cases for untested functions or methods in the main implementation files.
+        2. Testing edge cases and boundary conditions.
+        3. Ensuring all code paths in the main implementation are tested.
+
+        Provide specific code changes or additional tests to improve the coverage. Use the appropriate commands (cat, sed) to modify or create test files.
+        """
+        improvements = self.get_response(prompt)
+        self.validate_and_execute_commands(improvements)
+
+        # Run tests again to check if coverage improved
+        new_coverage = self.get_current_coverage()
+        if new_coverage < 80:
+            print(f"Coverage is still below 80% (current: {
+                  new_coverage}%). Attempting another improvement (attempt {attempt + 1})...")
+            self.improve_test_coverage(attempt + 1)
+        else:
+            print(f"Coverage goal achieved. Current coverage: {new_coverage}%")
+
+    def get_current_coverage(self):
+        try:
+            result = subprocess.run(
+                ["poetry", "run", "pytest", "--cov=" + self.project_name,
+                    "--cov-report=term-missing", "--cov-fail-under=0"],
+                capture_output=True,
+                text=True,
+                cwd=self.pwd
+            )
+            coverage_match = re.search(
+                r'TOTAL\s+\d+\s+\d+\s+(\d+)%', result.stdout)
+            if coverage_match:
+                return int(coverage_match.group(1))
+            else:
+                print("Couldn't parse coverage information. Assuming 0%")
+                return 0
+        except subprocess.CalledProcessError as e:
+            print(f"Error running coverage: {e}")
+            return 0
 
     def execute_solution(self, solution):
         print("Executing solution:")
@@ -499,9 +699,32 @@ class NemoAgent:
                         file_path = os.path.join(root, file)
                         self.clean_code_with_pylint(file_path)
 
-            # Run pytest
+            # Create a .coveragerc file to exclude empty files and __init__.py
+            coveragerc_content = """
+    [run]
+    omit =
+        */__init__.py
+        tests/*
+        **/test_*.py
+
+    [report]
+    exclude_lines =
+        pragma: no cover
+        def __repr__
+        if self.debug:
+        if __name__ == .__main__.:
+        raise NotImplementedError
+        pass
+        except ImportError:
+        def main
+    """
+            with open(os.path.join(self.pwd, '.coveragerc'), 'w') as f:
+                f.write(coveragerc_content)
+
+            # Run pytest with coverage
             result = subprocess.run(
-                ["poetry", "run", "pytest"],
+                ["poetry", "run", "pytest", "--cov=" + self.project_name,
+                    "--cov-config=.coveragerc", "--cov-report=term-missing", "--cov-fail-under=80"],
                 capture_output=True,
                 text=True,
                 cwd=self.pwd
@@ -511,10 +734,11 @@ class NemoAgent:
             print(result.stderr)
 
             if result.returncode == 0:
-                print("All tests passed successfully.")
+                print("All tests passed successfully and coverage is at least 80%.")
                 return True
             else:
-                print("Some tests failed. Please review the output above.")
+                print(
+                    "Tests failed or coverage is below 80%. Please review the output above.")
                 return False
 
         except subprocess.CalledProcessError as e:
@@ -522,12 +746,7 @@ class NemoAgent:
             return False
         except Exception as e:
             print(f"An unexpected error occurred: {e}")
-            return False
-
-        except subprocess.CalledProcessError as e:
-            print(f"Error running tests: {e}")
-        except Exception as e:
-            print(f"An unexpected error occurred: {e}")
+        return False
 
 
 @click.command()
