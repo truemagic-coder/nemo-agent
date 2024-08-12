@@ -432,7 +432,7 @@ class NemoAgent:
         coverage_result = initial_coverage if attempt == 1 else self.get_current_coverage()
         if coverage_result >= 80:
             print(f"Test coverage is already at {coverage_result}%. "
-                f"No improvements needed.")
+                  f"No improvements needed.")
             return
 
         prompt = f"""
@@ -465,8 +465,8 @@ class NemoAgent:
 
         new_coverage = self.get_current_coverage()
         if new_coverage < 80:
-            print(f"Coverage is still below 80% (current: {
-                  new_coverage}%). Attempting another improvement (attempt {attempt + 1})...")
+            print(f"Coverage is still below 80% (current: {new_coverage}%). "
+                  f"Attempting another improvement (attempt {attempt + 1})...")
             self.improve_test_coverage(attempt + 1, new_coverage)
         else:
             print(f"Coverage goal achieved. Current coverage: {new_coverage}%")
@@ -732,7 +732,8 @@ class NemoAgent:
 
             # Check if coverage report was generated
             if "No data to report." in result.stdout or "No data to report." in result.stderr:
-                print("No coverage data was collected. Ensure that the tests are running correctly.")
+                print(
+                    "No coverage data was collected. Ensure that the tests are running correctly.")
                 return False, 0
 
             # Extract coverage percentage
@@ -746,14 +747,14 @@ class NemoAgent:
 
             if tests_passed and coverage_percentage >= 80:
                 print(f"All tests passed successfully and coverage is "
-                    f"{coverage_percentage}%.")
+                      f"{coverage_percentage}%.")
                 return True, coverage_percentage
             else:
                 if not tests_passed:
                     print("Some tests failed. Please review the test output above.")
                 if coverage_percentage < 80:
                     print(f"Coverage is below 80%. "
-                        f"Current coverage: {coverage_percentage}%")
+                          f"Current coverage: {coverage_percentage}%")
                 return False, coverage_percentage
 
         except subprocess.CalledProcessError as e:
