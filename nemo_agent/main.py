@@ -2,6 +2,7 @@ import ast
 import os
 import re
 import subprocess
+import time
 from phi.assistant import Assistant
 from phi.llm.ollama import Ollama
 from phi.tools.file import FileTools
@@ -29,10 +30,13 @@ You are Nemo Agent, an expert Python developer. Follow these rules strictly:
 13. Always use pytest for testing.
 14. Keep the project structure simple with 1 file in the code directory and 1 file in the tests directory.
 15. Always run the tests using `poetry run pytest` with no options.
+16. Always use module imports when referring to files in tests.
+17. Use the following format for creating files:
+    For code files: cat > {project_name}/filename.py << EOL
+    For test files: cat > tests/test_filename.py << EOL
+18. IMPORTANT: Write to disk after EVERY step, no matter how small.
 
 Current working directory: {pwd}
-Code directory: {pwd}/{project_name}/{project_name}
-Tests directory: {pwd}/{project_name}/tests
 """
 
 
@@ -47,7 +51,6 @@ class CustomSystemTools:
             return result.stdout
         except subprocess.CalledProcessError as e:
             return f"Error executing command: {e.stderr}"
-
 
 
 class NemoAgent:
@@ -121,6 +124,9 @@ class NemoAgent:
             )
             print(result.stdout)
 
+            self.pwd = os.path.join(self.pwd, self.project_name)
+            os.chdir(self.pwd)
+
             # Update the system prompt with the new working directory
             self.update_system_prompt()
 
@@ -129,7 +135,8 @@ class NemoAgent:
             print(os.listdir(self.pwd))
 
             try:
-                subprocess.run(["poetry", "add", "--dev", "pylint", "autopep8"], check=True, cwd=self.pwd)
+                subprocess.run(["poetry", "add", "--dev", "pylint",
+                               "autopep8"], check=True, cwd=self.pwd)
                 print("Added pylint and autopep8 as development dependencies.")
             except subprocess.CalledProcessError as e:
                 print(f"Error adding pylint and autopep8: {e}")
@@ -155,10 +162,13 @@ class NemoAgent:
         10. Keep the project structure simple with 1 file in the code directory and 1 file in the tests directory.
         11. IMPORTANT: Only use Streamlit for web applications. Do not use FastAPI, Django, Flask, or any other web framework.
         12. NEVER include commands to run Streamlit apps or any other apps - only include commands to run tests.
+        13. Always use module imports when referring to files in tests.
+        14. Use the following format for creating files:
+            For code files: cat > {self.project_name}/filename.py << EOL
+            For test files: cat > tests/test_filename.py << EOL
+        15. IMPORTANT: Write to disk after EVERY step, no matter how small.
 
         Current working directory: {self.pwd}
-        Code directory: {self.pwd}/{self.project_name}/{self.project_name}
-        Tests directory: {self.pwd}/{self.project_name}/tests
         """
         solution = self.get_response(prompt)
         print("Executing solution:")
@@ -167,7 +177,8 @@ class NemoAgent:
 
         # Install dependencies
         try:
-            subprocess.run(["poetry", "add", "streamlit"], check=True, cwd=self.pwd)
+            subprocess.run(["poetry", "add", "streamlit"],
+                           check=True, cwd=self.pwd)
             subprocess.run(["poetry", "install"], check=True, cwd=self.pwd)
             print("Dependencies installed successfully.")
         except subprocess.CalledProcessError as e:
@@ -175,7 +186,7 @@ class NemoAgent:
 
         # Update pyproject.toml if necessary
         pyproject_update = self.get_response(
-            "Provide any necessary updates to pyproject.toml, including adding pytest and streamlit as dependencies if they're not already there.")
+            "Provide necessary updates to pyproject.toml, including adding pytest and streamlit as dependencies if they're not already there. Also, add a [tool.pytest.ini_options] section with pythonpath = '.'")
         self.validate_and_execute_commands(pyproject_update)
 
         # Run poetry update to ensure all dependencies are installed
@@ -222,30 +233,34 @@ class NemoAgent:
                 text=True,
                 cwd=self.pwd
             )
-            
+
             # If pylint found issues, fix them
             if result.returncode != 0:
-                print(f"Pylint found issues in {file_path}. Attempting to fix...")
-                
+                print(f"Pylint found issues in {
+                      file_path}. Attempting to fix...")
+
                 # Run autopep8 to fix some issues automatically
                 subprocess.run(
-                    ["poetry", "run", "autopep8", "--in-place", "--aggressive", "--aggressive", file_path],
+                    ["poetry", "run", "autopep8", "--in-place",
+                        "--aggressive", "--aggressive", file_path],
                     check=True,
                     cwd=self.pwd
                 )
-                
+
                 print(f"Applied automatic fixes to {file_path}")
-                
+
                 # Run pylint again to check remaining issues
                 result = subprocess.run(
-                    ["poetry", "run", "pylint", "--output-format=parseable", file_path],
+                    ["poetry", "run", "pylint",
+                        "--output-format=parseable", file_path],
                     capture_output=True,
                     text=True,
                     cwd=self.pwd
                 )
-                
+
                 if result.returncode != 0:
-                    print(f"Some issues remain in {file_path}. Manual review may be needed.")
+                    print(f"Some issues remain in {
+                          file_path}. Manual review may be needed.")
                     print(result.stdout)
                 else:
                     print(f"All issues in {file_path} have been resolved.")
@@ -320,7 +335,8 @@ class NemoAgent:
         if command_parts:
             if command_parts[0] in allowed_commands:
                 if command_parts[0] == 'poetry' and 'run' in command_parts and 'streamlit' in command_parts:
-                    print("Warning: Running Streamlit apps is not allowed. Skipping this command.")
+                    print(
+                        "Warning: Running Streamlit apps is not allowed. Skipping this command.")
                     return False
                 return True
         return False
@@ -378,28 +394,31 @@ class NemoAgent:
                 content = '\n'.join(content_lines[1:-1])
 
             # Ensure the file path is within the project directory
-            full_file_path = os.path.join(self.pwd, file_path)
+            if file_path.startswith('tests/'):
+                full_file_path = os.path.join(self.pwd, file_path)
+            elif file_path.startswith(f'{self.project_name}/'):
+                full_file_path = os.path.join(self.pwd, file_path)
+            else:
+                full_file_path = os.path.join(self.pwd, self.project_name, file_path)
 
             # Ensure the directory exists
             os.makedirs(os.path.dirname(full_file_path), exist_ok=True)
 
-            # Write the content to the file
+            print(f"Writing file to: {full_file_path}")
+
+            # Write the content to the file using a context manager
             with open(full_file_path, 'w') as f:
                 f.write(content)
+                f.flush()
+                os.fsync(f.fileno())
 
-            # Force sync to disk
-            os.fsync(f.fileno())
-
-            if self.file_exists_and_has_content(full_file_path):
-                print(f"File successfully created/updated: {full_file_path}")
-                self.verify_file_contents(full_file_path)
-            else:
-                print(f"Failed to create/update file: {full_file_path}")
+            # Add a small delay to ensure the file is fully written
+            time.sleep(0.1)
 
             if self.file_exists_and_has_content(full_file_path):
                 print(f"File successfully created/updated: {full_file_path}")
                 self.verify_file_contents(full_file_path)
-                
+
                 # Clean the code if it's a Python file
                 if full_file_path.endswith('.py'):
                     self.clean_code_with_pylint(full_file_path)
@@ -409,6 +428,8 @@ class NemoAgent:
         except Exception as e:
             print(f"Error executing heredoc command: {e}")
             print(f"Command that caused the error: {command}")
+
+
 
     def extract_python_code(self, command):
         match = re.search(r'cat > .*\.py << EOL\n(.*?)\nEOL',
@@ -441,6 +462,8 @@ class NemoAgent:
     def run_tests(self):
         print("Running tests...")
         try:
+            env = os.environ.copy()
+            env['PYTHONPATH'] = f"{self.pwd}:{env.get('PYTHONPATH', '')}"
             result = subprocess.run(
                 ["poetry", "run", "pytest"],
                 capture_output=True,
@@ -454,7 +477,7 @@ class NemoAgent:
             print("Some tests failed. Here's the output:")
             print(e.stdout)
             print(e.stderr)
-            self.fix_failing_tests()
+            # self.fix_failing_tests()
 
     def fix_failing_tests(self):
         prompt = f"""
@@ -482,6 +505,7 @@ def cli(task: str = None):
 
     nemo_agent = NemoAgent(task=task)
     nemo_agent.run_task()
+
 
 if __name__ == "__main__":
     cli()
