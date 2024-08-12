@@ -182,7 +182,7 @@ class NemoAgent:
 
             subprocess.run(
                 (f"sed -i '/^\\[tool.poetry\\]/a packages = [{{include = \""
-                f"{self.project_name}\"}}]' pyproject.toml"),
+                 f"{self.project_name}\"}}]' pyproject.toml"),
                 shell=True,
                 check=True,
                 cwd=self.pwd
@@ -377,8 +377,8 @@ class NemoAgent:
 
         if not content.startswith('"""'):
             module_name = os.path.basename(file_path).replace('.py', '')
-            docstring = f'"""\nThis module contains the implementation for {
-                module_name}.\n"""\n\n'
+            docstring = (f'"""\nThis module contains the implementation for '
+                         f'{module_name}.\n"""\n\n')
             with open(file_path, 'w') as file:
                 file.write(docstring + content)
             print(f"Added module docstring to {file_path}")
@@ -389,8 +389,8 @@ class NemoAgent:
             return
 
         if attempt > self.MAX_IMPROVEMENT_ATTEMPTS:
-            print(f"Maximum improvement attempts reached for {
-                  file_path}. Moving on.")
+            print(f"Maximum improvement attempts reached for "
+                  f"{file_path}. Moving on.")
             return
 
         # Run autopep8 again before manual improvements
@@ -419,8 +419,8 @@ class NemoAgent:
         # Run pylint again to check if the score improved
         new_score = self.clean_code_with_pylint(file_path)
         if new_score < 6.0:
-            print(f"Score is still below 6.0. Attempting another improvement (attempt {
-                  attempt + 1})...")
+            print(f"Score is still below 6.0. Attempting another improvement "
+                  f"(attempt {attempt + 1})...")
             self.improve_code(file_path, new_score, pylint_output,
                               is_test_file, is_init_file, attempt + 1)
 
@@ -431,8 +431,8 @@ class NemoAgent:
 
         coverage_result = initial_coverage if attempt == 1 else self.get_current_coverage()
         if coverage_result >= 80:
-            print(f"Test coverage is already at {
-                  coverage_result}%. No improvements needed.")
+            print(f"Test coverage is already at {coverage_result}%. "
+                f"No improvements needed.")
             return
 
         prompt = f"""
@@ -732,8 +732,7 @@ class NemoAgent:
 
             # Check if coverage report was generated
             if "No data to report." in result.stdout or "No data to report." in result.stderr:
-                print(
-                    "No coverage data was collected. Ensure that the tests are running correctly.")
+                print("No coverage data was collected. Ensure that the tests are running correctly.")
                 return False, 0
 
             # Extract coverage percentage
@@ -746,15 +745,15 @@ class NemoAgent:
             tests_passed = "failed" not in result.stdout.lower() and result.returncode == 0
 
             if tests_passed and coverage_percentage >= 80:
-                print(f"All tests passed successfully and coverage is {
-                      coverage_percentage}%.")
+                print(f"All tests passed successfully and coverage is "
+                    f"{coverage_percentage}%.")
                 return True, coverage_percentage
             else:
                 if not tests_passed:
                     print("Some tests failed. Please review the test output above.")
                 if coverage_percentage < 80:
-                    print(f"Coverage is below 80%. Current coverage: {
-                          coverage_percentage}%")
+                    print(f"Coverage is below 80%. "
+                        f"Current coverage: {coverage_percentage}%")
                 return False, coverage_percentage
 
         except subprocess.CalledProcessError as e:
