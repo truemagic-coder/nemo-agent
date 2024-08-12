@@ -3,6 +3,7 @@ import os
 import random
 import re
 import subprocess
+import sys
 import time
 from phi.assistant import Assistant
 from phi.llm.ollama import Ollama
@@ -42,9 +43,11 @@ You are Nemo Agent, an expert Python developer. Follow these rules strictly:
             For code files: cat > {project_name}/filename.py << EOL
             For test files: cat > tests/test_filename.py << EOL
 23. Prefer functions over classes. Use classes only when necessary.
-24. For API testing, use pytest-flask for Flask applications or fastapi.testclient for FastAPI applications.
-25. For both Flask and FastAPI, test all endpoints, including error cases and edge cases.
-26. Use parametrized tests to test multiple input scenarios for each endpoint.
+24. Only create an __init__.py file the project code directory {pwd}/{project_name}.
+25. Never create an __init__.py file in the tests directory.
+26. Create a simple test plan to ensure that all requirements are met.
+27. Don't use print statements as return values.
+28. Write testable code from the start.
 
 Current working directory: {pwd}
 """
@@ -134,6 +137,7 @@ class NemoAgent:
         self.assistant.system_prompt = updated_prompt
 
     def run_task(self):
+        self.ensure_poetry_installed()
         self.create_project_with_poetry()
         self.setup_init_files()
         self.implement_solution()
@@ -142,6 +146,22 @@ class NemoAgent:
             self.improve_test_coverage()
 
         print("Task completed. Please review the output and make any necessary manual adjustments.")
+
+    def ensure_poetry_installed(self):
+        try:
+            subprocess.run(["poetry", "--version"], check=True, capture_output=True, text=True)
+            print("Poetry is already installed.")
+        except FileNotFoundError:
+            print("Poetry is not installed. Installing Poetry...")
+            try:
+                if sys.platform.startswith('win'):
+                    subprocess.run(["powershell", "-Command", "(Invoke-WebRequest -Uri https://install.python-poetry.org -UseBasicParsing).Content | python -"], check=True, shell=True)
+                else:
+                    subprocess.run(["curl", "-sSL", "https://install.python-poetry.org", "|", "python3", "-"], check=True, shell=True)
+                print("Poetry installed successfully.")
+            except subprocess.CalledProcessError as e:
+                print(f"Error installing Poetry: {e}")
+                sys.exit(1)
 
     def create_project_with_poetry(self):
         print(f"Creating new Poetry project: {self.project_name}")
@@ -157,6 +177,12 @@ class NemoAgent:
 
             self.pwd = os.path.join(self.pwd, self.project_name)
             os.chdir(self.pwd)
+
+            # Delete __init__.py from the tests folder
+            tests_init_file = os.path.join(self.pwd, 'tests', '__init__.py')
+            if os.path.exists(tests_init_file):
+                os.remove(tests_init_file)
+                print(f"Deleted {tests_init_file}")
 
             # Update the system prompt with the new working directory
             self.update_system_prompt()
@@ -232,10 +258,34 @@ class NemoAgent:
         29. Prefer functions over classes. Use classes only when necessary.
         30. Only use pytest for testing - never use unittest.
         31. For API testing, use pytest-flask for Flask apps or fastapi.testclient for FastAPI apps.
-        32. Test all API endpoints thoroughly, including success and error cases.
-        33. Use parametrized tests to cover multiple scenarios for each endpoint.
+        32. Only create an __init__.py file the project code directory {self.pwd}/{self.project_name}.
+        33. Never create an __init__.py file in the tests directory. 
         34. Once you've completed the main implementation, end your response with the exact phrase: "MAIN IMPLEMENTATION COMPLETE".
-    
+        34. Don't use print statements as return values.
+        35. Write testable code from the start.
+        36. When writing tests, follow this structure:
+            - Import the necessary modules and the function/class to be tested
+            - Use descriptive test function names prefixed with 'test_'
+            - Use pytest.fixture for setting up test data if needed
+            - Write assertions to check expected outcomes
+            Example:
+            ```python
+            import pytest
+            from {self.project_name}.module_name import function_name
+
+            @pytest.fixture
+            def sample_data():
+                return [1, 2, 3, 4, 5]
+
+            def test_function_name_expected_behavior(sample_data):
+                result = function_name(sample_data)
+                assert result == expected_value, f"Expected {{expected_value}}, but got {{result}}"
+
+            def test_function_name_edge_case():
+                result = function_name([])
+                assert result == expected_empty_value, "Function should handle empty input correctly"
+            ```
+        
         Current working directory: {self.pwd}
         """
         solution = self.get_response(prompt)
@@ -598,6 +648,9 @@ class NemoAgent:
                 corrected_command = self.auto_correct_command(command)
 
                 if corrected_command.strip().startswith('cat >'):
+                    if 'tests/__init__.py' in corrected_command:
+                        print("Skipping creation of __init__.py in tests directory")
+                        continue
                     self.execute_heredoc_command(corrected_command)
                 elif corrected_command.startswith(('ls', 'cd', 'mkdir', 'poetry', 'sed', 'cat', 'echo', 'python3', 'source', 'pytest', 'python')):
                     result = subprocess.run(
@@ -639,6 +692,9 @@ class NemoAgent:
 
             # Ensure the file path is within the project directory
             if file_path.startswith('tests/'):
+                if file_path.endswith('__init__.py'):
+                    print("Skipping creation of __init__.py in tests directory")
+                    return
                 full_file_path = os.path.join(self.pwd, file_path)
             elif file_path.startswith(f'{self.project_name}/'):
                 full_file_path = os.path.join(self.pwd, file_path)
@@ -664,9 +720,11 @@ class NemoAgent:
                 print(f"File successfully created/updated: {full_file_path}")
                 self.verify_file_contents(full_file_path)
 
-                # Clean the code if it's a Python file
-                if full_file_path.endswith('.py'):
+                # Clean the code if it's a Python file and not a test file
+                if full_file_path.endswith('.py') and 'test_' not in os.path.basename(full_file_path) and 'tests/' not in full_file_path:
                     self.clean_code_with_pylint(full_file_path)
+                elif 'test_' in os.path.basename(full_file_path) or 'tests/' in full_file_path:
+                    print(f"Skipping pylint for test file: {full_file_path}")
             else:
                 print(f"Failed to create/update file: {full_file_path}")
 
@@ -705,12 +763,19 @@ class NemoAgent:
     def run_tests(self):
         print("Running tests and checking code quality...")
         try:
-            # Run pylint on all Python files in the project
+            # Delete tests/__init__.py if it exists
+            tests_init_file = os.path.join(self.pwd, 'tests', '__init__.py')
+            if os.path.exists(tests_init_file):
+                os.remove(tests_init_file)
+                print(f"Deleted {tests_init_file}")
+
+            # Run pylint only on non-test Python files in the project
             for root, dirs, files in os.walk(self.pwd):
-                for file in files:
-                    if file.endswith('.py'):
-                        file_path = os.path.join(root, file)
-                        self.clean_code_with_pylint(file_path)
+                if 'tests' not in root:  # Skip the tests directory
+                    for file in files:
+                        if file.endswith('.py'):
+                            file_path = os.path.join(root, file)
+                            self.clean_code_with_pylint(file_path)
 
             # Create a .coveragerc file to exclude empty files and __init__.py
             coveragerc_content = """
@@ -760,6 +825,7 @@ class NemoAgent:
         except Exception as e:
             print(f"An unexpected error occurred: {e}")
         return False
+
 
 
 @click.command()
