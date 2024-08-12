@@ -64,7 +64,7 @@ class CustomSystemTools:
 
 
 class NemoAgent:
-    MAX_IMPROVEMENT_ATTEMPTS = 3
+    MAX_IMPROVEMENT_ATTEMPTS = 10
 
     def __init__(self, task: str):
         self.pwd = os.getcwd()
@@ -224,7 +224,7 @@ class NemoAgent:
             4. You write code to the code directory on disk: {self.project_name}
             5. You write tests to the tests directory on disk: tests
             6. The test command is `poetry run pytest --cov={self.project_name} --cov-config=.coveragerc`
-            7. You only use pytest for testing and coverage - never use unittest, coveralls, or other testing tools.
+            7. Use pytest for testing and coverage and use pylint for code quality, style, and linting.
             8. Use OOP, DRY, KISS, SOLID, SRP, and other best practices.
             11. IMPORTANT: Follow PEP8 style guide and use type hints when appropriate.
             12. CRITICAL: When writing algorithms, write the code to maximize time complexity and space complexity.
@@ -549,6 +549,8 @@ class NemoAgent:
             'ture': 'true',
             'elif': 'elif',
             'esle': 'else',
+            'fixtrue': 'fixture',
+            '@pytest.fixtrue': '@pytest.fixture',
         }
         for typo, correction in corrections.items():
             command = command.replace(typo, correction)

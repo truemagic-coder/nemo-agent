@@ -1,0 +1,14 @@
+[tool.poetry]
+name = "user-registration-117"
+version = "0.1.0"
+description = ""
+authors = ["Bevan Hunt <bevan@bevanhunt.com>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.11"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
