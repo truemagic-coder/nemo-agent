@@ -135,11 +135,11 @@ class NemoAgent:
             print(os.listdir(self.pwd))
 
             try:
-                subprocess.run(["poetry", "add", "--dev", "pylint",
-                               "autopep8"], check=True, cwd=self.pwd)
-                print("Added pylint and autopep8 as development dependencies.")
+                subprocess.run(["poetry", "add", "--dev", "pytest",
+                               "pylint", "autopep8"], check=True, cwd=self.pwd)
+                print("Added pytest, pylint, and autopep8 as development dependencies.")
             except subprocess.CalledProcessError as e:
-                print(f"Error adding pylint and autopep8: {e}")
+                print(f"Error adding development dependencies: {e}")
 
         except subprocess.CalledProcessError as e:
             print(f"Error creating Poetry project: {e.stderr}")
@@ -160,13 +160,15 @@ class NemoAgent:
         8. IMPORTANT: Provide all necessary commands to create and modify files, including `cat` commands for file creation and `sed` commands for modifications.
         9. After providing the implementation, include commands to install any necessary dependencies using Poetry.
         10. Keep the project structure simple with 1 file in the code directory and 1 file in the tests directory.
-        11. IMPORTANT: Only use Streamlit for web applications. Do not use FastAPI, Django, Flask, or any other web framework.
-        12. NEVER include commands to run Streamlit apps or any other apps - only include commands to run tests.
+        11. IMPORTANT: Only use Streamlit for web applications if explicitly required. Do not use FastAPI, Django, Flask, or any other web framework unless specified.
+        12. NEVER include commands to run apps - only include commands to run tests.
         13. Always use module imports when referring to files in tests.
         14. Use the following format for creating files:
             For code files: cat > {self.project_name}/filename.py << EOL
             For test files: cat > tests/test_filename.py << EOL
         15. IMPORTANT: Write to disk after EVERY step, no matter how small.
+        16. CRITICAL: pytest is already installed as a development dependency. Do not install it again.
+        17. If additional dependencies are required, provide Poetry commands to add them.
 
         Current working directory: {self.pwd}
         """
@@ -175,18 +177,9 @@ class NemoAgent:
         print(solution)
         self.validate_and_execute_commands(solution)
 
-        # Install dependencies
-        try:
-            subprocess.run(["poetry", "add", "streamlit"],
-                           check=True, cwd=self.pwd)
-            subprocess.run(["poetry", "install"], check=True, cwd=self.pwd)
-            print("Dependencies installed successfully.")
-        except subprocess.CalledProcessError as e:
-            print(f"Error installing dependencies: {e}")
-
         # Update pyproject.toml if necessary
         pyproject_update = self.get_response(
-            "Provide necessary updates to pyproject.toml, including adding pytest and streamlit as dependencies if they're not already there. Also, add a [tool.pytest.ini_options] section with pythonpath = '.'")
+            "Provide necessary updates to pyproject.toml, including adding any required dependencies if they're not already there. Also, add a [tool.pytest.ini_options] section with pythonpath = '.' if it doesn't exist.")
         self.validate_and_execute_commands(pyproject_update)
 
         # Run poetry update to ensure all dependencies are installed
@@ -399,7 +392,8 @@ class NemoAgent:
             elif file_path.startswith(f'{self.project_name}/'):
                 full_file_path = os.path.join(self.pwd, file_path)
             else:
-                full_file_path = os.path.join(self.pwd, self.project_name, file_path)
+                full_file_path = os.path.join(
+                    self.pwd, self.project_name, file_path)
 
             # Ensure the directory exists
             os.makedirs(os.path.dirname(full_file_path), exist_ok=True)
@@ -428,8 +422,6 @@ class NemoAgent:
         except Exception as e:
             print(f"Error executing heredoc command: {e}")
             print(f"Command that caused the error: {command}")
-
-
 
     def extract_python_code(self, command):
         match = re.search(r'cat > .*\.py << EOL\n(.*?)\nEOL',
