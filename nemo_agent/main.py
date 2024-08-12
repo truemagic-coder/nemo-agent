@@ -181,8 +181,8 @@ class NemoAgent:
             print(os.listdir(self.pwd))
 
             subprocess.run(
-                f"sed -i '/^\\[tool.poetry\\]/a packages = [{{include = \"{
-                    self.project_name}\"}}]' pyproject.toml",
+                (f"sed -i '/^\\[tool.poetry\\]/a packages = [{{include = \""
+                f"{self.project_name}\"}}]' pyproject.toml"),
                 shell=True,
                 check=True,
                 cwd=self.pwd
