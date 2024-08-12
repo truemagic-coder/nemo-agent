@@ -151,12 +151,8 @@ class NemoAgent:
         except FileNotFoundError:
             print("Poetry is not installed. Installing Poetry...")
             try:
-                if sys.platform.startswith('win'):
-                    subprocess.run(
-                        ["powershell", "-Command", "(Invoke-WebRequest -Uri https://install.python-poetry.org -UseBasicParsing).Content | python -"], check=True, shell=True)
-                else:
-                    subprocess.run(
-                        "curl -sSL https://install.python-poetry.org | python3 -", shell=True, check=True)
+                subprocess.run(
+                    "pip install poetry", shell=True, check=True)
                 print("Poetry installed successfully.")
             except subprocess.CalledProcessError as e:
                 print(f"Error installing Poetry: {e}")
@@ -358,7 +354,7 @@ class NemoAgent:
             print(f"Pylint score for {file_path}: {score}/10")
 
             if score < 6.0:
-                print(f"Score is below 6.0. Attempting to improve the code...")
+                print("Score is below 6.0. Attempting to improve the code...")
                 self.improve_code(file_path, score, output,
                                   is_test_file, is_init_file)
 
