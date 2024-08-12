@@ -27,39 +27,39 @@ You are Nemo Agent, an expert Python developer. Follow these rules strictly:
 11. IMPORTANT: Write to disk after EVERY step, no matter how small.
 12. Always use type hints in your Python code.
 13. Always use pytest for testing.
-14. Keep the project structure simple with 1-2 files in the code directory and 1-2 files in the tests directory.
+14. Keep the project structure simple with 1 file in the code directory and 1 file in the tests directory.
 15. Always run the tests using `poetry run pytest` with no options.
 
-Current working directory: {cwd}
-Project name: {project_name}
-Code directory: {project_name}/{project_name}
-Test directory: {project_name}/tests
+Current working directory: {pwd}
+Code directory: {pwd}/{project_name}/{project_name}
+Tests directory: {pwd}/{project_name}/tests
 """
 
 
 class CustomSystemTools:
     def __init__(self):
-        self.cwd = os.getcwd()
+        self.pwd = os.getcwd()
 
     def execute_command(self, command: str) -> str:
         try:
             result = subprocess.run(
-                command, shell=True, check=True, capture_output=True, text=True, cwd=self.cwd)
+                command, shell=True, check=True, capture_output=True, text=True, cwd=self.pwd)
             return result.stdout
         except subprocess.CalledProcessError as e:
             return f"Error executing command: {e.stderr}"
 
 
+
 class NemoAgent:
     def __init__(self, task: str):
-        self.cwd = os.getcwd()
+        self.pwd = os.getcwd()
         self.task = task
         self.project_name = self.generate_project_name()
         self.assistant = self.setup_assistant()
 
     def setup_assistant(self):
         system_prompt = SYSTEM_PROMPT.format(
-            cwd=self.cwd,
+            pwd=self.pwd,
             project_name=self.project_name,
             os_name=os.uname().sysname,
             default_shell=os.environ.get("SHELL", "/bin/sh"),
@@ -96,7 +96,7 @@ class NemoAgent:
 
     def update_system_prompt(self):
         updated_prompt = SYSTEM_PROMPT.format(
-            cwd=self.cwd,
+            pwd=self.pwd,
             project_name=self.project_name,
             os_name=os.uname().sysname,
             default_shell=os.environ.get("SHELL", "/bin/sh"),
@@ -116,23 +116,24 @@ class NemoAgent:
                 ["poetry", "new", self.project_name],
                 capture_output=True,
                 text=True,
-                cwd=self.cwd,
+                cwd=self.pwd,
                 check=True
             )
             print(result.stdout)
 
-            # Change to the newly created project directory
-            project_path = os.path.join(self.cwd, self.project_name)
-            os.chdir(project_path)
-            self.cwd = project_path
-
             # Update the system prompt with the new working directory
             self.update_system_prompt()
 
-            print(f"Created and moved to project folder: {project_path}")
             print(f"Current working directory: {os.getcwd()}")
             print("Contents of the directory:")
-            print(os.listdir(self.cwd))
+            print(os.listdir(self.pwd))
+
+            try:
+                subprocess.run(["poetry", "add", "--dev", "pylint", "autopep8"], check=True, cwd=self.pwd)
+                print("Added pylint and autopep8 as development dependencies.")
+            except subprocess.CalledProcessError as e:
+                print(f"Error adding pylint and autopep8: {e}")
+
         except subprocess.CalledProcessError as e:
             print(f"Error creating Poetry project: {e.stderr}")
         except Exception as e:
@@ -143,23 +144,21 @@ class NemoAgent:
         Provide a complete solution for the task: {self.task}
         Follow the rules strictly:
         1. The project has been created using `poetry new {self.project_name}`.
-        2. Always write code to the code directory.
-        3. Always write tests to the tests directory.
-        4. CRITICAL: Never use `jsonify` or `json.dumps` in your code.
-        5. Provide complete, fully functional code when creating or editing files.
-        6. Use markdown and include language specifiers in code blocks.
-        7. Include proper error handling, comments, and follow Python best practices.
-        8. Use absolute paths when referring to files and directories especially in tests.
-        9. Always use type hints in your Python code.
-        10. IMPORTANT: Provide all necessary commands to create and modify files, including `cat` commands for file creation and `sed` commands for modifications.
-        11. After providing the implementation, include commands to install any necessary dependencies using Poetry.
-        12. Keep the project structure simple with 1-2 files in the code directory and 1-2 files in the tests directory.
-        13. IMPORTANT: Only use Streamlit for web applications. Do not use FastAPI, Django, Flask, or any other web framework.
-        14. NEVER include commands to run Streamlit apps or any other apps - only include commands to run tests.
+        2. CRITICAL: Never use `jsonify` or `json.dumps` in your code.
+        3. Provide complete, fully functional code when creating or editing files.
+        4. Use markdown and include language specifiers in code blocks.
+        5. Include proper error handling, comments, and follow Python best practices.
+        6. Use absolute paths when referring to files and directories especially in tests.
+        7. Always use type hints in your Python code.
+        8. IMPORTANT: Provide all necessary commands to create and modify files, including `cat` commands for file creation and `sed` commands for modifications.
+        9. After providing the implementation, include commands to install any necessary dependencies using Poetry.
+        10. Keep the project structure simple with 1 file in the code directory and 1 file in the tests directory.
+        11. IMPORTANT: Only use Streamlit for web applications. Do not use FastAPI, Django, Flask, or any other web framework.
+        12. NEVER include commands to run Streamlit apps or any other apps - only include commands to run tests.
 
-        Current working directory: {self.cwd}
-        Code directory: {self.project_name}/{self.project_name}
-        Test directory: {self.project_name}/tests
+        Current working directory: {self.pwd}
+        Code directory: {self.pwd}/{self.project_name}/{self.project_name}
+        Tests directory: {self.pwd}/{self.project_name}/tests
         """
         solution = self.get_response(prompt)
         print("Executing solution:")
@@ -168,8 +167,8 @@ class NemoAgent:
 
         # Install dependencies
         try:
-            subprocess.run(["poetry", "add", "streamlit"], check=True, cwd=self.cwd)
-            subprocess.run(["poetry", "install"], check=True, cwd=self.cwd)
+            subprocess.run(["poetry", "add", "streamlit"], check=True, cwd=self.pwd)
+            subprocess.run(["poetry", "install"], check=True, cwd=self.pwd)
             print("Dependencies installed successfully.")
         except subprocess.CalledProcessError as e:
             print(f"Error installing dependencies: {e}")
@@ -181,7 +180,7 @@ class NemoAgent:
 
         # Run poetry update to ensure all dependencies are installed
         try:
-            subprocess.run(["poetry", "update"], check=True, cwd=self.cwd)
+            subprocess.run(["poetry", "update"], check=True, cwd=self.pwd)
             print("Poetry update completed successfully.")
         except subprocess.CalledProcessError as e:
             print(f"Error updating dependencies: {e}")
@@ -213,6 +212,47 @@ class NemoAgent:
             print(current_line)
 
         return full_response.strip()
+
+    def clean_code_with_pylint(self, file_path):
+        try:
+            # Run pylint with --output-format=parseable to get machine-readable output
+            result = subprocess.run(
+                ["poetry", "run", "pylint", "--output-format=parseable", file_path],
+                capture_output=True,
+                text=True,
+                cwd=self.pwd
+            )
+            
+            # If pylint found issues, fix them
+            if result.returncode != 0:
+                print(f"Pylint found issues in {file_path}. Attempting to fix...")
+                
+                # Run autopep8 to fix some issues automatically
+                subprocess.run(
+                    ["poetry", "run", "autopep8", "--in-place", "--aggressive", "--aggressive", file_path],
+                    check=True,
+                    cwd=self.pwd
+                )
+                
+                print(f"Applied automatic fixes to {file_path}")
+                
+                # Run pylint again to check remaining issues
+                result = subprocess.run(
+                    ["poetry", "run", "pylint", "--output-format=parseable", file_path],
+                    capture_output=True,
+                    text=True,
+                    cwd=self.pwd
+                )
+                
+                if result.returncode != 0:
+                    print(f"Some issues remain in {file_path}. Manual review may be needed.")
+                    print(result.stdout)
+                else:
+                    print(f"All issues in {file_path} have been resolved.")
+            else:
+                print(f"No issues found in {file_path}")
+        except subprocess.CalledProcessError as e:
+            print(f"Error running pylint or autopep8: {e}")
 
     def execute_solution(self, solution):
         print("Executing solution:")
@@ -301,7 +341,7 @@ class NemoAgent:
                     self.execute_heredoc_command(corrected_command)
                 elif corrected_command.startswith(('ls', 'cd', 'mkdir', 'poetry', 'sed', 'cat', 'echo', 'python3', 'source', 'pytest', 'python')):
                     result = subprocess.run(
-                        corrected_command, shell=True, check=True, capture_output=True, text=True, cwd=self.cwd)
+                        corrected_command, shell=True, check=True, capture_output=True, text=True, cwd=self.pwd)
                     print(result.stdout)
                 else:
                     print(f"Command not allowed: {corrected_command}")
@@ -338,7 +378,7 @@ class NemoAgent:
                 content = '\n'.join(content_lines[1:-1])
 
             # Ensure the file path is within the project directory
-            full_file_path = os.path.join(self.cwd, file_path)
+            full_file_path = os.path.join(self.pwd, file_path)
 
             # Ensure the directory exists
             os.makedirs(os.path.dirname(full_file_path), exist_ok=True)
@@ -353,6 +393,16 @@ class NemoAgent:
             if self.file_exists_and_has_content(full_file_path):
                 print(f"File successfully created/updated: {full_file_path}")
                 self.verify_file_contents(full_file_path)
+            else:
+                print(f"Failed to create/update file: {full_file_path}")
+
+            if self.file_exists_and_has_content(full_file_path):
+                print(f"File successfully created/updated: {full_file_path}")
+                self.verify_file_contents(full_file_path)
+                
+                # Clean the code if it's a Python file
+                if full_file_path.endswith('.py'):
+                    self.clean_code_with_pylint(full_file_path)
             else:
                 print(f"Failed to create/update file: {full_file_path}")
 
@@ -395,7 +445,7 @@ class NemoAgent:
                 ["poetry", "run", "pytest"],
                 capture_output=True,
                 text=True,
-                cwd=self.cwd,
+                cwd=self.pwd,
                 check=True
             )
             print(result.stdout)
