@@ -6,12 +6,13 @@ Nemo Agent is a blazing fast local AI Agent for Python coding
 
 ## Features
 * Runs blazing fast locally
-* Generates Python project structures automatically
+* Generates Python project structures automatically using Poetry
 * Writes Python code based on task descriptions
 * Executes development tasks using AI-generated commands
 * Utilizes the mistral-nemo language model for intelligent code generation
 * Implements best practices in Python development automatically
-* Writes and runs tests
+* Writes and runs tests up to 80%+ test coverage using pytest
+* Automatically fixes and styles code using pylint
 
 ## Installation
 You can install Nemo Agent using pip:
@@ -47,17 +48,10 @@ Nemo Agent can execute various development tasks like creating virtual environme
 ## Requirements
 * Python 3.12.4 or higher
 * Ollama running mistral-nemo
-* Linux with a minimum of an RTX 4070 or;
-* Mac with a minimum of an M2 Pro with 16GB RAM
+* Linux with a minimum of an RTX 4090
 
 ## Contributing
 Contributions to Nemo Agent are welcome! Please feel free to submit a Pull Request.
-
-## Roadmap
-* Support current folder structure of projects for refactoring []
-* Support poetry []
-* Get all files in a folder recursive and put them into context for analysis []
-* Conversational interface with history [] 
 
 ## License
 This project is licensed under the MIT License - see the LICENSE file for details.
