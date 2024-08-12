@@ -224,10 +224,10 @@ class NemoAgent:
             4. You write code to the code directory on disk: {self.project_name}
             5. You write tests to the tests directory on disk: tests
             6. The test command is `poetry run pytest --cov={self.project_name} --cov-config=.coveragerc`
-            7. You only use pytest for testing - never use unittest
+            7. You only use pytest for testing and coverage - never use unittest, coveralls, or other testing tools.
             8. Use OOP, DRY, KISS, SOLID, SRP, and other best practices.
-            9. IMPORTANT: Always include docstrings for all functions, classes, files, and modules.
-            10. IMPORTANT: Follow PEP8 style guide and use type hints when appropriate.
+            11. IMPORTANT: Follow PEP8 style guide and use type hints when appropriate.
+            12. CRITICAL: When writing algorithms, write the code to maximize time complexity and space complexity.
 
         Working directory: {self.pwd}
         """
@@ -409,7 +409,6 @@ class NemoAgent:
         prompt = f"""
         The current pylint score for {file_path} (a {file_type}) is {current_score:.2f}/10. Please analyze the pylint output and suggest improvements to reach a score of at least 6/10.
 
-        {'This is a test file, so some rules like missing docstrings may not apply.' if is_test_file else ''}
         {'This is an __init__.py file, so it may not need a module docstring.' if is_init_file else ''}
 
         Pylint output:
@@ -417,10 +416,6 @@ class NemoAgent:
 
         Provide specific code changes to improve the score. Use the appropriate commands (cat, sed) to modify the file.
         Focus on addressing the issues reported by pylint, such as unused imports, code style issues, etc.
-        IMPORTANT: Always include docstrings for all functions, classes, files, and modules.
-        IMPORTANT: Follow PEP8 style guide and use type hints when appropriate.
-        {'For test files, focus on improving code quality without adding unnecessary docstrings.' if is_test_file else ''}
-        {'For __init__.py files, focus on improving code quality while considering its special purpose.' if is_init_file else ''}
         """
         improvements = self.get_response(prompt)
         self.validate_and_execute_commands(improvements)
@@ -455,8 +450,7 @@ class NemoAgent:
         4. Use pytest fixtures where appropriate to set up test data.
         5. Use parametrized tests to cover multiple scenarios efficiently.
         6. Use OOP, DRY, KISS, SOLID, SRP, and other best practices to write clean and efficient tests.
-        7. IMPORTANT: Always include docstrings for all functions, classes, files, and modules.
-        8. IMPORTANT: Follow PEP8 style guide and use type hints when appropriate.
+        7. IMPORTANT: Follow PEP8 style guide and use type hints when appropriate.
 
         Provide specific code changes or additional tests to improve the coverage.
         Use the following format for creating or modifying test files:
@@ -750,13 +744,19 @@ class NemoAgent:
             coverage_percentage = int(
                 coverage_match.group(1)) if coverage_match else 0
 
-            if result.returncode == 0 and coverage_percentage >= 80:
+            # Check if all tests passed
+            tests_passed = "failed" not in result.stdout.lower() and result.returncode == 0
+
+            if tests_passed and coverage_percentage >= 80:
                 print(f"All tests passed successfully and coverage is {
-                    coverage_percentage}%.")
+                      coverage_percentage}%.")
                 return True, coverage_percentage
             else:
-                print(f"Tests failed or coverage is below 80%. Current coverage: {
-                    coverage_percentage}%")
+                if not tests_passed:
+                    print("Some tests failed. Please review the test output above.")
+                if coverage_percentage < 80:
+                    print(f"Coverage is below 80%. Current coverage: {
+                          coverage_percentage}%")
                 return False, coverage_percentage
 
         except subprocess.CalledProcessError as e:
