@@ -42,12 +42,11 @@ You are Nemo Agent, an expert Python developer. Follow these rules strictly:
 22. Use the following format for creating files:
             For code files: cat > {project_name}/filename.py << EOL
             For test files: cat > tests/test_filename.py << EOL
-23. Prefer functions over classes. Use classes only when necessary.
-24. Only create an __init__.py file the project code directory {pwd}/{project_name}.
-25. Never create an __init__.py file in the tests directory.
-26. Create a simple test plan to ensure that all requirements are met.
-27. Don't use print statements as return values.
-28. Write testable code from the start.
+23. Only create an __init__.py file the project code directory {pwd}/{project_name}.
+24. Never create an __init__.py file in the tests directory.
+25. Create a simple test plan to ensure that all requirements are met.
+26. Don't use print statements as return values.
+27. Write testable code from the start.
 
 Current working directory: {pwd}
 """
@@ -149,15 +148,18 @@ class NemoAgent:
 
     def ensure_poetry_installed(self):
         try:
-            subprocess.run(["poetry", "--version"], check=True, capture_output=True, text=True)
+            subprocess.run(["poetry", "--version"], check=True,
+                           capture_output=True, text=True)
             print("Poetry is already installed.")
         except FileNotFoundError:
             print("Poetry is not installed. Installing Poetry...")
             try:
                 if sys.platform.startswith('win'):
-                    subprocess.run(["powershell", "-Command", "(Invoke-WebRequest -Uri https://install.python-poetry.org -UseBasicParsing).Content | python -"], check=True, shell=True)
+                    subprocess.run(
+                        ["powershell", "-Command", "(Invoke-WebRequest -Uri https://install.python-poetry.org -UseBasicParsing).Content | python -"], check=True, shell=True)
                 else:
-                    subprocess.run(["curl", "-sSL", "https://install.python-poetry.org", "|", "python3", "-"], check=True, shell=True)
+                    subprocess.run(["curl", "-sSL", "https://install.python-poetry.org",
+                                   "|", "python3", "-"], check=True, shell=True)
                 print("Poetry installed successfully.")
             except subprocess.CalledProcessError as e:
                 print(f"Error installing Poetry: {e}")
@@ -210,7 +212,7 @@ class NemoAgent:
             print("Added [tool.pytest.ini-options] section to pyproject.toml")
 
             try:
-                subprocess.run(["poetry", "add", "--dev", "pytest@*", "pylint@*", "autopep8@*", 
+                subprocess.run(["poetry", "add", "--dev", "pytest@*", "pylint@*", "autopep8@*",
                                 "pytest-cov@*", "pytest-flask@*", "httpx@*"], check=True, cwd=self.pwd)
                 print("Added pytest, pylint, autopep8, pytest-cov, pytest-flask, and httpx as development dependencies with latest versions.")
             except subprocess.CalledProcessError as e:
@@ -223,106 +225,177 @@ class NemoAgent:
 
     def implement_solution(self):
         prompt = f"""
-        Create a comprehensive test plan and implementation for the task: Calculate the factorial of a number.
-        
+        Create a comprehensive test plan and implementation for the task: {self.task}
+
+        Follow these guidelines:
+        1. Use Object-Oriented Programming (OOP) principles.
+        2. Apply SOLID principles:
+        - Single Responsibility Principle (SRP)
+        - Open-Closed Principle (OCP)
+        - Liskov Substitution Principle (LSP)
+        - Interface Segregation Principle (ISP)
+        - Dependency Inversion Principle (DIP)
+        3. Implement Dependency Injection (DI) where appropriate.
+        4. Ensure each class and method has a single responsibility.
+        5. Use abstract base classes or interfaces to define contracts.
+        6. Implement a simple Dependency Injection Container if needed.
+        7. Write unit tests for each class and method.
+        8. Use type hints for all method parameters and return values.
+        9. Include proper error handling and input validation.
+        10. Follow PEP 8 style guidelines.
+
         Test Plan:
-        1. Test positive integers:
-        - Test factorial of 0 (edge case)
-        - Test factorial of 1 (edge case)
-        - Test factorial of 5 (normal case)
-        - Test factorial of a large number (e.g., 20)
-        2. Test negative integers:
-        - Test factorial of -1 (should raise ValueError)
-        - Test factorial of a large negative number (should raise ValueError)
-        3. Test non-integer inputs:
-        - Test factorial of a float (should raise ValueError)
-        - Test factorial of a string (should raise ValueError)
-        - Test factorial of None (should raise ValueError)
-        4. Test performance:
-        - Test factorial of a very large number (e.g., 1000) to ensure it doesn't take too long
+        1. Unit tests for each class and method.
+        2. Integration tests for the entire system.
+        3. Edge case tests:
+        - Test with minimum and maximum valid inputs.
+        - Test with invalid inputs.
+        4. Performance tests (if applicable).
+        5. Exception handling tests.
+        6. Dependency Injection tests.
 
-        Now, implement the tests following this plan, and then create the actual function to make the tests pass.
-        Use pytest for all tests. Follow all the rules and guidelines provided earlier.
+        Implement the solution following this structure:
+        1. Create an abstract base class or interface for the main functionality.
+        2. Implement concrete classes that inherit from the base class or implement the interface.
+        3. Use dependency injection for any dependencies.
+        4. Implement a simple DI container if needed.
+        5. Create a main function that demonstrates the usage of the classes.
+        6. Write comprehensive unit tests for each class and method.
 
-        Start by creating the test file:
+        Use pytest for all tests. Follow all the rules and guidelines provided in the system prompt.
 
-        cat > tests/test_factorial.py << EOL
+        Now, create the test file:
+
+        cat > tests/test_main.py << EOL
+        '''This module contains tests for the main implementation.'''
         import pytest
-        from {self.project_name}.factorial import factorial
+        from {self.project_name}.main import FactorialCalculator, CalculatorFactory, DIContainer, Calculator
 
-        def test_factorial_zero():
-            assert factorial(0) == 1
+        @pytest.fixture
+        def factorial_calculator():
+            return FactorialCalculator()
 
-        def test_factorial_one():
-            assert factorial(1) == 1
+        @pytest.fixture
+        def di_container():
+            container = DIContainer()
+            container.register(Calculator, FactorialCalculator())
+            return container
 
-        def test_factorial_positive_integer():
-            assert factorial(5) == 120
+        def test_factorial_zero(factorial_calculator):
+            assert factorial_calculator.calculate(0) == 1
 
-        def test_factorial_large_number():
-            assert factorial(20) == 2432902008176640000
+        def test_factorial_one(factorial_calculator):
+            assert factorial_calculator.calculate(1) == 1
 
-        def test_factorial_negative_integer():
+        def test_factorial_positive_integer(factorial_calculator):
+            assert factorial_calculator.calculate(5) == 120
+
+        def test_factorial_large_number(factorial_calculator):
+            assert factorial_calculator.calculate(20) == 2432902008176640000
+
+        def test_factorial_negative_integer(factorial_calculator):
             with pytest.raises(ValueError):
-                factorial(-1)
+                factorial_calculator.calculate(-1)
 
-        def test_factorial_large_negative_integer():
+        def test_factorial_float(factorial_calculator):
             with pytest.raises(ValueError):
-                factorial(-1000)
+                factorial_calculator.calculate(5.5)
 
-        def test_factorial_float():
+        def test_factorial_string(factorial_calculator):
             with pytest.raises(ValueError):
-                factorial(5.5)
+                factorial_calculator.calculate("5")
 
-        def test_factorial_string():
+        def test_calculator_factory_valid():
+            calculator = CalculatorFactory.create_calculator("factorial")
+            assert isinstance(calculator, FactorialCalculator)
+
+        def test_calculator_factory_invalid():
             with pytest.raises(ValueError):
-                factorial("5")
+                CalculatorFactory.create_calculator("invalid_type")
 
-        def test_factorial_none():
+        def test_di_container_registration_and_resolution(di_container):
+            calculator = di_container.resolve(Calculator)
+            assert isinstance(calculator, FactorialCalculator)
+
+        def test_di_container_unregistered_service():
+            container = DIContainer()
             with pytest.raises(ValueError):
-                factorial(None)
+                container.resolve(str)
 
-        def test_factorial_performance():
+        def test_factorial_performance(factorial_calculator):
             import time
             start_time = time.time()
-            factorial(1000)
+            factorial_calculator.calculate(1000)
             end_time = time.time()
             assert end_time - start_time < 1, "Factorial calculation took too long"
         EOL
 
-        Now, implement the factorial function to make the tests pass:
+        Now run the tests using pytest:
 
-        cat > {self.project_name}/factorial.py << EOL
-        def factorial(n):
-            '''
-            Calculate the factorial of a non-negative integer.
+        poetry run pytest tests/test_main.py -v
 
-            Args:
-                n (int): The number to calculate the factorial of.
+        It should fail initially. Implement the main functionality in the main.py file.
+        
+        Follow this example structure for the main.py file:
 
-            Returns:
-                int: The factorial of n.
+        cat > {self.project_name}/main.py << EOL
+        '''This module contains the main implementation for {self.project_name}.'''
+        from abc import ABC, abstractmethod
+        from typing import Protocol, Any
 
-            Raises:
-                ValueError: If n is not a non-negative integer.
-            '''
-            if not isinstance(n, int):
-                raise ValueError("Input must be a non-negative integer")
-            if n < 0:
-                raise ValueError("Input must be a non-negative integer")
-            if n == 0 or n == 1:
-                return 1
-            result = 1
-            for i in range(2, n + 1):
-                result *= i
-            return result
+        class Calculator(Protocol):
+            def calculate(self, n: int) -> int:
+                ...
+
+        class FactorialCalculator:
+            def calculate(self, n: int) -> int:
+                if not isinstance(n, int):
+                    raise ValueError("Input must be a non-negative integer")
+                if n < 0:
+                    raise ValueError("Input must be a non-negative integer")
+                if n == 0 or n == 1:
+                    return 1
+                return n * self.calculate(n - 1)
+
+        class CalculatorFactory:
+            @staticmethod
+            def create_calculator(calculator_type: str) -> Calculator:
+                if calculator_type == "factorial":
+                    return FactorialCalculator()
+                raise ValueError(
+                    f"Unknown calculator type: {{calculator_type}}")
+
+        class DIContainer:
+            def __init__(self):
+                self._services = {{}}
+
+            def register(self, service_type: type, implementation: Any):
+                self._services[service_type] = implementation
+
+            def resolve(self, service_type: type) -> Any:
+                if service_type not in self._services:
+                    raise ValueError(
+                        f"Service {{service_type}} not registered")
+                return self._services[service_type]
+
+        def main(container: DIContainer) -> None:
+            calculator = container.resolve(Calculator)
+            result = calculator.calculate(5)
+            print(f"Factorial of 5 is: {{result}}")
+
+        if __name__ == "__main__":
+            container = DIContainer()
+            container.register(
+                Calculator, CalculatorFactory.create_calculator("factorial"))
+            main(container)
         EOL
 
         Now run the tests using pytest:
 
-        poetry run pytest tests/test_factorial.py -v
+        poetry run pytest tests/test_main.py -v
 
-        If all tests pass, the implementation is complete. If any tests fail, please provide the error messages, and I will help you fix the implementation.
+        And keep refining the implementation until all tests pass.
+
         """
 
         solution = self.get_response(prompt)
@@ -336,7 +409,7 @@ class NemoAgent:
 
         # Update pyproject.toml if necessary
         pyproject_update = self.get_response(
-            f"Provide necessary updates to pyproject.toml for the task: Calculate the factorial of a number, including adding any required dependencies if they're not already there. Also, add a [tool.pytest.ini_options] section with pythonpath = '.' if it doesn't exist.")
+            f"Provide necessary updates to pyproject.toml for the task: {self.task}, including adding any required dependencies if they're not already there. Also, add a [tool.pytest.ini_options] section with pythonpath = '.' if it doesn't exist.")
         self.validate_and_execute_commands(pyproject_update)
 
         # Run poetry update to ensure all dependencies are installed
@@ -543,13 +616,14 @@ class NemoAgent:
 
         coverage_result = self.get_current_coverage()
         if coverage_result >= 80:
-            print(f"Test coverage is already at {coverage_result}%. No improvements needed.")
+            print(f"Test coverage is already at {
+                  coverage_result}%. No improvements needed.")
             return
 
         prompt = f"""
-        The current test coverage for the project is {coverage_result}%, which is below the target of 80%. 
+        The current test coverage for the project is {coverage_result}%, which is below the target of 80%.
         Please analyze the coverage report and suggest improvements to increase the coverage to at least 80%.
-        
+
         Focus on:
         1. Adding new test cases for untested functions or methods.
         2. Testing edge cases and boundary conditions.
@@ -557,7 +631,7 @@ class NemoAgent:
         4. Use pytest fixtures where appropriate to set up test data.
         5. Use parametrized tests to cover multiple scenarios efficiently.
 
-        Provide specific code changes or additional tests to improve the coverage. 
+        Provide specific code changes or additional tests to improve the coverage.
         Use the following format for creating or modifying test files:
         cat > tests/test_filename.py << EOL
         # Test file content
@@ -574,11 +648,11 @@ class NemoAgent:
 
         new_coverage = self.get_current_coverage()
         if new_coverage < 80:
-            print(f"Coverage is still below 80% (current: {new_coverage}%). Attempting another improvement (attempt {attempt + 1})...")
+            print(f"Coverage is still below 80% (current: {
+                  new_coverage}%). Attempting another improvement (attempt {attempt + 1})...")
             self.improve_test_coverage(attempt + 1)
         else:
             print(f"Coverage goal achieved. Current coverage: {new_coverage}%")
-
 
     def get_current_coverage(self):
         try:
@@ -817,6 +891,7 @@ class NemoAgent:
             # Create a .coveragerc file to exclude empty files and __init__.py
             coveragerc_content = """
     [run]
+    source = {self.project_name}
     omit =
         */__init__.py
         tests/*
@@ -838,8 +913,8 @@ class NemoAgent:
 
             # Run pytest with coverage
             result = subprocess.run(
-                ["poetry", "run", "pytest", "--cov=" + self.project_name,
-                    "--cov-config=.coveragerc", "--cov-report=term-missing", "--cov-fail-under=80"],
+                ["poetry", "run", "pytest", "--cov=fizzbuzz_456", "--cov-config=.coveragerc", 
+                "--cov-report=term-missing", "--cov-fail-under=80"],
                 capture_output=True,
                 text=True,
                 cwd=self.pwd
@@ -848,12 +923,16 @@ class NemoAgent:
             print(result.stdout)
             print(result.stderr)
 
+            # Check if coverage report was generated
+            if "No data to report." in result.stdout or "No data to report." in result.stderr:
+                print("No coverage data was collected. Ensure that the tests are running correctly.")
+                return False
+
             if result.returncode == 0:
                 print("All tests passed successfully and coverage is at least 80%.")
                 return True
             else:
-                print(
-                    "Tests failed or coverage is below 80%. Please review the output above.")
+                print("Tests failed or coverage is below 80%. Please review the output above.")
                 return False
 
         except subprocess.CalledProcessError as e:
@@ -861,7 +940,7 @@ class NemoAgent:
             return False
         except Exception as e:
             print(f"An unexpected error occurred: {e}")
-        return False
+            return False
 
 
 
