@@ -26,7 +26,7 @@ You are Nemo Agent, an expert Python developer. Follow these rules strictly:
 9. Always use Poetry for project setup and dependency management - never use requirements.txt.
 10. Include proper error handling, comments, and follow Python best practices.
 11. IMPORTANT: Write to disk after EVERY step, no matter how small.
-12. Always use type hints in your Python code.
+12. Use type hints in your Python code when appropriate.
 13. Always use pytest for testing.
 14. Keep the project structure simple with 1 file in the code directory and 1 file in the tests directory.
 15. Always run the tests using `poetry run pytest` with no options.
@@ -35,6 +35,9 @@ You are Nemo Agent, an expert Python developer. Follow these rules strictly:
     For code files: cat > {project_name}/filename.py << EOL
     For test files: cat > tests/test_filename.py << EOL
 18. IMPORTANT: Write to disk after EVERY step, no matter how small.
+19. Break up tests into multiple test functions for better organization.
+20. Once the tests pass, the task is complete.
+21. Only mock external services or APIs if absolutely necessary.
 
 Current working directory: {pwd}
 """
@@ -110,7 +113,10 @@ class NemoAgent:
     def run_task(self):
         self.create_project_with_poetry()
         self.implement_solution()
-        self.run_tests()
+        if self.run_tests():
+            print("Task completed successfully. All tests passed.")
+            return
+        print("Task completed, but some tests failed.")
 
     def create_project_with_poetry(self):
         print(f"Creating new Poetry project: {self.project_name}")
@@ -135,9 +141,10 @@ class NemoAgent:
             print(os.listdir(self.pwd))
 
             try:
-                subprocess.run(["poetry", "add", "--dev", "pytest",
-                               "pylint", "autopep8"], check=True, cwd=self.pwd)
-                print("Added pytest, pylint, and autopep8 as development dependencies.")
+                subprocess.run(["poetry", "add", "--dev", "pytest@*",
+                            "pylint@*", "autopep8@*"], check=True, cwd=self.pwd)
+                print(
+                    "Added pytest, pylint, and autopep8 as development dependencies with latest versions.")
             except subprocess.CalledProcessError as e:
                 print(f"Error adding development dependencies: {e}")
 
@@ -156,7 +163,7 @@ class NemoAgent:
         4. Use markdown and include language specifiers in code blocks.
         5. Include proper error handling, comments, and follow Python best practices.
         6. Use absolute paths when referring to files and directories especially in tests.
-        7. Always use type hints in your Python code.
+        7. Use type hints in your Python code when appropriate.
         8. IMPORTANT: Provide all necessary commands to create and modify files, including `cat` commands for file creation and `sed` commands for modifications.
         9. After providing the implementation, include commands to install any necessary dependencies using Poetry.
         10. Keep the project structure simple with 1 file in the code directory and 1 file in the tests directory.
@@ -169,6 +176,9 @@ class NemoAgent:
         15. IMPORTANT: Write to disk after EVERY step, no matter how small.
         16. CRITICAL: pytest is already installed as a development dependency. Do not install it again.
         17. If additional dependencies are required, provide Poetry commands to add them.
+        18. Break up tests into multiple test functions for better organization.
+        19. Once the tests pass, the task is complete.
+        20. Only mock external services or APIs if absolutely necessary.
 
         Current working directory: {self.pwd}
         """
@@ -219,48 +229,76 @@ class NemoAgent:
 
     def clean_code_with_pylint(self, file_path):
         try:
-            # Run pylint with --output-format=parseable to get machine-readable output
+            # Check if the file is empty
+            if os.path.getsize(file_path) == 0:
+                print(f"File {file_path} is empty. Skipping pylint check.")
+                return 10.0  # Assume perfect score for empty files
+
+            # Determine if the file is a special file
+            file_name = os.path.basename(file_path)
+            is_test_file = 'test' in file_name.lower()
+            is_init_file = file_name == '__init__.py'
+
+            # Adjust pylint command for different file types
+            pylint_cmd = ["poetry", "run", "pylint"]
+            if is_test_file:
+                pylint_cmd.extend(
+                    ["--disable=missing-function-docstring,missing-module-docstring"])
+            elif is_init_file:
+                pylint_cmd.extend(["--disable=missing-module-docstring"])
+            pylint_cmd.append(file_path)
+
             result = subprocess.run(
-                ["poetry", "run", "pylint", "--output-format=parseable", file_path],
+                pylint_cmd,
                 capture_output=True,
                 text=True,
                 cwd=self.pwd
             )
+            output = result.stdout + result.stderr
+            score_match = re.search(
+                r'Your code has been rated at (\d+\.\d+)/10', output)
+            score = float(score_match.group(1)) if score_match else 0.0
 
-            # If pylint found issues, fix them
-            if result.returncode != 0:
-                print(f"Pylint found issues in {
-                      file_path}. Attempting to fix...")
+            print(output)
+            print(f"Pylint score for {file_path}: {score}/10")
 
-                # Run autopep8 to fix some issues automatically
-                subprocess.run(
-                    ["poetry", "run", "autopep8", "--in-place",
-                        "--aggressive", "--aggressive", file_path],
-                    check=True,
-                    cwd=self.pwd
-                )
-
-                print(f"Applied automatic fixes to {file_path}")
-
-                # Run pylint again to check remaining issues
-                result = subprocess.run(
-                    ["poetry", "run", "pylint",
-                        "--output-format=parseable", file_path],
-                    capture_output=True,
-                    text=True,
-                    cwd=self.pwd
-                )
-
-                if result.returncode != 0:
-                    print(f"Some issues remain in {
-                          file_path}. Manual review may be needed.")
-                    print(result.stdout)
-                else:
-                    print(f"All issues in {file_path} have been resolved.")
+            if score < 6.0:
+                print(f"Score is below 6.0. Attempting to improve the code...")
+                self.improve_code(file_path, score, output,
+                                  is_test_file, is_init_file)
             else:
-                print(f"No issues found in {file_path}")
+                print(f"Code quality is good. Score: {score}/10")
+
+            return score
         except subprocess.CalledProcessError as e:
-            print(f"Error running pylint or autopep8: {e}")
+            print(f"Error running pylint: {e}")
+            return 0.0
+
+    def improve_code(self, file_path, current_score, pylint_output, is_test_file, is_init_file):
+        file_type = "test file" if is_test_file else "init file" if is_init_file else "regular Python file"
+        prompt = f"""
+        The current pylint score for {file_path} (a {file_type}) is {current_score:.2f}/10. Please analyze the pylint output and suggest improvements to reach a score of at least 6/10.
+
+        {'This is a test file, so some rules like missing docstrings may not apply.' if is_test_file else ''}
+        {'This is an __init__.py file, so it may not need a module docstring.' if is_init_file else ''}
+
+        Pylint output:
+        {pylint_output}
+
+        Provide specific code changes to improve the score. Use the appropriate commands (cat, sed) to modify the file.
+        Focus on addressing the issues reported by pylint, such as unused imports, code style issues, etc.
+        {'For test files, focus on improving code quality without adding unnecessary docstrings.' if is_test_file else ''}
+        {'For __init__.py files, focus on improving code quality while considering its special purpose.' if is_init_file else ''}
+        """
+        improvements = self.get_response(prompt)
+        self.validate_and_execute_commands(improvements)
+
+        # Run pylint again to check if the score improved
+        new_score = self.clean_code_with_pylint(file_path)
+        if new_score < 6.0:
+            print(f"Score is still below 6.0. Attempting another improvement...")
+            self.improve_code(file_path, new_score,
+                              pylint_output, is_test_file, is_init_file)
 
     def execute_solution(self, solution):
         print("Executing solution:")
@@ -452,37 +490,44 @@ class NemoAgent:
         return corrected_commands[0] if corrected_commands else None
 
     def run_tests(self):
-        print("Running tests...")
+        print("Running tests and checking code quality...")
         try:
-            env = os.environ.copy()
-            env['PYTHONPATH'] = f"{self.pwd}:{env.get('PYTHONPATH', '')}"
+            # Run pylint on all Python files in the project
+            for root, dirs, files in os.walk(self.pwd):
+                for file in files:
+                    if file.endswith('.py'):
+                        file_path = os.path.join(root, file)
+                        self.clean_code_with_pylint(file_path)
+
+            # Run pytest
             result = subprocess.run(
                 ["poetry", "run", "pytest"],
                 capture_output=True,
                 text=True,
-                cwd=self.pwd,
-                check=True
+                cwd=self.pwd
             )
+            print("Pytest output:")
             print(result.stdout)
-            print("All tests passed successfully.")
-        except subprocess.CalledProcessError as e:
-            print("Some tests failed. Here's the output:")
-            print(e.stdout)
-            print(e.stderr)
-            # self.fix_failing_tests()
+            print(result.stderr)
 
-    def fix_failing_tests(self):
-        prompt = f"""
-        The tests for the project have failed. Please analyze the test output and provide fixes for the failing tests.
-        Make sure to:
-        1. Identify the specific tests that are failing.
-        2. Analyze the error messages and stack traces.
-        3. Propose changes to either the implementation or the tests to fix the failures.
-        4. Provide the necessary commands to update the relevant files.
-        """
-        fixes = self.get_response(prompt)
-        self.execute_solution(fixes)
-        self.run_tests()  # Run tests again after applying fixes
+            if result.returncode == 0:
+                print("All tests passed successfully.")
+                return True
+            else:
+                print("Some tests failed. Please review the output above.")
+                return False
+
+        except subprocess.CalledProcessError as e:
+            print(f"Error running tests: {e}")
+            return False
+        except Exception as e:
+            print(f"An unexpected error occurred: {e}")
+            return False
+
+        except subprocess.CalledProcessError as e:
+            print(f"Error running tests: {e}")
+        except Exception as e:
+            print(f"An unexpected error occurred: {e}")
 
 
 @click.command()
