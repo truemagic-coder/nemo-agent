@@ -155,8 +155,8 @@ class NemoAgent:
                     subprocess.run(
                         ["powershell", "-Command", "(Invoke-WebRequest -Uri https://install.python-poetry.org -UseBasicParsing).Content | python -"], check=True, shell=True)
                 else:
-                    subprocess.run(["curl", "-sSL", "https://install.python-poetry.org",
-                                   "|", "python3", "-"], check=True, shell=True)
+                    subprocess.run(
+                        "curl -sSL https://install.python-poetry.org | python3 -", shell=True, check=True)
                 print("Poetry installed successfully.")
             except subprocess.CalledProcessError as e:
                 print(f"Error installing Poetry: {e}")

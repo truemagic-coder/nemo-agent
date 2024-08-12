@@ -47,10 +47,9 @@ The AI writes Python code to implement the requested functionality.
 Nemo Agent can execute various development tasks like creating virtual environments, installing dependencies, and running tests.
 
 ## Requirements
-* Python 3.12.4 or higher
+* Python 3.9 or higher
 * Ollama running mistral-nemo
-* Linux with a minimum of an RTX 4070 or;
-* Mac with a minimum of an M2 Pro with 16GB RAM
+* Linux with a minimum of an RTX 4070
 
 ## Contributing
 Contributions to Nemo Agent are welcome! Please feel free to submit a Pull Request.
