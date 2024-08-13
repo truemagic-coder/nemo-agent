@@ -2,7 +2,7 @@
 
 [![PyPI - Version](https://img.shields.io/pypi/v/nemo-agent)](https://pypi.org/project/nemo-agent/)
 
-https://cdn.cometheart.com/nemo-agent.mp4
+[![Nemo Agent](https://cdn.cometheart.com/nemo-agent.png)](https://cdn.cometheart.com/nemo-agent.mp4)
 
 Nemo Agent is a blazing fast local AI Agent for Python coding
 
