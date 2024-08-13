@@ -66,9 +66,10 @@ class CustomSystemTools:
 class NemoAgent:
     MAX_IMPROVEMENT_ATTEMPTS = 10
 
-    def __init__(self, task: str):
+    def __init__(self, task: str, model: str = "mistral-nemo"):
         self.pwd = os.getcwd()
         self.task = task
+        self.model = model
         self.project_name = self.generate_project_name()
         self.assistant = self.setup_assistant()
 
@@ -82,7 +83,7 @@ class NemoAgent:
         )
         custom_system_tools = CustomSystemTools()
         return Assistant(
-            llm=Ollama(model="mistral-nemo"),
+            llm=Ollama(model=self.model),
             system_prompt=system_prompt,
             tools=[
                 custom_system_tools.execute_command,
@@ -94,7 +95,7 @@ class NemoAgent:
 
     def generate_project_name(self):
         temp_assistant = Assistant(
-            llm=Ollama(model="mistral-nemo"),
+            llm=Ollama(model=self.model),
             system_prompt="You are a helpful assistant.",
             show_tool_calls=True,
             markdown=True,
@@ -767,15 +768,16 @@ class NemoAgent:
 
 @click.command()
 @click.argument('task', required=False)
-def cli(task: str = None):
+@click.option('--model', default="mistral-nemo", help="The model to use for the Ollama LLM")
+def cli(task: str = None, model: str = "mistral-nemo"):
     """
-    Run Nemo Agent tasks to create Python projects using Poetry and Streamlit.
+    Run Nemo Agent tasks to create Python projects using Poetry and Pytest.
     If no task is provided, it will prompt the user for input.
     """
     if task is None:
         task = click.prompt("Please enter the task for Nemo Agent")
 
-    nemo_agent = NemoAgent(task=task)
+    nemo_agent = NemoAgent(task=task, model=model)
     nemo_agent.run_task()
 
 
