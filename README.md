@@ -7,14 +7,14 @@
 Nemo Agent is a blazing fast local AI Agent for Python coding
 
 ## Features
-* Runs blazing fast locally
-* Generates Python project structures automatically using poetry
+* Runs blazing fast locally on an RTX 4070 or greater
+* Generates Python project structures automatically using `poetry`
 * Writes Python code based on task descriptions
 * Executes development tasks using AI-generated commands
 * Utilizes the `mistral-nemo` language model for intelligent code generation
 * Implements best practices in Python development automatically
-* Writes and runs passing tests up to 80%+ test coverage using pytest
-* Automatically fixes and styles code using pylint
+* Writes and runs passing tests up to 80%+ test coverage using `pytest`
+* Automatically fixes and styles code using `pylint`
 
 ## Installation
 You can install Nemo Agent using pip:
@@ -36,20 +36,17 @@ Generate a fizzbuzz program:
 
 `nemo-agent "Create a fizzbuzz script"`
 
-## Cloud Install
+## Cloud-Ready
 * RunPod is the recommended hosting provider for RTX 4090 compute - [setup link](https://docs.runpod.io/tutorials/pods/run-ollama)
 
 ## Limitations
 
-* Currently due to `mistral-nemo` issues cannot codegen for APIs like Flask and FastAPI.
-* Due to `mistral-nemo` model IQ limits keeping to simple tasks is required.
+* LLM codegen issues mean that web APIs like Flask and FastAPI are not supported.
+* LLM reasoning limits mean keeping tasks simple is required.
 
 ## How It Works
 
-Nemo Agent uses the mistral-nemo LLM to interpret your task description.
-It generates a project structure and necessary files based on the task.
-The AI writes Python code to implement the requested functionality.
-Nemo Agent can execute various development tasks like creating virtual environments, installing dependencies, and running tests.
+Nemo Agent leverages `mistral-nemo`, `Ollama`, `phidata`, `poetry`, `pytest`, `pylint`, and other libraries to build a complete working solution for your task.
 
 ## Requirements
 * Python 3.9 or higher
