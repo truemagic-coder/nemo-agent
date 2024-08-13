@@ -41,6 +41,10 @@ Generate a fizzbuzz program:
 
 `nemo-agent --model codestral "Create a fizzbuzz script"`
 
+## Cloud Install
+* Many people may not have expensive RTX cards especially the 4090.
+* RunPod is the recommended hosting provider for RTX 4090 compute - [setup link](https://docs.runpod.io/tutorials/pods/run-ollama)
+
 ## Limitations
 
 * Currently due to `mistral-nemo` issues cannot codegen for APIs like Flask and FastAPI.
