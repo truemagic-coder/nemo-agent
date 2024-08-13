@@ -9,7 +9,7 @@ Nemo Agent is a blazing fast local AI Agent for Python coding
 * Generates Python project structures automatically using poetry
 * Writes Python code based on task descriptions
 * Executes development tasks using AI-generated commands
-* Utilizes the mistral-nemo or codestral language model for intelligent code generation
+* Utilizes the `mistral-nemo` language model for intelligent code generation
 * Implements best practices in Python development automatically
 * Writes and runs passing tests up to 80%+ test coverage using pytest
 * Automatically fixes and styles code using pylint
@@ -36,15 +36,14 @@ Generate a fizzbuzz program:
 
 ## Custom Ollama Model
 * Nemo Agent allows running any Ollama model instead of `mistral-nemo`.
-* For the RTX 4090 small class models - all other models fail with Nemo Agent.
-* Tested on RunPod RTX 4090 x1: 
-    * gemma2:27b - bad tool use
-    * codestral:22b - bad tool use
-    * deepseek-coder-v2:16b - quickly crashes for unknown reason
-    * phi3:14b - bad codegen
-    * command-r:35b - too slow and bad license
-    * nous-hermes2:34b - bad code gen and bad tool use
-    * nous-hermes2-mixtral - bad code gen and too slow
+* Tested on RunPod RTX 4090 x1 (all fail or are too slow): 
+    * gemma2:27b
+    * codestral:22b
+    * deepseek-coder-v2:16b
+    * phi3:14b
+    * command-r:35b
+    * nous-hermes2:34b
+    * nous-hermes2-mixtral:8x7b
 
 `nemo-agent --model other_model_name "Create a fizzbuzz script"`
 
