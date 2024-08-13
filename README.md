@@ -28,24 +28,11 @@ If you run nemo-agent without any arguments, it will prompt you to enter a task.
 ## Examples
 Create a simple calculator:
 
-`nemo-agent "Create a simple calculator with add, subtract, multiply, and divide functions with tests"`
+`nemo-agent "Create a simple calculator"`
 
 Generate a fizzbuzz program:
 
 `nemo-agent "Create a fizzbuzz script"`
-
-## Custom Ollama Model
-* Nemo Agent allows running any Ollama model instead of `mistral-nemo`.
-* Tested on RunPod RTX 4090 x1 (all fail or are too slow): 
-    * gemma2:27b
-    * codestral:22b
-    * deepseek-coder-v2:16b
-    * phi3:14b
-    * command-r:35b
-    * nous-hermes2:34b
-    * nous-hermes2-mixtral:8x7b
-
-`nemo-agent --model other_model_name "Create a fizzbuzz script"`
 
 ## Cloud Install
 * RunPod is the recommended hosting provider for RTX 4090 compute - [setup link](https://docs.runpod.io/tutorials/pods/run-ollama)
