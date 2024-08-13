@@ -34,15 +34,21 @@ Generate a fizzbuzz program:
 
 `nemo-agent "Create a fizzbuzz script"`
 
-## Codestral rather than Nemo
-* Nemo Agent supports any Ollama model. 
-* If you have an RTX 4070 `mistral-nemo` is recommended.
-* If you have an RTX 4090 `codestral` is recommended.
+## Custom Ollama Model
+* Nemo Agent allows running any Ollama model instead of `mistral-nemo`.
+* For the RTX 4090 small class models - all other models fail with Nemo Agent.
+* Tested on RunPod RTX 4090 x1: 
+    * gemma2:27b - bad tool use
+    * codestral:22b - bad tool use
+    * deepseek-coder-v2:16b - quickly crashes for unknown reason
+    * phi3:14b - bad codegen
+    * command-r:35b - too slow and bad license
+    * nous-hermes2:34b - bad code gen and bad tool use
+    * nous-hermes2-mixtral - bad code gen and too slow
 
-`nemo-agent --model codestral "Create a fizzbuzz script"`
+`nemo-agent --model other_model_name "Create a fizzbuzz script"`
 
 ## Cloud Install
-* Many people may not have expensive RTX cards especially the 4090.
 * RunPod is the recommended hosting provider for RTX 4090 compute - [setup link](https://docs.runpod.io/tutorials/pods/run-ollama)
 
 ## Limitations
@@ -59,8 +65,8 @@ Nemo Agent can execute various development tasks like creating virtual environme
 
 ## Requirements
 * Python 3.9 or higher
-* Ollama running mistral-nemo or codestral
-* Linux with a minimum of an RTX 4070 or RTX 4090
+* Ollama running `mistral-nemo`
+* Linux with a minimum of an RTX 4070
 
 ## Contributing
 Contributions to Nemo Agent are welcome! Please feel free to submit a Pull Request.
