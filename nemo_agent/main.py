@@ -349,6 +349,8 @@ class NemoAgent:
 
             # Extract file contents from the solution
             file_contents = self.extract_file_contents(solution)
+            file_contents = {k: v for k, v in file_contents.items() if v.strip()}
+
 
             # Write files using standard Python file operations
             for file_path, content in file_contents.items():
@@ -401,11 +403,14 @@ class NemoAgent:
         for line in solution.split("\n"):
             stripped_line = line.strip()
 
-            if stripped_line.startswith("# Filename:"):
+            if stripped_line.startswith("# Filename:") or stripped_line.startswith("cat >"):
                 if current_file:
-                    file_contents[current_file] = "\n".join(current_content)
+                    file_contents[current_file] = "\n".join(current_content).strip()
                     current_content = []
-                current_file = stripped_line.split(":", 1)[1].strip()
+                if stripped_line.startswith("# Filename:"):
+                    current_file = stripped_line.split(":", 1)[1].strip()
+                else:
+                    current_file = stripped_line.split(">", 1)[1].split("<<", 1)[0].strip()
                 in_code_block = False
             elif stripped_line.startswith("```"):
                 in_code_block = not in_code_block
@@ -413,9 +418,10 @@ class NemoAgent:
                 current_content.append(line)
 
         if current_file:
-            file_contents[current_file] = "\n".join(current_content)
+            file_contents[current_file] = "\n".join(current_content).strip()
 
         return file_contents
+
 
     def validate_against_task(self, proposed_changes):
         prompt = f"""
