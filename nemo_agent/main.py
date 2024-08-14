@@ -875,8 +875,9 @@ class NemoAgent:
                 # fmt: on
                 return self.improve_test_coverage(attempt + 1, new_coverage)
             else:
-                print(f"Coverage goal achieved. Current coverage: {
-                      new_coverage}%")
+                # fmt: off
+                print(f"Coverage goal achieved. Current coverage: {new_coverage}%")
+                # fmt: on
                 self.commit_changes(
                     f"Improve test coverage to {new_coverage}%")
                 return new_coverage
