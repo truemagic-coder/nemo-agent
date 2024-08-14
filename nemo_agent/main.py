@@ -118,7 +118,7 @@ class NemoAgent:
         Return only the project name, nothing else.
         """
         response = self.get_response(prompt, assistant=temp_assistant)
-        project_name = response.strip().lower().replace(" ", "_")
+        project_name = response.strip().strip('"').strip("'").lower().replace(" ", "_")
 
         # Ensure the project name has exactly two segments
         segments = project_name.split("_")
@@ -332,7 +332,7 @@ class NemoAgent:
                 # Filename: pyproject.toml
                 # Updated pyproject.toml content here
                 ```
-            7. Use `sed` for making specific modifications to existing files:
+            7. IMPORTANT: Only use `sed` for making specific modifications to existing files:
                 sed -i 's/old_text/new_text/g' filename.py
             8. Use the following to create the files:
                         For code file: cat > {self.project_name}/main.py << EOL
@@ -388,46 +388,23 @@ class NemoAgent:
         print(f"File written successfully: {file_path}")
 
     def extract_file_contents(self, solution):
-        prompt = f"""
-        Analyze the following solution and extract the file contents for each file mentioned.
-        The solution contains file contents in the following format:
-
-        ```python
-        # Filename: {self.project_name}/your_module.py
-        # File content here
-        ```
-
-        For each file, provide the filename (including path) and its content in the following format:
-
-        FILE: path/to/file.py
-        CONTENT:
-        <file content goes here>
-        END_OF_FILE
-
-        Repeat this for each file in the solution.
-
-        Solution to analyze:
-        {solution}
-        """
-
-        response = self.get_response(prompt)
-
         file_contents = {}
         current_file = None
         current_content = []
+        in_code_block = False
 
-        for line in response.split("\n"):
-            if line.startswith("FILE: "):
+        for line in solution.split("\n"):
+            stripped_line = line.strip()
+            
+            if stripped_line.startswith("# Filename:"):
                 if current_file:
                     file_contents[current_file] = "\n".join(current_content)
                     current_content = []
-                current_file = line[6:].strip()
-            elif line == "END_OF_FILE":
-                if current_file:
-                    file_contents[current_file] = "\n".join(current_content)
-                    current_file = None
-                    current_content = []
-            elif current_file and line != "CONTENT:":
+                current_file = stripped_line.split(":", 1)[1].strip()
+                in_code_block = False
+            elif stripped_line.startswith("```"):
+                in_code_block = not in_code_block
+            elif current_file and not stripped_line.startswith("#") and not in_code_block:
                 current_content.append(line)
 
         if current_file:
@@ -503,8 +480,9 @@ class NemoAgent:
         5. Consider the Git history when suggesting changes to avoid reverting recent improvements or duplicating work.
         6. Use parametrized tests to cover multiple scenarios efficiently
         7. IMPORTANT: Do not create new files. Only modify the existing files.
-        8. Use `sed` for making specific modifications to existing files:
+        8. IMPORTANT: Only use `sed` for making specific modifications to existing files:
             sed -i 's/old_text/new_text/g' filename.py
+        9. IMPORTANT: Never remove existing poetry dependencies. Only add new ones if necessary.
         """
         improvements = self.get_response(prompt)
         print("Proposed improvements:")
@@ -786,8 +764,10 @@ class NemoAgent:
         4. CRITICAL: Never create new files. Only modify the existing ones.
         5. Consider the Git history when suggesting changes to avoid reverting recent improvements.
         6. Use parametrized tests to cover multiple scenarios efficiently
-        7. Use `sed` for making specific modifications to existing files:
+        7. IMPORTANT: Only use `sed` for making specific modifications to existing files:
             sed -i 's/old_text/new_text/g' filename.py
+        8. IMPORTANT: Never modify the existing pyproject.toml dependencies.
+        9. IMPORTANT: Do not add new imports in the code or tests files for 3rd party dependencies.
         """
         proposed_improvements = self.get_response(prompt)
 
@@ -870,8 +850,10 @@ class NemoAgent:
         6. Consider the Git history when suggesting changes to avoid reverting recent improvements or duplicating tests.
         7. Use parametrized tests to cover multiple scenarios efficiently
         8. IMPORTANT: Do not create new files. Only modify the existing ones.
-        9. Use `sed` for making specific modifications to existing files:
+        9. IMPORTANT: Only use `sed` for making specific modifications to existing files:
             sed -i 's/old_text/new_text/g' filename.py
+        10. IMPORTANT: Never modify the existing pyproject.toml dependencies.
+        11. IMPORTANT: Do not add new imports in the code or tests files for 3rd party dependencies.
         """
         proposed_improvements = self.get_response(prompt)
 
