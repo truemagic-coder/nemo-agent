@@ -690,8 +690,7 @@ class NemoAgent:
                 )
                 self.improve_test_coverage(attempt + 1, new_coverage)
             else:
-                print(f"Coverage goal achieved. Current coverage: {
-                      new_coverage}%")
+                print(f"Coverage goal achieved. Current coverage: {new_coverage}%")
         else:
             print(
                 "Proposed improvements do not align with the original task. Skipping this improvement attempt.")
