@@ -46,6 +46,7 @@ Generate a fizzbuzz program:
 ## Limitations
 
 * LLM codegen issues mean that web APIs like Flask and FastAPI are not supported.
+* Due to the LLM getting confused with paths and files - writing 1 code and 1 test file is only supported.
 
 ## How It Works
 
