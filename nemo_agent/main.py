@@ -321,12 +321,11 @@ class NemoAgent:
         Create a comprehensive implementation for the task: {self.task}.
         You must follow these rules strictly:
             1. CRITICAL: Do not modify the pyproject.toml file.
-            2. IMPORTANT: Do not create any additional files.
-            3. Use the correct import statements: from {self.project_name}.module_name import method_name.
-            4. Follow PEP8 style guide.
-            5. Never use pass statements in your code. Always provide a meaningful implementation.
-            6. Use parametrized tests to cover multiple scenarios efficiently.
-            7. Use the following format for specifying file content:
+            2. Use the correct import statements: from {self.project_name}.module_name import method_name.
+            3. Follow PEP8 style guide.
+            4. Never use pass statements in your code. Always provide a meaningful implementation.
+            5. Use parametrized tests to cover multiple scenarios efficiently.
+            6. Use the following format for specifying file content:
                 <<<{self.project_name}/main.py>>>
                 # File content here
                 <<<end>>>
@@ -334,7 +333,7 @@ class NemoAgent:
                 <<<tests/test_main.py>>>
                 # Test file content here
                 <<<end>>>
-            8. The test command is `poetry run pytest --cov={self.project_name} --cov-config=.coveragerc`
+            7. The test command is `poetry run pytest --cov={self.project_name} --cov-config=.coveragerc`
         Working directory: {self.pwd}
         """
 
@@ -352,6 +351,7 @@ class NemoAgent:
                 try:
                     os.makedirs(os.path.dirname(full_path), exist_ok=True)
                     with open(full_path, "w") as f:
+                        content = self.clean_markdown_artifacts(content)
                         f.write(content)
                     print(f"File written successfully: {full_path}")
                 except Exception as e:
@@ -381,12 +381,6 @@ class NemoAgent:
                 print("Poetry update completed successfully.")
             except subprocess.CalledProcessError as e:
                 print(f"Error updating dependencies: {e}")
-
-    def write_file(self, file_path, content):
-        os.makedirs(os.path.dirname(file_path), exist_ok=True)
-        with open(file_path, "w") as f:
-            f.write(content)
-        print(f"File written successfully: {file_path}")
 
     def extract_file_contents_direct(self, solution):
         file_contents = {}
@@ -830,14 +824,13 @@ class NemoAgent:
         2. IMPORTANT: Never use pass statements in your code. Always provide a meaningful implementation.
         3. Only use pytest for testing.
         4. CRITICAL: Only modify the existing files. Do not create new files.
-        5. Make the minimum code and test changes necessary to improve the coverage.
-        6. Consider the Git history when suggesting changes to avoid reverting recent improvements or duplicating tests.
-        7. Use parametrized tests to cover multiple scenarios efficiently
-        8. IMPORTANT: Do not create new files. Only modify the existing ones.
-        9. IMPORTANT: Only use `sed` for making specific modifications to existing files:
+        5. Consider the Git history when suggesting changes to avoid reverting recent improvements or duplicating tests.
+        6. Use parametrized tests to cover multiple scenarios efficiently
+        7. IMPORTANT: Do not create new files. Only modify the existing ones.
+        8. IMPORTANT: Only use `sed` for making specific modifications to existing files:
             sed -i 's/old_text/new_text/g' filename.py
-        10. IMPORTANT: Never modify the existing pyproject.toml dependencies.
-        11. IMPORTANT: Do not add new imports in the code or tests files for 3rd party dependencies.
+        9. IMPORTANT: Never modify the existing pyproject.toml dependencies.
+        10. IMPORTANT: Do not add new imports in the code or tests files for 3rd party dependencies.
         """
         proposed_improvements = self.get_response(prompt)
 
