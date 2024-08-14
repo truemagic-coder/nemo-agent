@@ -124,8 +124,9 @@ class NemoAgent:
         segments = project_name.split("_")
         if len(segments) != 2:
             # If not, generate a default name
-            project_name = f"task_{
-                segments[0]}" if segments else "default_project"
+            # fmt: off
+            project_name = f"task_{segments[0]}" if segments else "default_project"
+            # fmt: on
 
         # Add a random 3-digit number as the third segment
         random_number = random.randint(100, 999)
@@ -360,15 +361,18 @@ class NemoAgent:
                     print(f"Error writing file {full_path}: {str(e)}")
 
             # Verify that files were created
-            code_files = [f for f in os.listdir(os.path.join(self.pwd, self.project_name)) if f.endswith(".py") and f != "__init__.py"]
-            test_files = [f for f in os.listdir(os.path.join(self.pwd, "tests")) if f.startswith("test_") and f.endswith(".py")]
-            
+            code_files = [f for f in os.listdir(os.path.join(
+                self.pwd, self.project_name)) if f.endswith(".py") and f != "__init__.py"]
+            test_files = [f for f in os.listdir(os.path.join(
+                self.pwd, "tests")) if f.startswith("test_") and f.endswith(".py")]
+
             if len(code_files) == 1 and len(test_files) == 1 and os.path.exists(os.path.join(self.pwd, "pyproject.toml")):
                 print("Files successfully created.")
                 self.commit_changes("Implement initial solution")
                 break
             else:
-                print(f"Attempt {attempt + 1} failed to create the correct files. Retrying...")
+                print(
+                    f"Attempt {attempt + 1} failed to create the correct files. Retrying...")
 
         # Validate that the implementation matches the original task
         if not self.validate_implementation():
@@ -395,7 +399,7 @@ class NemoAgent:
 
         for line in solution.split("\n"):
             stripped_line = line.strip()
-            
+
             if stripped_line.startswith("# Filename:"):
                 if current_file:
                     file_contents[current_file] = "\n".join(current_content)
@@ -723,8 +727,9 @@ class NemoAgent:
             return current_score
 
         if attempt > self.MAX_IMPROVEMENT_ATTEMPTS:
-            print(f"Maximum improvement attempts reached for {
-                  file_path}. Moving on.")
+            # fmt: off
+            print(f"Maximum improvement attempts reached for {file_path}. Moving on.")
+            # fmt: on
             return current_score
 
         # Check and fix pyproject.toml
@@ -821,8 +826,9 @@ class NemoAgent:
             initial_coverage if attempt == 1 else self.get_current_coverage()
         )
         if coverage_result >= 80:
-            print(f"Test coverage is already at {
-                  coverage_result}%. No improvements needed.")
+            # fmt: off
+            print(f"Test coverage is already at {coverage_result}%. No improvements needed.")
+            # fmt: on
             return coverage_result
 
         git_diff = self.get_git_diff()
@@ -863,8 +869,9 @@ class NemoAgent:
 
             new_coverage = self.get_current_coverage()
             if new_coverage < 80:
-                print(f"Coverage is still below 80% (current: {
-                      new_coverage}%). Attempting another improvement (attempt {attempt + 1})...")
+                # fmt: off
+                print(f"Coverage is still below 80% (current: {new_coverage}%). Attempting another improvement (attempt {attempt + 1})...")
+                # fmt: on
                 return self.improve_test_coverage(attempt + 1, new_coverage)
             else:
                 print(f"Coverage goal achieved. Current coverage: {
@@ -964,7 +971,8 @@ class NemoAgent:
         fixed_content = content
 
         # Ensure the project name is correct
-        fixed_content = re.sub(r'name = ".*"', f'name = "{self.project_name}"', fixed_content)
+        fixed_content = re.sub(
+            r'name = ".*"', f'name = "{self.project_name}"', fixed_content)
 
         # Ensure pytest-cov is in dev-dependencies
         if 'pytest-cov' not in fixed_content:
@@ -978,7 +986,8 @@ class NemoAgent:
             fixed_content += '\n[tool.pytest.ini_options]\npythonpath = ["."]\n'
 
         # Fix unclosed inline table issue
-        fixed_content = re.sub(r'(\[.*?\].*?{[^}]*$)', r'\1}', fixed_content, flags=re.DOTALL)
+        fixed_content = re.sub(
+            r'(\[.*?\].*?{[^}]*$)', r'\1}', fixed_content, flags=re.DOTALL)
 
         return fixed_content
 
@@ -1187,8 +1196,9 @@ class NemoAgent:
             validated_content = self.validate_file_content(
                 full_file_path, content)
             if validated_content is None:
-                print(f"Failed to validate content for {
-                      full_file_path}. Skipping file creation.")
+                # fmt: off
+                print(f"Failed to validate content for {full_file_path}. Skipping file creation.")
+                # fmt: on
                 return
 
             # Ensure the directory exists
