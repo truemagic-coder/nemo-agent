@@ -412,14 +412,9 @@ class NemoAgent:
         CRITICAL: The correct import statements for local files looks like `from {self.project_name}.module_name import method_name`.
         Please provide improvements to the existing code and tests to better meet the requirements.
         Do not create new files, only modify the existing ones.
-        Follow all the rules and guidelines provided in the original implementation prompt.
         Only use pytest for testing.
-        Use `cat` to show the current content of each file before modifying it.
-        Use `sed` commands to make specific modifications to the existing files.
-        After each modification, use `cat` to show the updated content of the file.
         IMPORTANT: Never use pass statements in your code. Always provide a meaningful implementation.
         Use best practices for Python development, including proper error handling, docstrings, snake_case, comments, and PEP8 style.
-        IMPORTANT: Only create 1 file in the code directory and 1 file in the tests directory if possible.
         Use `sed` for making specific modifications to existing files:
             sed -i 's/old_text/new_text/g' filename.py
         """
@@ -598,10 +593,9 @@ class NemoAgent:
 
         Original task: {self.task}
 
-        Provide specific and least amount of code changes to improve the score. Use the appropriate commands (cat, sed) to modify the file.
+        Provide specific and least amount of code changes to improve the score.
         CRITICAL: The correct import statements for local files looks like `from {self.project_name}.module_name import method_name`.
         Always provide complete, fully functional code when creating or editing files.
-        Save all changes to disk after each step using the `cat` or `sed` commands.
         IMPORTANT: Never use pass statements in your code. Always provide a meaningful implementation.
         Use best practices for Python development, including proper error handling, docstrings, snake_case, comments, and PEP8 style.
         Only use pytest for testing.
@@ -652,8 +646,8 @@ class NemoAgent:
 
         Original task: {self.task}
 
-        Provide specific code changes or additional tests to improve the coverage.
-        Analyze the code and tests files to provide better changes using the `ls` and `cat` commands.
+        Provide the minimum amount of code changes or additional tests to improve the coverage.
+        Analyze the code and tests files to provide better changes using the `cd`, `ls`, or `cat` commands.
         Save all changes to disk after each step using the `cat` or `sed` commands.
         IMPORTANT: Never use pass statements in your code. Always provide a meaningful implementation.
         Use best practices for Python development, including proper error handling, docstrings, snake_case, comments, and PEP8 style.
