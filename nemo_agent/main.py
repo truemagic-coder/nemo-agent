@@ -30,24 +30,22 @@ You are Nemo Agent, an expert Python developer. Follow these rules strictly:
 14. Always break up tests into multiple test functions for better organization.
 15. Always mock external services, database calls, and APIs.
 16. Always include module docstrings at the beginning of Python files, unless they are test files or __init__.py files.
-17. You use your tools like `ls` and `cat` to verify and understand the contents of files and directories.
-18. Always use `cat` with heredoc syntax to create files. Example:
+17. You use your tools like `cd`, `ls`, and `cat` to verify and understand the contents of files and directories.
+18. Always use `cat` with heredoc syntax to create and modify files. Example:
    cat > filename.py << EOL
    # File content here
    EOL
-19. Use `sed` for making specific modifications to existing files:
-   sed -i 's/old_text/new_text/g' filename.py
-20. Use the following format for creating files:
+19. Use the following format for creating files:
             For code files: cat > {project_name}/filename.py << EOL
             For test files: cat > tests/test_filename.py << EOL
-21. Never use `poetry shell` only use `poetry run` for running commands.
-22. The test command is `poetry run pytest --cov={project_name} --cov-config=.coveragerc`
-23. IMPORTANT: Write to disk after EVERY step using `cat` or `sed`, no matter how small.
-24. You write code to the code directory on disk: {project_name}
-25. You write tests to the tests directory on disk: tests
-26. CRITICAL: Implement the task solution in 1 file in the code directory and 1 file in the tests directory if possible.
-27. IMPORTANT: Never use pass statements in your code. Always provide a meaningful implementation.
-28. IMPORTANT: Only create 1 file in the code directory and 1 file in the tests directory if possible.
+20. Never use `poetry shell` only use `poetry run` for running commands.
+21. The test command is `poetry run pytest --cov={project_name} --cov-config=.coveragerc`
+22. IMPORTANT: Write to disk after EVERY step using `cat` or `sed`, no matter how small.
+23. You write code to the code directory on disk: {project_name}
+24. You write tests to the tests directory on disk: tests
+25. CRITICAL: Implement the task solution in 1 file in the code directory and 1 file in the tests directory if possible.
+26. IMPORTANT: Never use pass statements in your code. Always provide a meaningful implementation.
+27. IMPORTANT: Only create 1 file in the code directory and 1 file in the tests directory if possible.
 
 Current working directory: {pwd}
 """
@@ -221,7 +219,7 @@ class NemoAgent:
         prompt = f"""
         Create a comprehensive test plan and implementation for the task: {self.task}.
         You must follow these rules strictly:
-            1. CRITICAL: Write to disk after EVERY step using `cat` or `sed`, no matter how small.
+            1. CRITICAL: Write to disk after EVERY step using `cat`, no matter how small.
             2. CRITICAL: The correct import statements for local files looks like `from {self.project_name}.module_name import method_name`.
             3. You write code to the code directory on disk: {self.project_name}
             4. You write tests to the tests directory on disk: tests
@@ -242,6 +240,10 @@ class NemoAgent:
                 # Filename: tests/test_your_module.py
                 # Test file content here
                 ```
+            14. Always use `cat` with heredoc syntax to create and modify files. Example:
+                cat > filename.py << EOL
+                # File content here
+                EOL
         Working directory: {self.pwd}
         """
 
@@ -409,14 +411,17 @@ class NemoAgent:
     def improve_implementation(self):
         prompt = f"""
         The current implementation does not fully address the original task: {self.task}
-        CRITICAL: The correct import statements for local files looks like `from {self.project_name}.module_name import method_name`.
-        Please provide improvements to the existing code and tests to better meet the requirements.
-        Do not create new files, only modify the existing ones.
-        Only use pytest for testing.
-        IMPORTANT: Never use pass statements in your code. Always provide a meaningful implementation.
-        Use best practices for Python development, including proper error handling, docstrings, snake_case, comments, and PEP8 style.
-        Use `sed` for making specific modifications to existing files:
-            sed -i 's/old_text/new_text/g' filename.py
+        Follow these rules strictly:
+        1. CRITICAL: The correct import statements for local files looks like `from {self.project_name}.module_name import method_name`.
+        2. Please provide improvements to the existing code and tests to better meet the requirements.
+        3. Do not create new files, only modify the existing ones.
+        4. Only use pytest for testing.
+        5. IMPORTANT: Never use pass statements in your code. Always provide a meaningful implementation.
+        6. Use best practices for Python development, including proper error handling, docstrings, snake_case, comments, and PEP8 style.
+        7. Always use `cat` with heredoc syntax to create and modify files. Example:
+            cat > filename.py << EOL
+            # File content here
+            EOL
         """
         improvements = self.get_response(prompt)
         print("Executing improvements:")
@@ -594,14 +599,17 @@ class NemoAgent:
         Original task: {self.task}
 
         Provide specific and least amount of code changes to improve the score.
-        CRITICAL: The correct import statements for local files looks like `from {self.project_name}.module_name import method_name`.
-        Always provide complete, fully functional code when creating or editing files.
-        IMPORTANT: Never use pass statements in your code. Always provide a meaningful implementation.
-        Use best practices for Python development, including proper error handling, docstrings, snake_case, comments, and PEP8 style.
-        Only use pytest for testing.
-        Never add any additional files. Only modify the existing file.
-        Use `sed` for making specific modifications to existing files:
-            sed -i 's/old_text/new_text/g' filename.py
+        Follow these rules strictly:
+        1. CRITICAL: The correct import statements for local files looks like `from {self.project_name}.module_name import method_name`.
+        2. Always provide complete, fully functional code when creating or editing files.
+        3. IMPORTANT: Never use pass statements in your code. Always provide a meaningful implementation.
+        4. Use best practices for Python development, including proper error handling, docstrings, snake_case, comments, and PEP8 style.
+        5. Only use pytest for testing.
+        7. Never add any additional files. Only modify the existing file.
+        8. Always use `cat` with heredoc syntax to create and modify files. Example:
+            cat > filename.py << EOL
+            # File content here
+            EOL
         """
         proposed_improvements = self.get_response(prompt)
 
@@ -647,15 +655,17 @@ class NemoAgent:
         Original task: {self.task}
 
         Provide the minimum amount of code changes or additional tests to improve the coverage.
-        Analyze the code and tests files to provide better changes using the `cd`, `ls`, or `cat` commands.
-        Save all changes to disk after each step using the `cat` or `sed` commands.
-        IMPORTANT: Never use pass statements in your code. Always provide a meaningful implementation.
-        Use best practices for Python development, including proper error handling, docstrings, snake_case, comments, and PEP8 style.
-        Only use pytest for testing.
-        Use `sed` for making specific modifications to existing files:
-            sed -i 's/old_text/new_text/g' filename.py
-        REMEMBER: Do not modify any files outside the 'tests' directory.
-        Never add any additional files. Only modify the existing files.
+        Follow these rules strictly:
+        1. Analyze the code and tests files to provide better changes using the `cd`, `ls`, or `cat` commands.
+        2. IMPORTANT: Never use pass statements in your code. Always provide a meaningful implementation.
+        3. Use best practices for Python development, including proper error handling, docstrings, snake_case, comments, and PEP8 style.
+        4. Only use pytest for testing.
+        5. Always use `cat` with heredoc syntax to create and modify files. Example:
+            cat > filename.py << EOL
+            # File content here
+            EOL
+        6. REMEMBER: Do not modify any files outside the 'tests' directory.
+        7. Never add any additional files. Only modify the existing files.
         """
         proposed_improvements = self.get_response(prompt)
 
