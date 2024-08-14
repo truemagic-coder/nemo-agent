@@ -627,11 +627,13 @@ class NemoAgent:
             # Run pylint again to check if the score improved
             new_score = self.clean_code_with_pylint(file_path)
 
-            if new_score < 6.0:
-                print(f"Score is still below 6.0. Attempting another improvement (attempt {
-                      attempt + 1})...")
-                self.improve_code(file_path, new_score, pylint_output,
-                                  is_test_file, is_init_file, attempt + 1)
+        if new_score < 6.0:
+            print(
+                f"Score is still below 6.0. "
+                f"Attempting another improvement (attempt {attempt + 1})..."
+            )
+            self.improve_code(file_path, new_score, pylint_output,
+                              is_test_file, is_init_file, attempt + 1)
         else:
             print(
                 "Proposed improvements do not align with the original task. Skipping this improvement attempt.")
@@ -682,8 +684,10 @@ class NemoAgent:
 
             new_coverage = self.get_current_coverage()
             if new_coverage < 80:
-                print(f"Coverage is still below 80% (current: {
-                      new_coverage}%). Attempting another improvement (attempt {attempt + 1})...")
+                print(
+                    f"Coverage is still below 80% (current: {new_coverage}%). "
+                    f"Attempting another improvement (attempt {attempt + 1})..."
+                )
                 self.improve_test_coverage(attempt + 1, new_coverage)
             else:
                 print(f"Coverage goal achieved. Current coverage: {
