@@ -36,7 +36,7 @@ You are Nemo Agent, an expert Python developer. Follow these rules strictly:
    # File content here
    EOL
 20. Use `sed` for making specific modifications to existing files:
-sed -i 's/old_text/new_text/g' filename.py
+    sed -i 's/old_text/new_text/g' filename.py
 21. Use the following format for creating files:
             For code files: cat > {project_name}/filename.py << EOL
             For test files: cat > tests/test_filename.py << EOL
@@ -59,7 +59,13 @@ class CustomSystemTools:
     def execute_command(self, command: str) -> str:
         try:
             result = subprocess.run(
-                command, shell=True, check=True, capture_output=True, text=True, cwd=self.pwd)
+                command,
+                shell=True,
+                check=True,
+                capture_output=True,
+                text=True,
+                cwd=self.pwd,
+            )
             return result.stdout
         except subprocess.CalledProcessError as e:
             return f"Error executing command: {e.stderr}"
@@ -81,7 +87,7 @@ class NemoAgent:
             project_name=self.project_name,
             os_name=os.uname().sysname,
             default_shell=os.environ.get("SHELL", "/bin/sh"),
-            home_dir=os.path.expanduser("~")
+            home_dir=os.path.expanduser("~"),
         )
         custom_system_tools = CustomSystemTools()
         return Assistant(
@@ -114,11 +120,10 @@ class NemoAgent:
         project_name = response.strip().lower().replace(" ", "_")
 
         # Ensure the project name has exactly two segments
-        segments = project_name.split('_')
+        segments = project_name.split("_")
         if len(segments) != 2:
             # If not, generate a default name
-            project_name = (f"task_{segments[0]}" if segments
-                            else "default_project")
+            project_name = f"task_{segments[0]}" if segments else "default_project"
 
         # Add a random 3-digit number as the third segment
         random_number = random.randint(100, 999)
@@ -132,7 +137,7 @@ class NemoAgent:
             project_name=self.project_name,
             os_name=os.uname().sysname,
             default_shell=os.environ.get("SHELL", "/bin/sh"),
-            home_dir=os.path.expanduser("~")
+            home_dir=os.path.expanduser("~"),
         )
         self.assistant.system_prompt = updated_prompt
 
@@ -145,18 +150,20 @@ class NemoAgent:
         if not tests_passed or coverage < 80:
             self.improve_test_coverage(initial_coverage=coverage)
 
-        print("Task completed. Please review the output and make any necessary manual adjustments.")
+        print(
+            "Task completed. Please review the output and make any necessary manual adjustments."
+        )
 
     def ensure_poetry_installed(self):
         try:
-            subprocess.run(["poetry", "--version"], check=True,
-                           capture_output=True, text=True)
+            subprocess.run(
+                ["poetry", "--version"], check=True, capture_output=True, text=True
+            )
             print("Poetry is already installed.")
         except FileNotFoundError:
             print("Poetry is not installed. Installing Poetry...")
             try:
-                subprocess.run(
-                    "pip install poetry", shell=True, check=True)
+                subprocess.run("pip install poetry", shell=True, check=True)
                 print("Poetry installed successfully.")
             except subprocess.CalledProcessError as e:
                 print(f"Error installing Poetry: {e}")
@@ -170,7 +177,7 @@ class NemoAgent:
                 capture_output=True,
                 text=True,
                 cwd=self.pwd,
-                check=True
+                check=True,
             )
             print(result.stdout)
 
@@ -187,27 +194,44 @@ class NemoAgent:
             print(os.listdir(self.pwd))
 
             subprocess.run(
-                (f"sed -i '/^\\[tool.poetry\\]/a packages = [{{include = \""
-                 f"{self.project_name}\"}}]' pyproject.toml"),
+                (
+                    f"sed -i '/^\\[tool.poetry\\]/a packages = [{{include = \""
+                    f"{self.project_name}\"}}]' pyproject.toml"
+                ),
                 shell=True,
                 check=True,
-                cwd=self.pwd
+                cwd=self.pwd,
             )
             print("Added packages variable to pyproject.toml")
 
             # Add [tool.pytest.ini-options] section to pyproject.toml
             subprocess.run(
-                "sed -i '$a\\[tool.pytest.ini-options]\\npython_paths = [\".\", \"tests\"]' pyproject.toml",
+                'sed -i \'$a\\[tool.pytest.ini-options]\\npython_paths = [".", "tests"]\' pyproject.toml',
                 shell=True,
                 check=True,
-                cwd=self.pwd
+                cwd=self.pwd,
             )
             print("Added [tool.pytest.ini-options] section to pyproject.toml")
 
             try:
-                subprocess.run(["poetry", "add", "--dev", "pytest@*", "pylint@*", "autopep8@*",
-                                "pytest-cov@*", "pytest-flask@*", "httpx@*"], check=True, cwd=self.pwd)
-                print("Added pytest, pylint, autopep8, pytest-cov, pytest-flask, and httpx as development dependencies with latest versions.")
+                subprocess.run(
+                    [
+                        "poetry",
+                        "add",
+                        "--dev",
+                        "pytest@*",
+                        "pylint@*",
+                        "autopep8@*",
+                        "pytest-cov@*",
+                        "pytest-flask@*",
+                        "httpx@*",
+                    ],
+                    check=True,
+                    cwd=self.pwd,
+                )
+                print(
+                    "Added pytest, pylint, autopep8, pytest-cov, pytest-flask, and httpx as development dependencies with latest versions."
+                )
             except subprocess.CalledProcessError as e:
                 print(f"Error adding development dependencies: {e}")
 
@@ -263,17 +287,23 @@ class NemoAgent:
                 full_path = os.path.join(self.pwd, file_path)
                 try:
                     os.makedirs(os.path.dirname(full_path), exist_ok=True)
-                    with open(full_path, 'w') as f:
+                    with open(full_path, "w") as f:
                         f.write(content)
                     print(f"File written successfully: {full_path}")
                 except Exception as e:
                     print(f"Error writing file {full_path}: {str(e)}")
 
             # Verify that files were created
-            code_files = [f for f in os.listdir(os.path.join(
-                self.pwd, self.project_name)) if f.endswith('.py') and f != '__init__.py']
-            test_files = [f for f in os.listdir(os.path.join(
-                self.pwd, 'tests')) if f.startswith('test_') and f.endswith('.py')]
+            code_files = [
+                f
+                for f in os.listdir(os.path.join(self.pwd, self.project_name))
+                if f.endswith(".py") and f != "__init__.py"
+            ]
+            test_files = [
+                f
+                for f in os.listdir(os.path.join(self.pwd, "tests"))
+                if f.startswith("test_") and f.endswith(".py")
+            ]
             print(f"Code files created: {code_files}")
             print(f"Test files created: {test_files}")
 
@@ -281,12 +311,12 @@ class NemoAgent:
                 print("Files successfully created.")
                 break
             else:
-                print(
-                    f"Attempt {attempt + 1} failed to create files. Retrying...")
+                print(f"Attempt {attempt + 1} failed to create files. Retrying...")
 
             if not code_files or not test_files:
                 print(
-                    "Failed to create files after multiple attempts. Creating placeholder files.")
+                    "Failed to create files after multiple attempts. Creating placeholder files."
+                )
                 self.create_placeholder_files()
 
         # Validate that the implementation matches the original task
@@ -295,7 +325,8 @@ class NemoAgent:
 
         # Update pyproject.toml if necessary
         pyproject_update = self.get_response(
-            f"Provide necessary updates to pyproject.toml for the task: {self.task}, including adding any required dependencies if they're not already there. Also, add a [tool.pytest.ini_options] section with pythonpath = '.' if it doesn't exist.")
+            f"Provide necessary updates to pyproject.toml for the task: {self.task}, including adding any required dependencies if they're not already there. Also, add a [tool.pytest.ini_options] section with pythonpath = '.' if it doesn't exist."
+        )
         self.validate_and_execute_commands(pyproject_update)
 
         # Run poetry update to ensure all dependencies are installed
@@ -309,8 +340,7 @@ class NemoAgent:
         print("Creating placeholder files...")
 
         # Create a placeholder file in the code directory
-        code_file_path = os.path.join(
-            self.pwd, self.project_name, "placeholder.py")
+        code_file_path = os.path.join(self.pwd, self.project_name, "placeholder.py")
         code_content = f"""
     # This is a placeholder file for the {self.project_name} project.
     # Replace this content with your actual implementation.
@@ -340,7 +370,7 @@ class NemoAgent:
 
     def write_file(self, file_path, content):
         os.makedirs(os.path.dirname(file_path), exist_ok=True)
-        with open(file_path, 'w') as f:
+        with open(file_path, "w") as f:
             f.write(content)
         print(f"File written successfully: {file_path}")
 
@@ -373,22 +403,22 @@ class NemoAgent:
         current_file = None
         current_content = []
 
-        for line in response.split('\n'):
+        for line in response.split("\n"):
             if line.startswith("FILE: "):
                 if current_file:
-                    file_contents[current_file] = '\n'.join(current_content)
+                    file_contents[current_file] = "\n".join(current_content)
                     current_content = []
                 current_file = line[6:].strip()
             elif line == "END_OF_FILE":
                 if current_file:
-                    file_contents[current_file] = '\n'.join(current_content)
+                    file_contents[current_file] = "\n".join(current_content)
                     current_file = None
                     current_content = []
             elif current_file and line != "CONTENT:":
                 current_content.append(line)
 
         if current_file:
-            file_contents[current_file] = '\n'.join(current_content)
+            file_contents[current_file] = "\n".join(current_content)
 
         return file_contents
 
@@ -412,29 +442,61 @@ class NemoAgent:
             return False
 
     def improve_implementation(self):
+        initial_pylint_score = self.get_pylint_score()
+        initial_test_results, initial_coverage = self.run_tests()
+
         prompt = f"""
-        The current implementation does not fully address the original task: {self.task}
+        The current implementation needs improvement for the task: {self.task}
+        Current pylint score: {initial_pylint_score:.2f}/10
+        Current test status: {'Passing' if initial_test_results else 'Failing'}
+        Current test coverage: {initial_coverage}%
+
+        Please provide improvements to the existing code and tests to:
+        1. Improve or maintain the pylint score (target: at least 6.0/10)
+        2. Ensure all tests are passing
+        3. Improve or maintain the test coverage (target: at least 80%)
+
         Follow these rules strictly:
         1. CRITICAL: The correct import statements for local files looks like `from {self.project_name}.module_name import method_name`.
-        2. Please provide improvements to the existing code and tests to better meet the requirements.
-        3. Do not create new files, only modify the existing ones.
-        4. Only use pytest for testing.
-        5. IMPORTANT: Never use pass statements in your code. Always provide a meaningful implementation.
-        6. Use best practices for Python development, including proper error handling, docstrings, snake_case, comments, and PEP8 style.
-        7. Use `sed` for making specific modifications to existing files:
+        2. Do not create new files, only modify the existing ones.
+        3. Only use pytest for testing.
+        4. IMPORTANT: Never use pass statements in your code. Always provide a meaningful implementation.
+        5. Use best practices for Python development, including proper error handling, docstrings, snake_case, comments, and PEP8 style.
+        6. Use `sed` for making specific modifications to existing files:
             sed -i 's/old_text/new_text/g' filename.py
         """
         improvements = self.get_response(prompt)
-        print("Executing improvements:")
+        print("Proposed improvements:")
         print(improvements)
-        self.validate_and_execute_commands(improvements)
 
-        # Validate the improved implementation
-        if not self.validate_implementation():
-            print(
-                "Implementation still does not fully meet the requirements. Manual review may be necessary.")
+        if self.validate_against_task(improvements):
+            print("Executing validated improvements:")
+            self.validate_and_execute_commands(improvements)
+
+            # Check if the improvements actually improved both code quality and test coverage
+            new_pylint_score = self.get_pylint_score()
+            new_test_results, new_coverage = self.run_tests()
+
+            if (
+                new_pylint_score >= initial_pylint_score
+                and new_test_results
+                and new_coverage >= initial_coverage
+            ):
+                print("Improvements successfully applied.")
+                if self.validate_implementation():
+                    print("Improved implementation validated successfully.")
+                    return
+                else:
+                    print("Implementation still does not fully meet the requirements.")
+            else:
+                print(
+                    "Improvements did not enhance both code quality and test coverage."
+                )
         else:
-            print("Improved implementation validated successfully.")
+            print("Proposed improvements do not align with the original task.")
+
+        print("Attempting to recover implementation...")
+        self.recover_implementation()
 
     def validate_implementation(self):
         prompt = f"""
@@ -457,16 +519,58 @@ class NemoAgent:
         Please provide a corrected implementation that focuses specifically on this task.
         Do not default to a generic or "Hello World" example.
         Follow all the rules and guidelines provided in the original implementation prompt.
+        Ensure that the implementation maintains or improves the current pylint score and test coverage.
         """
         corrected_solution = self.get_response(prompt)
         print("Executing corrected solution:")
         print(corrected_solution)
-        self.validate_and_execute_commands(corrected_solution)
 
-        # Validate the corrected implementation
-        if not self.validate_implementation():
-            print(
-                "Failed to recover implementation. Manual intervention may be required.")
+        if self.validate_against_task(corrected_solution):
+            initial_pylint_score = self.get_pylint_score()
+            initial_test_results, initial_coverage = self.run_tests()
+
+            self.validate_and_execute_commands(corrected_solution)
+
+            new_pylint_score = self.get_pylint_score()
+            new_test_results, new_coverage = self.run_tests()
+
+            if (
+                new_pylint_score >= initial_pylint_score
+                and new_test_results
+                and new_coverage >= initial_coverage
+            ):
+                print("Recovered implementation applied successfully.")
+                if self.validate_implementation():
+                    print("Recovered implementation validated successfully.")
+                    return
+                else:
+                    print(
+                        "Recovered implementation still does not fully meet the requirements."
+                    )
+            else:
+                print(
+                    "Recovered implementation did not maintain or improve code quality and test coverage."
+                )
+        else:
+            print("Recovered implementation does not align with the original task.")
+
+        print("Failed to recover implementation. Manual intervention may be required.")
+
+    def get_pylint_score(self):
+        try:
+            result = subprocess.run(
+                ["poetry", "run", "pylint", self.project_name],
+                capture_output=True,
+                text=True,
+                cwd=self.pwd,
+            )
+            score_match = re.search(
+                r"Your code has been rated at (\d+\.\d+)/10", result.stdout
+            )
+            return float(score_match.group(1)) if score_match else 0.0
+        except subprocess.CalledProcessError as e:
+            print(f"Error running pylint: {e}")
+            return 0.0
 
     def get_response(self, prompt, assistant=None):
         if assistant is None:
@@ -477,16 +581,16 @@ class NemoAgent:
             if isinstance(response, str):
                 full_response += response
                 current_line += response
-            elif isinstance(response, dict) and 'content' in response:
-                content = response['content']
+            elif isinstance(response, dict) and "content" in response:
+                content = response["content"]
                 full_response += content
                 current_line += content
             else:
                 full_response += str(response)
                 print(str(response))
 
-            if '\n' in current_line:
-                lines = current_line.split('\n')
+            if "\n" in current_line:
+                lines = current_line.split("\n")
                 for line in lines[:-1]:
                     print(line)
                 current_line = lines[-1]
@@ -500,41 +604,47 @@ class NemoAgent:
         try:
             # Check if the file is empty
             if os.path.getsize(file_path) == 0:
-                print(
-                    f"File {file_path} is empty. Skipping autopep8 and pylint check.")
+                print(f"File {file_path} is empty. Skipping autopep8 and pylint check.")
                 return 10.0  # Assume perfect score for empty files
 
             # Run autopep8 to automatically fix style issues
             print(f"Running autopep8 on {file_path}")
-            autopep8_cmd = ["poetry", "run", "autopep8",
-                            "--in-place", "--aggressive", "--aggressive", file_path]
-            subprocess.run(autopep8_cmd, check=True,
-                           capture_output=True, text=True, cwd=self.pwd)
+            autopep8_cmd = [
+                "poetry",
+                "run",
+                "autopep8",
+                "--in-place",
+                "--aggressive",
+                "--aggressive",
+                file_path,
+            ]
+            subprocess.run(
+                autopep8_cmd, check=True, capture_output=True, text=True, cwd=self.pwd
+            )
             print("autopep8 completed successfully.")
 
             # Determine if the file is a special file
             file_name = os.path.basename(file_path)
-            is_test_file = 'test' in file_name.lower()
-            is_init_file = file_name == '__init__.py'
+            is_test_file = "test" in file_name.lower()
+            is_init_file = file_name == "__init__.py"
 
             # Adjust pylint command for different file types
             pylint_cmd = ["poetry", "run", "pylint"]
             if is_test_file:
                 pylint_cmd.extend(
-                    ["--disable=missing-function-docstring,missing-module-docstring"])
+                    ["--disable=missing-function-docstring,missing-module-docstring"]
+                )
             elif is_init_file:
                 pylint_cmd.extend(["--disable=missing-module-docstring"])
             pylint_cmd.append(file_path)
 
             result = subprocess.run(
-                pylint_cmd,
-                capture_output=True,
-                text=True,
-                cwd=self.pwd
+                pylint_cmd, capture_output=True, text=True, cwd=self.pwd
             )
             output = result.stdout + result.stderr
             score_match = re.search(
-                r'Your code has been rated at (\d+\.\d+)/10', output)
+                r"Your code has been rated at (\d+\.\d+)/10", output
+            )
             score = float(score_match.group(1)) if score_match else 0.0
 
             print(output)
@@ -542,10 +652,13 @@ class NemoAgent:
 
             if score < 6.0:
                 print("Score is below 6.0. Attempting to improve the code...")
-                self.improve_code(file_path, score, output,
-                                  is_test_file, is_init_file)
+                self.improve_code(file_path, score, output, is_test_file, is_init_file)
 
-            elif 'missing-module-docstring' in output and not is_test_file and not is_init_file:
+            elif (
+                "missing-module-docstring" in output
+                and not is_test_file
+                and not is_init_file
+            ):
                 self.add_module_docstring(file_path)
                 # Re-run pylint after adding the docstring
                 return self.clean_code_with_pylint(file_path)
@@ -559,36 +672,44 @@ class NemoAgent:
             return 0.0
 
     def add_module_docstring(self, file_path):
-        with open(file_path, 'r') as file:
+        with open(file_path, "r") as file:
             content = file.read()
 
         if not content.startswith('"""'):
-            module_name = os.path.basename(file_path).replace('.py', '')
-            docstring = (f'"""\nThis module contains the implementation for '
-                         f'{module_name}.\n"""\n\n')
-            with open(file_path, 'w') as file:
+            module_name = os.path.basename(file_path).replace(".py", "")
+            docstring = (
+                f'"""\nThis module contains the implementation for '
+                f'{module_name}.\n"""\n\n'
+            )
+            with open(file_path, "w") as file:
                 file.write(docstring + content)
             print(f"Added module docstring to {file_path}")
 
-    def improve_code(self, file_path, current_score, pylint_output, is_test_file, is_init_file, attempt=1):
+    def improve_code(
+        self,
+        file_path,
+        current_score,
+        pylint_output,
+        is_test_file,
+        is_init_file,
+        attempt=1,
+    ):
         if current_score >= 6.0:
             print(f"Code quality is already good. Score: {current_score}/10")
-            return
+            return current_score
 
         if attempt > self.MAX_IMPROVEMENT_ATTEMPTS:
-            print(f"Maximum improvement attempts reached for "
-                  f"{file_path}. Moving on.")
-            return
+            print(f"Maximum improvement attempts reached for {
+                  file_path}. Moving on.")
+            return current_score
 
-        # Run autopep8 again before manual improvements
-        print(f"Running autopep8 on {file_path}")
-        autopep8_cmd = ["poetry", "run", "autopep8",
-                        "--in-place", "--aggressive", "--aggressive", file_path]
-        subprocess.run(autopep8_cmd, check=True,
-                       capture_output=True, text=True, cwd=self.pwd)
-        print("autopep8 completed successfully.")
-
-        file_type = "test file" if is_test_file else "init file" if is_init_file else "regular Python file"
+        file_type = (
+            "test file"
+            if is_test_file
+            else "init file"
+            if is_init_file
+            else "regular Python file"
+        )
         prompt = f"""
         The current pylint score for {file_path} (a {file_type}) is {current_score:.2f}/10. Please analyze the pylint output and suggest improvements to reach a score of at least 6/10.
 
@@ -611,40 +732,55 @@ class NemoAgent:
         """
         proposed_improvements = self.get_response(prompt)
 
-        # Validate the proposed improvements against the original task
         if self.validate_against_task(proposed_improvements):
             print("Executing validated improvements:")
             self.validate_and_execute_commands(proposed_improvements)
 
-            # Run pylint again to check if the score improved
             new_score = self.clean_code_with_pylint(file_path)
 
-        if new_score < 6.0:
-            print(
-                f"Score is still below 6.0. "
-                f"Attempting another improvement (attempt {attempt + 1})..."
-            )
-            self.improve_code(file_path, new_score, pylint_output,
-                              is_test_file, is_init_file, attempt + 1)
+            if new_score < 6.0:
+                print(f"Score is still below 6.0. Attempting another improvement (attempt {
+                      attempt + 1})...")
+                return self.improve_code(
+                    file_path,
+                    new_score,
+                    pylint_output,
+                    is_test_file,
+                    is_init_file,
+                    attempt + 1,
+                )
+            else:
+                print(f"Code quality improved. New score: {new_score}/10")
+                return new_score
         else:
             print(
-                "Proposed improvements do not align with the original task. Skipping this improvement attempt.")
+                "Proposed improvements do not align with the original task. Skipping this improvement attempt."
+            )
             if attempt < self.MAX_IMPROVEMENT_ATTEMPTS:
-                print(
-                    f"Attempting another improvement (attempt {attempt + 1})...")
-                self.improve_code(file_path, current_score, pylint_output,
-                                  is_test_file, is_init_file, attempt + 1)
+                print(f"Attempting another improvement (attempt {attempt + 1})...")
+                return self.improve_code(
+                    file_path,
+                    current_score,
+                    pylint_output,
+                    is_test_file,
+                    is_init_file,
+                    attempt + 1,
+                )
+            else:
+                return current_score
 
     def improve_test_coverage(self, attempt=1, initial_coverage=0):
         if attempt > self.MAX_IMPROVEMENT_ATTEMPTS:
             print("Maximum test coverage improvement attempts reached. Moving on.")
-            return
+            return initial_coverage
 
-        coverage_result = initial_coverage if attempt == 1 else self.get_current_coverage()
+        coverage_result = (
+            initial_coverage if attempt == 1 else self.get_current_coverage()
+        )
         if coverage_result >= 80:
-            print(f"Test coverage is already at {coverage_result}%. "
-                  f"No improvements needed.")
-            return
+            print(f"Test coverage is already at {
+                  coverage_result}%. No improvements needed.")
+            return coverage_result
 
         prompt = f"""
         The current test coverage for the project is {coverage_result}%, which is below the target of 80%.
@@ -664,39 +800,44 @@ class NemoAgent:
         """
         proposed_improvements = self.get_response(prompt)
 
-        # Validate the proposed improvements against the original task
         if self.validate_against_task(proposed_improvements):
             print("Executing validated improvements:")
             self.validate_and_execute_commands(proposed_improvements)
 
             new_coverage = self.get_current_coverage()
             if new_coverage < 80:
-                print(
-                    f"Coverage is still below 80% (current: {new_coverage}%). "
-                    f"Attempting another improvement (attempt {attempt + 1})..."
-                )
-                self.improve_test_coverage(attempt + 1, new_coverage)
+                print(f"Coverage is still below 80% (current: {
+                      new_coverage}%). Attempting another improvement (attempt {attempt + 1})...")
+                return self.improve_test_coverage(attempt + 1, new_coverage)
             else:
-                print(f"Coverage goal achieved. Current coverage: {new_coverage}%")
+                print(f"Coverage goal achieved. Current coverage: {
+                      new_coverage}%")
+                return new_coverage
         else:
             print(
-                "Proposed improvements do not align with the original task. Skipping this improvement attempt.")
+                "Proposed improvements do not align with the original task. Skipping this improvement attempt."
+            )
             if attempt < self.MAX_IMPROVEMENT_ATTEMPTS:
-                print(
-                    f"Attempting another improvement (attempt {attempt + 1})...")
-                self.improve_test_coverage(attempt + 1, coverage_result)
+                print(f"Attempting another improvement (attempt {attempt + 1})...")
+                return self.improve_test_coverage(attempt + 1, coverage_result)
+            else:
+                return coverage_result
 
     def get_current_coverage(self):
         try:
             result = subprocess.run(
-                ["poetry", "run", "pytest", "--cov=" + self.project_name,
-                 "--cov-config=.coveragerc"],
+                [
+                    "poetry",
+                    "run",
+                    "pytest",
+                    "--cov=" + self.project_name,
+                    "--cov-config=.coveragerc",
+                ],
                 capture_output=True,
                 text=True,
-                cwd=self.pwd
+                cwd=self.pwd,
             )
-            coverage_match = re.search(
-                r'TOTAL\s+\d+\s+\d+\s+(\d+)%', result.stdout)
+            coverage_match = re.search(r"TOTAL\s+\d+\s+\d+\s+(\d+)%", result.stdout)
             if coverage_match:
                 return int(coverage_match.group(1))
             else:
@@ -713,7 +854,7 @@ class NemoAgent:
 
     def extract_commands(self, response):
         commands = []
-        lines = response.split('\n')
+        lines = response.split("\n")
         in_bash_block = False
         current_command = ""
         in_heredoc = False
@@ -721,23 +862,23 @@ class NemoAgent:
 
         for line in lines:
             stripped_line = line.strip()
-            if stripped_line.startswith('```bash'):
+            if stripped_line.startswith("```bash"):
                 in_bash_block = True
-            elif stripped_line.startswith('```') and in_bash_block:
+            elif stripped_line.startswith("```") and in_bash_block:
                 in_bash_block = False
                 if current_command:
                     commands.append(current_command.strip())
                     current_command = ""
             elif in_bash_block:
-                if not in_heredoc and '<<' in stripped_line:
-                    heredoc_delimiter = stripped_line.split('<<', 1)[1].strip()
+                if not in_heredoc and "<<" in stripped_line:
+                    heredoc_delimiter = stripped_line.split("<<", 1)[1].strip()
                     in_heredoc = True
-                    current_command += line + '\n'
+                    current_command += line + "\n"
                 elif in_heredoc and stripped_line == heredoc_delimiter:
                     in_heredoc = False
-                    current_command += line + '\n'
+                    current_command += line + "\n"
                 elif in_heredoc:
-                    current_command += line + '\n'
+                    current_command += line + "\n"
                 else:
                     if current_command:
                         commands.append(current_command.strip())
@@ -750,32 +891,48 @@ class NemoAgent:
 
     def auto_correct_command(self, command):
         corrections = {
-            'pyhton': 'python',
-            'pirnt': 'print',
-            'impotr': 'import',
-            'defien': 'define',
-            'fucntion': 'function',
-            'retrun': 'return',
-            'flase': 'false',
-            'ture': 'true',
-            'elif': 'elif',
-            'esle': 'else',
-            'fixtrue': 'fixture',
-            '@pytest.fixtrue': '@pytest.fixture',
+            "pyhton": "python",
+            "pirnt": "print",
+            "impotr": "import",
+            "defien": "define",
+            "fucntion": "function",
+            "retrun": "return",
+            "flase": "false",
+            "ture": "true",
+            "elif": "elif",
+            "esle": "else",
+            "fixtrue": "fixture",
+            "@pytest.fixtrue": "@pytest.fixture",
         }
         for typo, correction in corrections.items():
             command = command.replace(typo, correction)
         return command
 
     def validate_command(self, command):
-        allowed_commands = ['cat', 'ls', 'cd', 'mkdir', 'sed',
-                            'poetry', 'echo', 'python3', 'source', 'pytest', 'python']
+        allowed_commands = [
+            "cat",
+            "ls",
+            "cd",
+            "mkdir",
+            "sed",
+            "poetry",
+            "echo",
+            "python3",
+            "source",
+            "pytest",
+            "python",
+        ]
         command_parts = command.strip().split()
         if command_parts:
             if command_parts[0] in allowed_commands:
-                if command_parts[0] == 'poetry' and 'run' in command_parts and 'streamlit' in command_parts:
+                if (
+                    command_parts[0] == "poetry"
+                    and "run" in command_parts
+                    and "streamlit" in command_parts
+                ):
                     print(
-                        "Warning: Running Streamlit apps is not allowed. Skipping this command.")
+                        "Warning: Running Streamlit apps is not allowed. Skipping this command."
+                    )
                     return False
                 return True
         return False
@@ -792,11 +949,31 @@ class NemoAgent:
             try:
                 corrected_command = self.auto_correct_command(command)
 
-                if corrected_command.strip().startswith('cat >'):
+                if corrected_command.strip().startswith("cat >"):
                     self.execute_heredoc_command(corrected_command)
-                elif corrected_command.startswith(('ls', 'cd', 'mkdir', 'poetry', 'sed', 'cat', 'echo', 'python3', 'source', 'pytest', 'python')):
+                elif corrected_command.startswith(
+                    (
+                        "ls",
+                        "cd",
+                        "mkdir",
+                        "poetry",
+                        "sed",
+                        "cat",
+                        "echo",
+                        "python3",
+                        "source",
+                        "pytest",
+                        "python",
+                    )
+                ):
                     result = subprocess.run(
-                        corrected_command, shell=True, check=True, capture_output=True, text=True, cwd=self.pwd)
+                        corrected_command,
+                        shell=True,
+                        check=True,
+                        capture_output=True,
+                        text=True,
+                        cwd=self.pwd,
+                    )
                     print(result.stdout)
                 else:
                     print(f"Command not allowed: {corrected_command}")
@@ -813,7 +990,7 @@ class NemoAgent:
 
     def verify_file_contents(self, file_path):
         try:
-            with open(file_path, 'r') as f:
+            with open(file_path, "r") as f:
                 content = f.read()
             print(f"Contents of {file_path}:")
             print(content)
@@ -823,23 +1000,22 @@ class NemoAgent:
 
     def execute_heredoc_command(self, command):
         try:
-            file_path, content = command.split('<<', 1)
-            file_path = file_path.split('>', 1)[1].strip()
+            file_path, content = command.split("<<", 1)
+            file_path = file_path.split(">", 1)[1].strip()
             content = content.strip()
 
             # Remove the EOL markers
-            content_lines = content.split('\n')
+            content_lines = content.split("\n")
             if len(content_lines) >= 2 and content_lines[0] == content_lines[-1]:
-                content = '\n'.join(content_lines[1:-1])
+                content = "\n".join(content_lines[1:-1])
 
             # Ensure the file path is within the project directory
-            if file_path.startswith('tests/'):
+            if file_path.startswith("tests/"):
                 full_file_path = os.path.join(self.pwd, file_path)
-            elif file_path.startswith(f'{self.project_name}/'):
+            elif file_path.startswith(f"{self.project_name}/"):
                 full_file_path = os.path.join(self.pwd, file_path)
             else:
-                full_file_path = os.path.join(
-                    self.pwd, self.project_name, file_path)
+                full_file_path = os.path.join(self.pwd, self.project_name, file_path)
 
             # Ensure the directory exists
             os.makedirs(os.path.dirname(full_file_path), exist_ok=True)
@@ -848,14 +1024,14 @@ class NemoAgent:
 
             # Write the content to the file using a context manager
             print(f"Attempting to write file: {full_file_path}")
-            with open(full_file_path, 'w') as f:
+            with open(full_file_path, "w") as f:
                 f.write(content)
                 f.flush()
                 os.fsync(f.fileno())
             if os.path.exists(full_file_path):
                 print(f"File created successfully: {full_file_path}")
                 print("File contents:")
-                with open(full_file_path, 'r') as f:
+                with open(full_file_path, "r") as f:
                     print(f.read())
             else:
                 print(f"Failed to create file: {full_file_path}")
@@ -868,9 +1044,16 @@ class NemoAgent:
                 self.verify_file_contents(full_file_path)
 
                 # Clean the code if it's a Python file and not a test file
-                if full_file_path.endswith('.py') and 'test_' not in os.path.basename(full_file_path) and 'tests/' not in full_file_path:
+                if (
+                    full_file_path.endswith(".py")
+                    and "test_" not in os.path.basename(full_file_path)
+                    and "tests/" not in full_file_path
+                ):
                     self.clean_code_with_pylint(full_file_path)
-                elif 'test_' in os.path.basename(full_file_path) or 'tests/' in full_file_path:
+                elif (
+                    "test_" in os.path.basename(full_file_path)
+                    or "tests/" in full_file_path
+                ):
                     print(f"Skipping pylint for test file: {full_file_path}")
             else:
                 print(f"Failed to create/update file: {full_file_path}")
@@ -880,8 +1063,7 @@ class NemoAgent:
             print(f"Command that caused the error: {command}")
 
     def extract_python_code(self, command):
-        match = re.search(r'cat > .*\.py << EOL\n(.*?)\nEOL',
-                          command, re.DOTALL)
+        match = re.search(r"cat > .*\.py << EOL\n(.*?)\nEOL", command, re.DOTALL)
         if match:
             return match.group(1)
         return ""
@@ -912,9 +1094,9 @@ class NemoAgent:
         try:
             # Run pylint only on non-test Python files in the project
             for root, dirs, files in os.walk(self.pwd):
-                if 'tests' not in root:  # Skip the tests directory
+                if "tests" not in root:  # Skip the tests directory
                     for file in files:
-                        if file.endswith('.py'):
+                        if file.endswith(".py"):
                             file_path = os.path.join(root, file)
                             self.clean_code_with_pylint(file_path)
 
@@ -938,46 +1120,60 @@ class NemoAgent:
         except ImportError:
         def main
     """
-            with open(os.path.join(self.pwd, '.coveragerc'), 'w') as f:
+            with open(os.path.join(self.pwd, ".coveragerc"), "w") as f:
                 f.write(coveragerc_content)
 
             # Run pytest with coverage
             result = subprocess.run(
-                ["poetry", "run", "pytest", "--cov=" + self.project_name, "--cov-config=.coveragerc",
-                 "--cov-report=term-missing"],
+                [
+                    "poetry",
+                    "run",
+                    "pytest",
+                    "--cov=" + self.project_name,
+                    "--cov-config=.coveragerc",
+                    "--cov-report=term-missing",
+                ],
                 capture_output=True,
                 text=True,
-                cwd=self.pwd
+                cwd=self.pwd,
             )
             print("Pytest output:")
             print(result.stdout)
             print(result.stderr)
 
             # Check if coverage report was generated
-            if "No data to report." in result.stdout or "No data to report." in result.stderr:
+            if (
+                "No data to report." in result.stdout
+                or "No data to report." in result.stderr
+            ):
                 print(
-                    "No coverage data was collected. Ensure that the tests are running correctly.")
+                    "No coverage data was collected. Ensure that the tests are running correctly."
+                )
                 return False, 0
 
             # Extract coverage percentage
-            coverage_match = re.search(
-                r'TOTAL\s+\d+\s+\d+\s+(\d+)%', result.stdout)
-            coverage_percentage = int(
-                coverage_match.group(1)) if coverage_match else 0
+            coverage_match = re.search(r"TOTAL\s+\d+\s+\d+\s+(\d+)%", result.stdout)
+            coverage_percentage = int(coverage_match.group(1)) if coverage_match else 0
 
             # Check if all tests passed
-            tests_passed = "failed" not in result.stdout.lower() and result.returncode == 0
+            tests_passed = (
+                "failed" not in result.stdout.lower() and result.returncode == 0
+            )
 
             if tests_passed and coverage_percentage >= 80:
-                print(f"All tests passed successfully and coverage is "
-                      f"{coverage_percentage}%.")
+                print(
+                    f"All tests passed successfully and coverage is "
+                    f"{coverage_percentage}%."
+                )
                 return True, coverage_percentage
             else:
                 if not tests_passed:
                     print("Some tests failed. Please review the test output above.")
                 if coverage_percentage < 80:
-                    print(f"Coverage is below 80%. "
-                          f"Current coverage: {coverage_percentage}%")
+                    print(
+                        f"Coverage is below 80%. "
+                        f"Current coverage: {coverage_percentage}%"
+                    )
                 return False, coverage_percentage
 
         except subprocess.CalledProcessError as e:
@@ -989,8 +1185,10 @@ class NemoAgent:
 
 
 @click.command()
-@click.argument('task', required=False)
-@click.option('--model', default="mistral-nemo", help="The model to use for the Ollama LLM")
+@click.argument("task", required=False)
+@click.option(
+    "--model", default="mistral-nemo", help="The model to use for the Ollama LLM"
+)
 def cli(task: str = None, model: str = "mistral-nemo"):
     """
     Run Nemo Agent tasks to create Python projects using Poetry and Pytest.
