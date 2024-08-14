@@ -42,9 +42,11 @@ You are Nemo Agent, an expert Python developer. Follow these rules strictly:
             For test files: cat > tests/test_filename.py << EOL
 21. Never use `poetry shell` only use `poetry run` for running commands.
 22. The test command is `poetry run pytest --cov={project_name} --cov-config=.coveragerc`
-23. IMPORTANT: Write to disk after EVERY step, no matter how small.
+23. IMPORTANT: Write to disk after EVERY step using `cat` or `sed`, no matter how small.
 24. You write code to the code directory on disk: {project_name}
 25. You write tests to the tests directory on disk: tests
+26. CRITICAL: Implement the task solution in 1 file in the code directory and 1 file in the tests directory if possible.
+27. IMPORTANT: Never use pass statements in your code. Always provide a meaningful implementation.
 
 Current working directory: {pwd}
 """
@@ -135,6 +137,7 @@ class NemoAgent:
         self.assistant.system_prompt = updated_prompt
 
     def run_task(self):
+        print(f"Current working directory: {os.getcwd()}")
         self.ensure_poetry_installed()
         self.create_project_with_poetry()
         self.implement_solution()
@@ -174,6 +177,8 @@ class NemoAgent:
             self.pwd = os.path.join(self.pwd, self.project_name)
             os.chdir(self.pwd)
 
+            print(f"Project directory created: {self.pwd}")
+
             # Update the system prompt with the new working directory
             self.update_system_prompt()
 
@@ -211,32 +216,63 @@ class NemoAgent:
         except Exception as e:
             print(f"Error: {str(e)}")
 
-    def implement_solution(self):
+    def implement_solution(self, max_attempts=3):
         prompt = f"""
-        Create a comprehensive test plan and implementation for the task: {self.task}
-        You follow these rules strictly:
+        Create a comprehensive test plan and implementation for the task: {self.task} and save it to disk.
+        You must follow these rules strictly:
             1. Use TDD (Test-Driven Development) with red-green refactor to guide your implementation.
-            2. CRITICAL: Write to disk after EVERY step, no matter how small.
+            2. CRITICAL: Write to disk after EVERY step using `cat` or `sed`, no matter how small.
             3. CRITICAL: The correct import statements for local files looks like `from {self.project_name}.module_name import method_name`.
             4. You write code to the code directory on disk: {self.project_name}
             5. You write tests to the tests directory on disk: tests
             6. The test command is `poetry run pytest --cov={self.project_name} --cov-config=.coveragerc`
             7. Use pytest for testing and coverage and use pylint for code quality, style, and linting.
-            8. Use OOP, DRY, KISS, SOLID, SRP, and other best practices.
-            11. IMPORTANT: Follow PEP8 style guide and use type hints when appropriate.
-            12. CRITICAL: When writing algorithms, write the code to maximize time complexity and space complexity.
+            8. Use best practices for Python development, including proper error handling, docstrings, comments, and PEP8 style.
+            9. IMPORTANT: Follow PEP8 style guide and use type hints when appropriate.
+            10. CRITICAL: When writing algorithms, write the code to maximize time complexity and space complexity.
+            11. CRITICAL: Implement the task solution in 1 file in the code directory and 1 file in the tests directory if possible.
+            12. Always use `cat` with heredoc syntax to create files. Example:
+            cat > filename.py << EOL
+            # File content here
+            EOL
+            13. Use `sed` for making specific modifications to existing files:
+            sed -i 's/old_text/new_text/g' filename.py
+            14. Use the following format for creating files:
+                        For code files: cat > {self.project_name}/filename.py << EOL
+                        For test files: cat > tests/test_filename.py << EOL
+            15. IMPORTANT: After creating each file, use the `ls` command to verify its existence in the correct directory.
+            16. IMPORTANT: Never use pass statements in your code. Always provide a meaningful implementation.
 
         Working directory: {self.pwd}
         """
 
-        solution = self.get_response(prompt)
-        print("Executing solution:")
-        print(solution)
-        self.validate_and_execute_commands(solution)
+        for attempt in range(max_attempts):
+            solution = self.get_response(prompt)
+            print(f"Attempt {attempt + 1}: Executing solution:")
+            print(solution)
+            self.validate_and_execute_commands(solution)
+
+            # Verify that files were created
+            code_files = os.listdir(os.path.join(self.pwd, self.project_name))
+            test_files = os.listdir(os.path.join(self.pwd, 'tests'))
+            print(f"Code files created: {code_files}")
+            print(f"Test files created: {test_files}")
+
+            if code_files and test_files:
+                print("Files successfully created.")
+                break
+            else:
+                print(
+                    f"Attempt {attempt + 1} failed to create files. Retrying...")
+
+            if not code_files or not test_files:
+                print(
+                    "Failed to create files after multiple attempts. Creating placeholder files.")
+                self.create_placeholder_files()
 
         # Validate that the implementation matches the original task
         if not self.validate_implementation():
-            self.recover_implementation()
+            self.improve_implementation()
 
         # Update pyproject.toml if necessary
         pyproject_update = self.get_response(
@@ -249,6 +285,49 @@ class NemoAgent:
             print("Poetry update completed successfully.")
         except subprocess.CalledProcessError as e:
             print(f"Error updating dependencies: {e}")
+
+    def validate_against_task(self, proposed_changes):
+        prompt = f"""
+        Review the following proposed changes and confirm if they correctly address the original task: {self.task}
+
+        Proposed changes:
+        {proposed_changes}
+
+        If the proposed changes are correct and fully address the task, respond with 'VALID'.
+        If the proposed changes do not match the task or are incomplete, respond with 'INVALID'.
+        Provide a brief explanation for your decision.
+        """
+        response = self.get_response(prompt)
+        if "VALID" in response.upper():
+            print("Proposed changes validated successfully against the original task.")
+            return True
+        else:
+            print("Proposed changes do not fully address the original task.")
+            return False
+
+    def improve_implementation(self):
+        prompt = f"""
+        The current implementation does not fully address the original task: {self.task}
+        Please provide improvements to the existing code and tests to better meet the requirements.
+        Do not create new files, only modify the existing ones.
+        Follow all the rules and guidelines provided in the original implementation prompt.
+        Use `cat` to show the current content of each file before modifying it.
+        Use `sed` commands to make specific modifications to the existing files.
+        After each modification, use `cat` to show the updated content of the file.
+        IMPORTANT: Never use pass statements in your code. Always provide a meaningful implementation.
+        Use best practices for Python development, including proper error handling, docstrings, comments, and PEP8 style.
+        """
+        improvements = self.get_response(prompt)
+        print("Executing improvements:")
+        print(improvements)
+        self.validate_and_execute_commands(improvements)
+
+        # Validate the improved implementation
+        if not self.validate_implementation():
+            print(
+                "Implementation still does not fully meet the requirements. Manual review may be necessary.")
+        else:
+            print("Improved implementation validated successfully.")
 
     def validate_implementation(self):
         prompt = f"""
@@ -411,19 +490,37 @@ class NemoAgent:
         Pylint output:
         {pylint_output}
 
-        Provide specific code changes to improve the score. Use the appropriate commands (cat, sed) to modify the file.
-        Focus on addressing the issues reported by pylint, such as unused imports, code style issues, etc.
-        """
-        improvements = self.get_response(prompt)
-        self.validate_and_execute_commands(improvements)
+        Original task: {self.task}
 
-        # Run pylint again to check if the score improved
-        new_score = self.clean_code_with_pylint(file_path)
-        if new_score < 6.0:
-            print(f"Score is still below 6.0. Attempting another improvement "
-                  f"(attempt {attempt + 1})...")
-            self.improve_code(file_path, new_score, pylint_output,
-                              is_test_file, is_init_file, attempt + 1)
+        Provide specific and least amount of code changes to improve the score. Use the appropriate commands (cat, sed) to modify the file.
+        Always provide complete, fully functional code when creating or editing files.
+        Save all changes to disk after each step using the `cat` or `sed` commands.
+        IMPORTANT: Never use pass statements in your code. Always provide a meaningful implementation.
+        Use best practices for Python development, including proper error handling, docstrings, comments, and PEP8 style.
+        """
+        proposed_improvements = self.get_response(prompt)
+
+        # Validate the proposed improvements against the original task
+        if self.validate_against_task(proposed_improvements):
+            print("Executing validated improvements:")
+            self.validate_and_execute_commands(proposed_improvements)
+
+            # Run pylint again to check if the score improved
+            new_score = self.clean_code_with_pylint(file_path)
+
+            if new_score < 6.0:
+                print(f"Score is still below 6.0. Attempting another improvement (attempt {
+                      attempt + 1})...")
+                self.improve_code(file_path, new_score, pylint_output,
+                                  is_test_file, is_init_file, attempt + 1)
+        else:
+            print(
+                "Proposed improvements do not align with the original task. Skipping this improvement attempt.")
+            if attempt < self.MAX_IMPROVEMENT_ATTEMPTS:
+                print(
+                    f"Attempting another improvement (attempt {attempt + 1})...")
+                self.improve_code(file_path, current_score, pylint_output,
+                                  is_test_file, is_init_file, attempt + 1)
 
     def improve_test_coverage(self, attempt=1, initial_coverage=0):
         if attempt > self.MAX_IMPROVEMENT_ATTEMPTS:
@@ -440,16 +537,13 @@ class NemoAgent:
         The current test coverage for the project is {coverage_result}%, which is below the target of 80%.
         Please analyze the coverage report and suggest improvements to increase the coverage to at least 80%.
 
-        Focus on:
-        1. Adding new test cases for untested functions or methods.
-        2. Testing edge cases and boundary conditions.
-        3. Ensuring all code paths in the main implementation are tested.
-        4. Use pytest fixtures where appropriate to set up test data.
-        5. Use parametrized tests to cover multiple scenarios efficiently.
-        6. Use OOP, DRY, KISS, SOLID, SRP, and other best practices to write clean and efficient tests.
-        7. IMPORTANT: Follow PEP8 style guide and use type hints when appropriate.
+        Original task: {self.task}
 
         Provide specific code changes or additional tests to improve the coverage.
+        Analyze the code and tests files to provide better changes using the `ls` and `cat` commands.
+        Save all changes to disk after each step using the `cat` or `sed` commands.
+        IMPORTANT: Never use pass statements in your code. Always provide a meaningful implementation.
+        Use best practices for Python development, including proper error handling, docstrings, comments, and PEP8 style.
         Use the following format for creating or modifying test files:
         cat > tests/test_filename.py << EOL
         # Test file content
@@ -461,16 +555,28 @@ class NemoAgent:
 
         REMEMBER: Do not modify any files outside the 'tests' directory.
         """
-        improvements = self.get_response(prompt)
-        self.validate_and_execute_commands(improvements)
+        proposed_improvements = self.get_response(prompt)
 
-        new_coverage = self.get_current_coverage()
-        if new_coverage < 80:
-            print(f"Coverage is still below 80% (current: {new_coverage}%). "
-                  f"Attempting another improvement (attempt {attempt + 1})...")
-            self.improve_test_coverage(attempt + 1, new_coverage)
+        # Validate the proposed improvements against the original task
+        if self.validate_against_task(proposed_improvements):
+            print("Executing validated improvements:")
+            self.validate_and_execute_commands(proposed_improvements)
+
+            new_coverage = self.get_current_coverage()
+            if new_coverage < 80:
+                print(f"Coverage is still below 80% (current: {
+                      new_coverage}%). Attempting another improvement (attempt {attempt + 1})...")
+                self.improve_test_coverage(attempt + 1, new_coverage)
+            else:
+                print(f"Coverage goal achieved. Current coverage: {
+                      new_coverage}%")
         else:
-            print(f"Coverage goal achieved. Current coverage: {new_coverage}%")
+            print(
+                "Proposed improvements do not align with the original task. Skipping this improvement attempt.")
+            if attempt < self.MAX_IMPROVEMENT_ATTEMPTS:
+                print(
+                    f"Attempting another improvement (attempt {attempt + 1})...")
+                self.improve_test_coverage(attempt + 1, coverage_result)
 
     def get_current_coverage(self):
         try:
@@ -633,10 +739,18 @@ class NemoAgent:
             print(f"Writing file to: {full_file_path}")
 
             # Write the content to the file using a context manager
+            print(f"Attempting to write file: {full_file_path}")
             with open(full_file_path, 'w') as f:
                 f.write(content)
                 f.flush()
                 os.fsync(f.fileno())
+            if os.path.exists(full_file_path):
+                print(f"File created successfully: {full_file_path}")
+                print("File contents:")
+                with open(full_file_path, 'r') as f:
+                    print(f.read())
+            else:
+                print(f"Failed to create file: {full_file_path}")
 
             # Add a small delay to ensure the file is fully written
             time.sleep(0.1)
