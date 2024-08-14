@@ -657,10 +657,9 @@ class NemoAgent:
         1. Analyze the code and tests files to provide better changes using the `cd`, `ls`, or `cat` commands.
         2. IMPORTANT: Never use pass statements in your code. Always provide a meaningful implementation.
         3. Only use pytest for testing.
-        4. REMEMBER: Do not modify any files outside the 'tests' directory.
-        5. Never add any additional files. Only modify the existing files.
-        6. Make the minimum changes necessary to improve the coverage.
-        7. Use `sed` for making specific modifications to existing files:
+        4. CRITICAL: Only modify the existing tests files. Do not create new files.
+        5. Make the minimum changes necessary in test files to improve the coverage.
+        6. Use `sed` for making specific modifications to existing test files:
             sed -i 's/old_text/new_text/g' filename.py
         """
         proposed_improvements = self.get_response(prompt)
