@@ -15,6 +15,7 @@ Nemo Agent is a blazing fast local AI Agent for Python coding
 * Implements best practices in Python development automatically
 * Writes and runs passing tests up to 80%+ test coverage using `pytest`
 * Automatically fixes and styles code using `pylint`
+* Utilizes `git` to commit and track changes
 
 ## Ability
 Solves a leetcode hard with a set time complexity constraint in less than a minute with full tests on an RTX 4090
@@ -52,6 +53,7 @@ Nemo Agent leverages `mistral-nemo`, `Ollama`, `phidata`, `poetry`, `pytest`, `p
 
 ## Requirements
 * Python 3.9 or higher
+* Git
 * Ollama running `mistral-nemo`
 * Linux with a minimum of an RTX 4070
 

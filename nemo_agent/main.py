@@ -131,6 +131,72 @@ class NemoAgent:
 
         return project_name
 
+    def initialize_git_repo(self):
+        try:
+            subprocess.run(["git", "init"], check=True, cwd=self.pwd)
+            print("Git repository initialized.")
+
+            # Set Git user name and email
+            subprocess.run(
+                ["git", "config", "user.name", "Nemo Agent"], check=True, cwd=self.pwd
+            )
+            subprocess.run(
+                ["git", "config", "user.email", "hello@nemo-agent.com"],
+                check=True,
+                cwd=self.pwd,
+            )
+            print("Git user name and email configured.")
+
+            # Create .gitignore file
+            gitignore_content = """
+            __pycache__/
+            *.py[cod]
+            .pytest_cache/
+            .coverage
+            """
+            with open(os.path.join(self.pwd, ".gitignore"), "w") as f:
+                f.write(gitignore_content)
+
+            # Initial commit
+            subprocess.run(["git", "add", "."], check=True, cwd=self.pwd)
+            subprocess.run(
+                ["git", "commit", "-m", "Initial commit"], check=True, cwd=self.pwd
+            )
+            print("Initial commit created.")
+        except subprocess.CalledProcessError as e:
+            print(f"Error initializing Git repository: {e}")
+
+    def commit_changes(self, message):
+        try:
+            subprocess.run(["git", "add", "."], check=True, cwd=self.pwd)
+            subprocess.run(["git", "commit", "-m", message], check=True, cwd=self.pwd)
+            print(f"Changes committed: {message}")
+        except subprocess.CalledProcessError as e:
+            print(f"Error committing changes: {e}")
+
+    def get_git_diff(self):
+        try:
+            result = subprocess.run(
+                ["git", "diff", "HEAD"], capture_output=True, text=True, cwd=self.pwd
+            )
+            return result.stdout
+        except subprocess.CalledProcessError as e:
+            print(f"Error getting Git diff: {e}")
+            return ""
+
+    def get_git_log(self, num_commits=5):
+        try:
+            result = subprocess.run(
+                ["git", "log", f"-{num_commits}", "--oneline"],
+                capture_output=True,
+                text=True,
+                cwd=self.pwd,
+            )
+            return result.stdout
+        except subprocess.CalledProcessError as e:
+            print(f"Error getting Git log: {e}")
+            return ""
+
     def update_system_prompt(self):
         updated_prompt = SYSTEM_PROMPT.format(
             pwd=self.pwd,
@@ -172,6 +238,8 @@ class NemoAgent:
     def create_project_with_poetry(self):
         print(f"Creating new Poetry project: {self.project_name}")
         try:
+            self.initialize_git_repo()
+
             result = subprocess.run(
                 ["poetry", "new", self.project_name],
                 capture_output=True,
@@ -309,6 +377,7 @@ class NemoAgent:
 
             if code_files and test_files:
                 print("Files successfully created.")
+                self.commit_changes("Implement initial solution")
                 break
             else:
                 print(f"Attempt {attempt + 1} failed to create files. Retrying...")
@@ -445,11 +514,20 @@ class NemoAgent:
         initial_pylint_score = self.get_pylint_score()
         initial_test_results, initial_coverage = self.run_tests()
 
+        git_diff = self.get_git_diff()
+        git_log = self.get_git_log()
+
         prompt = f"""
         The current implementation needs improvement for the task: {self.task}
         Current pylint score: {initial_pylint_score:.2f}/10
         Current test status: {'Passing' if initial_test_results else 'Failing'}
         Current test coverage: {initial_coverage}%
+
+        Git diff:
+        {git_diff}
+
+        Git log:
+        {git_log}
 
         Please provide improvements to the existing code and tests to:
         1. Improve or maintain the pylint score (target: at least 6.0/10)
@@ -464,6 +542,7 @@ class NemoAgent:
         5. Use best practices for Python development, including proper error handling, docstrings, snake_case, comments, and PEP8 style.
         6. Use `sed` for making specific modifications to existing files:
             sed -i 's/old_text/new_text/g' filename.py
+        7. Consider the Git history when suggesting changes to avoid reverting recent improvements or duplicating work.
         """
         improvements = self.get_response(prompt)
         print("Proposed improvements:")
@@ -483,6 +562,7 @@ class NemoAgent:
                 and new_coverage >= initial_coverage
             ):
                 print("Improvements successfully applied.")
+                self.commit_changes("Improve implementation")
                 if self.validate_implementation():
                     print("Improved implementation validated successfully.")
                     return
@@ -540,6 +620,7 @@ class NemoAgent:
                 and new_coverage >= initial_coverage
             ):
                 print("Recovered implementation applied successfully.")
+                self.commit_changes("Recover implementation")
                 if self.validate_implementation():
                     print("Recovered implementation validated successfully.")
                     return
@@ -703,6 +784,9 @@ class NemoAgent:
                   file_path}. Moving on.")
             return current_score
 
+        git_diff = self.get_git_diff()
+        git_log = self.get_git_log()
+
         file_type = (
             "test file"
             if is_test_file
@@ -718,6 +802,12 @@ class NemoAgent:
         Pylint output:
         {pylint_output}
 
+         Git diff:
+        {git_diff}
+
+        Git log:
+        {git_log}
+        
         Original task: {self.task}
 
         Provide specific code changes to improve the score.
@@ -725,10 +815,10 @@ class NemoAgent:
         1. CRITICAL: The correct import statements for local files looks like `from {self.project_name}.module_name import method_name`.
         2. IMPORTANT: Never use pass statements in your code. Always provide a meaningful implementation.
         3. Only use pytest for testing.
-        4. Make the minimum changes necessary to improve the score.
-        5. Never add any additional files. Only modify the existing file.
-        6. Use `sed` for making specific modifications to existing files:
+        4. Never add any additional files. Only modify the existing file.
+        5. Use `sed` for making specific modifications to existing files:
             sed -i 's/old_text/new_text/g' filename.py
+        6. Consider the Git history when suggesting changes to avoid reverting recent improvements.
         """
         proposed_improvements = self.get_response(prompt)
 
@@ -751,6 +841,9 @@ class NemoAgent:
                 )
             else:
                 print(f"Code quality improved. New score: {new_score}/10")
+                self.commit_changes(
+                    f"Improve code quality for {file_path} to {new_score}/10"
+                )
                 return new_score
         else:
             print(
@@ -782,9 +875,18 @@ class NemoAgent:
                   coverage_result}%. No improvements needed.")
             return coverage_result
 
+        git_diff = self.get_git_diff()
+        git_log = self.get_git_log()
+
         prompt = f"""
         The current test coverage for the project is {coverage_result}%, which is below the target of 80%.
         Please analyze the coverage report and suggest improvements to increase the coverage to at least 80%.
+
+        Git diff:
+        {git_diff}
+
+        Git log:
+        {git_log}
 
         Original task: {self.task}
 
@@ -797,6 +899,7 @@ class NemoAgent:
         5. Make the minimum changes necessary in test files to improve the coverage.
         6. Use `sed` for making specific modifications to existing test files:
             sed -i 's/old_text/new_text/g' filename.py
+        7. Consider the Git history when suggesting changes to avoid reverting recent improvements or duplicating tests.
         """
         proposed_improvements = self.get_response(prompt)
 
@@ -812,6 +915,7 @@ class NemoAgent:
             else:
                 print(f"Coverage goal achieved. Current coverage: {
                       new_coverage}%")
+                self.commit_changes(f"Improve test coverage to {new_coverage}%")
                 return new_coverage
         else:
             print(
@@ -921,6 +1025,7 @@ class NemoAgent:
             "source",
             "pytest",
             "python",
+            "git",
         ]
         command_parts = command.strip().split()
         if command_parts:
@@ -964,6 +1069,7 @@ class NemoAgent:
                         "source",
                         "pytest",
                         "python",
+                        "git",
                     )
                 ):
                     result = subprocess.run(
