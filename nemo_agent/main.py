@@ -49,6 +49,7 @@ You are Nemo Agent, an expert Python developer. Follow these rules strictly:
 27. Use the following format for creating files:
             For code files: cat > {project_name}/main.py << EOL
             For test files: cat > tests/test_main.py << EOL
+28. IMPORTANT: Never remove existing poetry dependencies. Only add new ones if necessary.
 Current working directory: {pwd}
 """
 
@@ -215,7 +216,6 @@ class NemoAgent:
         print(f"Current working directory: {os.getcwd()}")
         self.ensure_poetry_installed()
         self.create_project_with_poetry()
-        self.check_and_fix_pyproject_toml()
         self.implement_solution()
         tests_passed, coverage = self.run_tests()
         if not tests_passed or coverage < 80:
@@ -898,25 +898,6 @@ class NemoAgent:
                 return self.improve_test_coverage(attempt + 1, coverage_result)
             else:
                 return coverage_result
-
-    def check_and_fix_pyproject_toml(self):
-        pyproject_path = os.path.join(self.pwd, "pyproject.toml")
-        if not os.path.exists(pyproject_path):
-            print("pyproject.toml not found. Creating a new one.")
-            self.create_default_pyproject_toml()
-        else:
-            with open(pyproject_path, 'r') as f:
-                content = f.read()
-
-            # Check for common issues and fix them
-            fixed_content = self.fix_pyproject_toml_issues(content)
-
-            if fixed_content != content:
-                with open(pyproject_path, 'w') as f:
-                    f.write(fixed_content)
-                print("Fixed issues in pyproject.toml")
-            else:
-                print("No issues found in pyproject.toml")
 
     def validate_file_content(self, file_path, content):
         if file_path.endswith('.py'):
