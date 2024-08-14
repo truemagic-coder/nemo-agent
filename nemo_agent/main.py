@@ -783,8 +783,9 @@ class NemoAgent:
             new_score = self.clean_code_with_pylint(file_path)
 
             if new_score < 6.0:
-                print(f"Score is still below 6.0. Attempting another improvement (attempt {
-                      attempt + 1})...")
+                # fmt: off
+                print(f"Score is still below 6.0. Attempting another improvement (attempt {attempt + 1})...")
+                # fmt: on
                 return self.improve_code(
                     file_path,
                     new_score,
