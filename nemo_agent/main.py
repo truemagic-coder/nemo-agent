@@ -314,18 +314,18 @@ class NemoAgent:
         prompt = f"""
         Create a comprehensive implementation for the task: {self.task}.
         You must follow these rules strictly:
-            1. IMPORTANT: only create one code file and one test file. Do not create any additional files.
+            1. CRITICAL: only create one code file called `main.py` in {self.project_name} and one test file called `test_main.py` in tests/. Do not create any additional files.
             2. Use the correct import statements: from {self.project_name}.module_name import method_name.
             3. Follow PEP8 style guide and use type hints when appropriate.
             4. Never use pass statements in your code. Always provide a meaningful implementation.
             5. Use parametrized tests to cover multiple scenarios efficiently.
-            6. Use the following format for specifying file content:
+            6. Use the following for specifying file content:
                 ```python
-                # Filename: {self.project_name}/your_module.py
+                # Filename: {self.project_name}/main.py
                 # File content here
                 ```
                 ```python
-                # Filename: tests/test_your_module.py
+                # Filename: tests/test_main.py
                 # Test file content here
                 ```
                 ```toml
