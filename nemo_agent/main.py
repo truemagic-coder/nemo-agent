@@ -241,8 +241,6 @@ class NemoAgent:
     def create_project_with_poetry(self):
         print(f"Creating new Poetry project: {self.project_name}")
         try:
-            self.initialize_git_repo()
-
             result = subprocess.run(
                 ["poetry", "new", self.project_name],
                 capture_output=True,
@@ -256,6 +254,9 @@ class NemoAgent:
             os.chdir(self.pwd)
 
             print(f"Project directory created: {self.pwd}")
+
+            # Initialize Git repository in the project directory
+            self.initialize_git_repo()
 
             # Update the system prompt with the new working directory
             self.update_system_prompt()
