@@ -420,12 +420,8 @@ class NemoAgent:
         IMPORTANT: Never use pass statements in your code. Always provide a meaningful implementation.
         Use best practices for Python development, including proper error handling, docstrings, snake_case, comments, and PEP8 style.
         IMPORTANT: Only create 1 file in the code directory and 1 file in the tests directory if possible.
-        Always use `cat` with heredoc syntax to create files. Example:
-        cat > filename.py << EOL
-        # File content here
-        EOL
         Use `sed` for making specific modifications to existing files:
-        sed -i 's/old_text/new_text/g' filename.py
+            sed -i 's/old_text/new_text/g' filename.py
         """
         improvements = self.get_response(prompt)
         print("Executing improvements:")
@@ -609,13 +605,9 @@ class NemoAgent:
         IMPORTANT: Never use pass statements in your code. Always provide a meaningful implementation.
         Use best practices for Python development, including proper error handling, docstrings, snake_case, comments, and PEP8 style.
         Only use pytest for testing.
-        IMPORTANT: Only create 1 file in the code directory and 1 file in the tests directory if possible.
-        Always use `cat` with heredoc syntax to create files. Example:
-        cat > filename.py << EOL
-        # File content here
-        EOL
+        Never add any additional files. Only modify the existing file.
         Use `sed` for making specific modifications to existing files:
-        sed -i 's/old_text/new_text/g' filename.py
+            sed -i 's/old_text/new_text/g' filename.py
         """
         proposed_improvements = self.get_response(prompt)
 
@@ -666,14 +658,10 @@ class NemoAgent:
         IMPORTANT: Never use pass statements in your code. Always provide a meaningful implementation.
         Use best practices for Python development, including proper error handling, docstrings, snake_case, comments, and PEP8 style.
         Only use pytest for testing.
-        IMPORTANT: Only create 1 file in the code directory and 1 file in the tests directory if possible.
-        Always use `cat` with heredoc syntax to create files. Example:
-        cat > filename.py << EOL
-        # File content here
-        EOL
         Use `sed` for making specific modifications to existing files:
-        sed -i 's/old_text/new_text/g' filename.py
+            sed -i 's/old_text/new_text/g' filename.py
         REMEMBER: Do not modify any files outside the 'tests' directory.
+        Never add any additional files. Only modify the existing files.
         """
         proposed_improvements = self.get_response(prompt)
 
