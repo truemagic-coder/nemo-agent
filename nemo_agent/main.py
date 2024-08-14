@@ -218,7 +218,7 @@ class NemoAgent:
 
     def implement_solution(self, max_attempts=3):
         prompt = f"""
-        Create a comprehensive test plan and implementation for the task: {self.task} and save it to disk.
+        Create a comprehensive test plan and implementation for the task: {self.task}.
         You must follow these rules strictly:
             1. Use TDD (Test-Driven Development) with red-green refactor to guide your implementation.
             2. CRITICAL: Write to disk after EVERY step using `cat` or `sed`, no matter how small.
@@ -230,18 +230,18 @@ class NemoAgent:
             8. Use best practices for Python development, including proper error handling, docstrings, comments, and PEP8 style.
             9. IMPORTANT: Follow PEP8 style guide and use type hints when appropriate.
             10. CRITICAL: When writing algorithms, write the code to maximize time complexity and space complexity.
-            11. CRITICAL: Implement the task solution in 1 file in the code directory and 1 file in the tests directory if possible.
-            12. Always use `cat` with heredoc syntax to create files. Example:
-            cat > filename.py << EOL
-            # File content here
-            EOL
-            13. Use `sed` for making specific modifications to existing files:
-            sed -i 's/old_text/new_text/g' filename.py
-            14. Use the following format for creating files:
-                        For code files: cat > {self.project_name}/filename.py << EOL
-                        For test files: cat > tests/test_filename.py << EOL
-            15. IMPORTANT: After creating each file, use the `ls` command to verify its existence in the correct directory.
-            16. IMPORTANT: Never use pass statements in your code. Always provide a meaningful implementation.
+            11. IMPORTANT: Never use pass statements in your code. Always provide a meaningful implementation.
+            12. Provide the full content of each file you want to create or modify.
+            13. Use the following format for specifying file content:
+                ```python
+                # Filename: {self.project_name}/your_module.py
+                # File content here
+                ```
+                ```python
+                # Filename: tests/test_your_module.py
+                # Test file content here
+                ```
+            14. Write out the full content of each file you want to create or modify.
 
         Working directory: {self.pwd}
         """
@@ -250,11 +250,26 @@ class NemoAgent:
             solution = self.get_response(prompt)
             print(f"Attempt {attempt + 1}: Executing solution:")
             print(solution)
-            self.validate_and_execute_commands(solution)
+
+            # Extract file contents from the solution
+            file_contents = self.extract_file_contents(solution)
+
+            # Write files using standard Python file operations
+            for file_path, content in file_contents.items():
+                full_path = os.path.join(self.pwd, file_path)
+                try:
+                    os.makedirs(os.path.dirname(full_path), exist_ok=True)
+                    with open(full_path, 'w') as f:
+                        f.write(content)
+                    print(f"File written successfully: {full_path}")
+                except Exception as e:
+                    print(f"Error writing file {full_path}: {str(e)}")
 
             # Verify that files were created
-            code_files = os.listdir(os.path.join(self.pwd, self.project_name))
-            test_files = os.listdir(os.path.join(self.pwd, 'tests'))
+            code_files = [f for f in os.listdir(os.path.join(
+                self.pwd, self.project_name)) if f.endswith('.py') and f != '__init__.py']
+            test_files = [f for f in os.listdir(os.path.join(
+                self.pwd, 'tests')) if f.startswith('test_') and f.endswith('.py')]
             print(f"Code files created: {code_files}")
             print(f"Test files created: {test_files}")
 
@@ -285,6 +300,30 @@ class NemoAgent:
             print("Poetry update completed successfully.")
         except subprocess.CalledProcessError as e:
             print(f"Error updating dependencies: {e}")
+
+    def extract_file_contents(self, solution):
+        file_contents = {}
+        lines = solution.split('\n')
+        current_file = None
+        current_content = []
+
+        for line in lines:
+            if line.startswith("# Filename:"):
+                if current_file:
+                    file_contents[current_file] = '\n'.join(current_content)
+                    current_content = []
+                current_file = line.split(":", 1)[1].strip()
+            elif line.startswith("```") and current_file:
+                file_contents[current_file] = '\n'.join(current_content)
+                current_file = None
+                current_content = []
+            elif current_file:
+                current_content.append(line)
+
+        if current_file:
+            file_contents[current_file] = '\n'.join(current_content)
+
+        return file_contents
 
     def validate_against_task(self, proposed_changes):
         prompt = f"""
