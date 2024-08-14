@@ -16,6 +16,9 @@ Nemo Agent is a blazing fast local AI Agent for Python coding
 * Writes and runs passing tests up to 80%+ test coverage using `pytest`
 * Automatically fixes and styles code using `pylint`
 
+## Coding Ability
+* Can solve a leetcode hard with a set time complexity constraint in less than a minute with full tests on an RTX 4090
+
 ## Installation
 You can install Nemo Agent using pip:
 
@@ -42,7 +45,6 @@ Generate a fizzbuzz program:
 ## Limitations
 
 * LLM codegen issues mean that web APIs like Flask and FastAPI are not supported.
-* LLM reasoning limits mean keeping tasks simple is required.
 
 ## How It Works
 
