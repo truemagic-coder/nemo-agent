@@ -1,10 +1,11 @@
 [tool.poetry]
 name = "nemo-agent"
-version = "0.4.1"
+version = "0.4.2"
 description = "Blazing fast local AI Agent for Python coding"
 authors = ["Bevan Hunt <bevan@bevanhunt.com>"]
 license = "MIT"
 readme = "README.md"
+homepage = "https://nemo-agent.com"
 repository = "https://github.com/truemagic-coder/nemo-agent"
 keywords = ["ai", "agent", "ai agent", "local ai agent", "python ai agent"]
 classifiers = [
