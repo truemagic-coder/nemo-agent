@@ -36,6 +36,9 @@ You are Nemo Agent, an expert Python developer. Follow these rules strictly:
     sed -i 's/old_text/new_text/g' filename.py
 21. IMPORTANT: Never remove existing poetry dependencies. Only add new ones if necessary.
 22. Follow PEP8 style guide.
+23. CRITICAL: Only create one code file ({project_name}/main.py) and one test file (tests/test_main.py).
+24. IMPORTANT: Do not add any code comments to the files.
+25. IMPORTANT: Always follow PEP8 style guide, follow best practices for Python, use descriptive variable names, and provide meaningful docstrings.
 
 When creating or modifying files, use the following format:
 <<<filename>>>
@@ -334,6 +337,9 @@ class NemoAgent:
                 # Test file content here
                 <<<end>>>
             7. The test command is `poetry run pytest --cov={self.project_name} --cov-config=.coveragerc`
+            8. CRITICAL: Only create one code file ({self.project_name}/main.py) and one test file (tests/test_main.py).
+            9. IMPORTANT: Do not add any code comments to the files.
+            10. IMPORTANT: Always follow PEP8 style guide, follow best practices for Python, use descriptive variable names, and provide meaningful docstrings.
         Working directory: {self.pwd}
         """
 
@@ -418,7 +424,6 @@ class NemoAgent:
         git_diff = self.get_git_diff()
         git_log = self.get_git_log()
 
-        # Add this new block to check and clean existing files
         print("Checking and cleaning existing files...")
         for root, dirs, files in os.walk(self.pwd):
             for file in files:
@@ -426,15 +431,13 @@ class NemoAgent:
                     file_path = os.path.join(root, file)
                     with open(file_path, 'r') as f:
                         content = f.read()
-                    cleaned_content = self.validate_file_content(
-                        file_path, content)
+                    cleaned_content = self.validate_file_content(file_path, content)
                     if cleaned_content != content:
                         with open(file_path, 'w') as f:
                             f.write(cleaned_content)
                         print(f"Cleaned up file: {file_path}")
         print("File check and clean completed.")
 
-        # Existing code continues from here
         prompt = f"""
         The current implementation needs improvement for the task: {self.task}
         Current pylint score: {initial_pylint_score:.2f}/10
@@ -451,6 +454,10 @@ class NemoAgent:
         1. Improve or maintain the pylint score (target: at least 6.0/10)
         2. Ensure all tests are passing
         3. Improve or maintain the test coverage (target: at least 80%)
+        4. CRITICAL: Handle list indices properly to avoid IndexError exceptions
+        5. Implement input validation and error handling for list operations
+        6. Handle empty lists and edge cases correctly
+        7. Use defensive programming techniques to prevent IndexError
 
         Follow these rules strictly:
         1. CRITICAL: The correct import statements for local files looks like `from {self.project_name}.module_name import method_name`.
@@ -458,42 +465,56 @@ class NemoAgent:
         3. Only use pytest for testing.
         4. IMPORTANT: Never use pass statements in your code. Always provide a meaningful implementation.
         5. Consider the Git history when suggesting changes to avoid reverting recent improvements or duplicating work.
-        6. Use parametrized tests to cover multiple scenarios efficiently
-        7. IMPORTANT: Do not create new files. Only modify the existing files.
+        6. Use parametrized tests to cover multiple scenarios efficiently, including edge cases for list operations.
+        7. IMPORTANT: Do not create new files. Only modify the existing ones.
         8. IMPORTANT: Only use `sed` for making specific modifications to existing files:
             sed -i 's/old_text/new_text/g' filename.py
         9. IMPORTANT: Never remove existing poetry dependencies. Only add new ones if necessary.
         10. The test command is `poetry run pytest --cov={self.project_name} --cov-config=.coveragerc`
+        11. IMPORTANT: Do not add any code comments to the files.
+        12. Implement proper error handling using try-except blocks for potential IndexError exceptions.
+        13. Use len() to check list lengths before accessing indices.
+        14. Implement input validation to ensure list indices are within valid ranges.
+        15. Always check if a list is empty before accessing its elements.
+        16. Use defensive programming techniques like .get() for dictionaries and list slicing for safe access.
+        17. Consider using the `itertools` module for efficient list operations.
+        18. IMPORTANT: Always follow PEP8 style guide, follow best practices for Python, use descriptive variable names, and provide meaningful docstrings.
         """
         improvements = self.get_response(prompt)
         print("Proposed improvements:")
         print(improvements)
 
         if self.validate_against_task(improvements):
-            print("Executing validated improvements:")
-            self.validate_and_execute_commands(improvements)
-
-            # Check if the improvements actually improved both code quality and test coverage
-            new_pylint_score = self.get_pylint_score()
-            new_test_results, new_coverage = self.run_tests()
-
-            if (
-                new_pylint_score >= initial_pylint_score
-                and new_test_results
-                and new_coverage >= initial_coverage
-            ):
-                print("Improvements successfully applied.")
-                self.commit_changes("Improve implementation")
-                return
-            else:
-                print(
-                    "Improvements did not enhance both code quality and test coverage."
-                )
+            print("Writing suggested improvements to files:")
+            file_contents = self.extract_file_contents_direct(improvements)
+            for file_path, content in file_contents.items():
+                full_path = os.path.join(self.pwd, file_path)
+                try:
+                    with open(full_path, 'w') as f:
+                        content = self.clean_markdown_artifacts(content)
+                        f.write(content)
+                    print(f"Updated file: {full_path}")
+                except Exception as e:
+                    print(f"Error writing to file {full_path}: {str(e)}")
+            
+            print("Improvements have been written to files. Please review the changes manually.")
         else:
-            print("Proposed improvements do not align with the original task.")
+            print("Proposed improvements do not align with the original task. No changes were made.")
 
-        print("Attempting to recover implementation...")
-        self.recover_implementation()
+    def validate_list_operations(self, file_path):
+        with open(file_path, 'r') as f:
+            content = f.read()
+        
+        # Check for common patterns that might lead to IndexError
+        if '[0]' in content and 'if' not in content.split('[0]')[0].split('\n')[-1]:
+            print(f"Warning: Possible unsafe list access in {file_path}")
+            return False
+        
+        if 'except IndexError' not in content:
+            print(f"Warning: No explicit IndexError handling in {file_path}")
+            return False
+        
+        return True
 
     def validate_implementation(self):
         prompt = f"""
@@ -503,57 +524,13 @@ class NemoAgent:
         Provide a brief explanation for your decision.
         """
         response = self.get_response(prompt)
+    
         if "VALID" in response.upper():
             print("Implementation validated successfully.")
             return True
         else:
             print("Implementation does not match the original task.")
             return False
-
-    def recover_implementation(self):
-        prompt = f"""
-        The current implementation does not correctly address the original task: {self.task}
-        Please provide a corrected implementation that focuses specifically on this task.
-        Do not create new files - only modify the existing ones.
-        Do not default to a generic or "Hello World" example.
-        Follow all the rules and guidelines provided in the original implementation prompt.
-        Ensure that the implementation maintains or improves the current pylint score and test coverage.
-        """
-        corrected_solution = self.get_response(prompt)
-        print("Executing corrected solution:")
-        print(corrected_solution)
-
-        if self.validate_against_task(corrected_solution):
-            initial_pylint_score = self.get_pylint_score()
-            initial_test_results, initial_coverage = self.run_tests()
-
-            self.validate_and_execute_commands(corrected_solution)
-
-            new_pylint_score = self.get_pylint_score()
-            new_test_results, new_coverage = self.run_tests()
-
-            if (
-                new_pylint_score >= initial_pylint_score
-                and new_test_results
-                and new_coverage >= initial_coverage
-            ):
-                print("Recovered implementation applied successfully.")
-                self.commit_changes("Recover implementation")
-                if self.validate_implementation():
-                    print("Recovered implementation validated successfully.")
-                    return
-                else:
-                    print(
-                        "Recovered implementation still does not fully meet the requirements."
-                    )
-            else:
-                print(
-                    "Recovered implementation did not maintain or improve code quality and test coverage."
-                )
-        else:
-            print("Recovered implementation does not align with the original task.")
-
-        print("Failed to recover implementation. Manual intervention may be required.")
 
     def get_pylint_score(self):
         try:
@@ -744,6 +721,8 @@ class NemoAgent:
         8. IMPORTANT: Never modify the existing pyproject.toml dependencies.
         9. IMPORTANT: Do not add new imports in the code or tests files for 3rd party dependencies.
         10. The test command is `poetry run pytest --cov={self.project_name} --cov-config=.coveragerc`
+        11. IMPORTANT: Do not add any code comments to the files.
+        12. IMPORTANT: Always follow PEP8 style guide, follow best practices for Python, use descriptive variable names, and provide meaningful docstrings.
         """
         proposed_improvements = self.get_response(prompt)
 
@@ -831,6 +810,7 @@ class NemoAgent:
             sed -i 's/old_text/new_text/g' filename.py
         9. IMPORTANT: Never modify the existing pyproject.toml dependencies.
         10. IMPORTANT: Do not add new imports in the code or tests files for 3rd party dependencies.
+        21. IMPORTANT: Always follow PEP8 style guide, follow best practices for Python, use descriptive variable names, and provide meaningful docstrings.
         """
         proposed_improvements = self.get_response(prompt)
 
@@ -883,11 +863,6 @@ class NemoAgent:
         content = re.sub(r'```python\n', '', content)
         content = re.sub(r'```\n', '', content)
         content = re.sub(r'```', '', content)
-
-        # Remove any remaining markdown syntax (you can add more as needed)
-        content = re.sub(r'#{1,6}\s', '', content)  # Remove headers
-        content = re.sub(r'\*\*(.+?)\*\*', r'\1', content)  # Remove bold
-        content = re.sub(r'\*(.+?)\*', r'\1', content)  # Remove italic
 
         return content
 

@@ -18,7 +18,8 @@ Nemo Agent is a blazing fast local AI Agent for Python coding
 * Utilizes `git` to commit and track changes
 
 ## Ability
-Solves a leetcode hard with a set time complexity constraint in less than a minute with full tests on an RTX 4090
+* Can solve leetcode mediums in under a minute
+* Can apply time complexity constraints
 
 ## Installation
 You can install Nemo Agent using pip:
@@ -47,6 +48,7 @@ Generate a fizzbuzz program:
 
 * LLM codegen issues mean that web APIs like Flask and FastAPI are not supported.
 * Due to the LLM getting confused with paths and files - writing 1 code and 1 test file is only supported.
+* Struggles with completing leetcode hards - gets very close
 
 ## How It Works
 
