@@ -4,7 +4,7 @@
 
 [![Nemo Agent](https://cdn.cometheart.com/nemo-agent-2.png)](https://cdn.cometheart.com/nemo-agent.mp4)
 
-Nemo Agent is an expert Python software developer that can build fully-tested Python programs for your task.
+Nemo Agent is an expert Python AI software developer.
 
 ## Features
 * Runs blazing fast locally on an RTX 4070 or greater
