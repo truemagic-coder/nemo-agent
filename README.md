@@ -45,9 +45,6 @@ Generate a fizzbuzz program:
 
 `nemo-agent "Create a fizzbuzz script"`
 
-## Cloud-Ready
-* RunPod is the recommended hosting provider for RTX 4090 compute - [setup link](https://docs.runpod.io/tutorials/pods/run-ollama)
-
 ## Limitations
 
 * LLM codegen issues mean that web APIs like Flask and FastAPI are not supported.
@@ -57,11 +54,43 @@ Generate a fizzbuzz program:
 
 Nemo Agent leverages `mistral-nemo`, `Ollama`, `phidata`, `poetry`, `pytest`, `pylint`, and other libraries to build a complete working solution for your task.
 
-## Requirements
+## Local Install
+
+### Requirements
 * Python 3.9 or higher
-* Git
+* git
+* curl
 * Ollama running `mistral-nemo`
-* Linux with a minimum of an RTX 4070
+* Ubuntu (22.04 or 24.04) with a minimum of an RTX 4070
+
+### Requirements Installation
+* Python, curl, git are pre-installed on Ubuntu
+* Ollama install instructions:
+    * `curl -fsSL https://ollama.com/install.sh | sh`
+    * `ollama pull mistral-nemo`
+* `nemo-agent` install:
+    * `pip install nemo-agent`
+* You are ready to use `nemo-agent`
+
+## Cloud Install
+
+### Requirements
+* [RunPod](https://runpod.io) account setup with your SSH and billing information
+
+### RunPod Setup
+* Make sure you have setup your SSH keys
+* Select a `4090` pod
+* Select the `RunPod Pytorch 2.1.1` template
+* Edit the template:
+    * Set `Container Disk` to 60 GB
+    * Set `Expose HTTP Ports` to `8888, 11434`
+    * Add `environment variables` with `OLLAMA_HOST` key and `0.0.0.0` value
+* Deploy your pod
+* After deploying then login via SSH
+* Run on the pod: `curl -fsSL https://ollama.com/install.sh | sh && ollama serve`
+* Run on the pod: `ollama pull mistral-nemo`
+* Run on the pod: `pip install nemo-agent`
+* You are ready to use `nemo-agent`
 
 ## Contributing
 Contributions to Nemo Agent are welcome! Please feel free to submit a Pull Request.
@@ -71,3 +100,7 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 
 ## Disclaimer
 Nemo Agent generates code using AI. While it strives for accuracy and best practices, the generated code should be reviewed and tested before being used in a production environment.
+
+## Notes
+* Tested all local models that can run on an RTX 4090 on Ollama other than `mistral-nemo` and none can be prompted to complete the task.
+* Tested with Mistral Nemo hosted API - the local/API models are not the same and the API version is very buggy with prompting

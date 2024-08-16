@@ -11,7 +11,6 @@ import sys
 import time
 from phi.assistant import Assistant
 from phi.llm.ollama import Ollama
-from phi.tools.file import FileTools
 import click
 
 SYSTEM_PROMPT = """
@@ -150,7 +149,6 @@ class NemoAgent:
             system_prompt=system_prompt,
             tools=[
                 custom_system_tools.execute_command,
-                FileTools(),
             ],
             show_tool_calls=True,
             markdown=True,
