@@ -21,6 +21,10 @@ Nemo Agent is a blazing fast local AI Agent for Python coding
 * Can solve some leetcode hards on some runs in about 30 seconds on an RTX 4090
 * Can apply time complexity constraints in task requirements
 
+## Demo Video
+
+[Watch on Youtube](https://www.youtube.com/watch?v=i2Au5F4anME)
+
 ## Installation
 You can install Nemo Agent using pip:
 
