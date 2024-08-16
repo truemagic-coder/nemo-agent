@@ -87,6 +87,13 @@ Generate a fizzbuzz program:
 * Tested all local models that can run on an RTX 4090 on Ollama other than `mistral-nemo` and none can be prompted to complete the task.
 * Tested with Mistral Nemo hosted API - the local/API models are not the same and the API version is very buggy with prompting
 
+## Roadmap
+* Refactor legacy Python code projects to `nemo-agent` code
+* Convert legacy non-Python projects to `nemo-agent` code
+* Give `nemo-agent` up-to-date knowledge about PyPi libraries
+* Give `nemo-agent` up-to-date knowledge of the latest Python language features
+* Give `nemo-agent` up-to-date knowledge about other language libraries
+
 ## Contributing
 Contributions to Nemo Agent are welcome! Please feel free to submit a Pull Request.
 
