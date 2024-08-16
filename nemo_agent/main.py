@@ -277,10 +277,14 @@ class NemoAgent:
                 print(f"Task completed successfully after {attempt + 1} attempts.")
                 print(f"Coverage is {coverage}%.")
                 if not tests_passed:
-                    print("Note: Some tests are still failing, but coverage is above 80%.")
+                    print(
+                        "Note: Some tests are still failing, but coverage is above 80%."
+                    )
                 return  # Exit the method immediately
             elif attempt < max_improvement_attempts - 1:
-                print(f"Attempt {attempt + 1} failed. Trying to improve implementation...")
+                print(
+                    f"Attempt {attempt + 1} failed. Trying to improve implementation..."
+                )
                 self.improve_implementation(test_output)
                 print("Attempting to improve test file...")
                 self.improve_test_file(test_output)
@@ -476,11 +480,13 @@ class NemoAgent:
                         self.logger.info(f"File written successfully: {full_path}")
                         with open(full_path, "r") as f:
                             self.logger.debug(f"Content of {full_path}:\n{f.read()}")
-                        
+
                         # Run pylint on the file
                         pylint_score = self.clean_code_with_pylint(full_path)
                         if pylint_score < 6.0:
-                            self.logger.warning(f"Pylint score for {full_path} is below 6.0: {pylint_score}")
+                            self.logger.warning(
+                                f"Pylint score for {full_path} is below 6.0: {pylint_score}"
+                            )
                             success = False
                     else:
                         self.logger.error(
@@ -492,7 +498,9 @@ class NemoAgent:
                     success = False
 
             if success:
-                self.logger.info("All files created successfully and passed pylint check")
+                self.logger.info(
+                    "All files created successfully and passed pylint check"
+                )
                 self.commit_changes("Implement initial solution")
                 return True
 
@@ -620,9 +628,13 @@ class NemoAgent:
                         else:
                             self.logger.error(f"Failed to update file: {full_path}")
                     except Exception as e:
-                        self.logger.error(f"Error writing to file {full_path}: {str(e)}")
+                        self.logger.error(
+                            f"Error writing to file {full_path}: {str(e)}"
+                        )
                 else:
-                    self.logger.warning(f"Ignoring changes to non-implementation file: {file_path}")
+                    self.logger.warning(
+                        f"Ignoring changes to non-implementation file: {file_path}"
+                    )
 
             self.logger.info(
                 "Improvements have been written to the implementation file. Please review the changes manually."
@@ -631,7 +643,6 @@ class NemoAgent:
             self.logger.info(
                 "Proposed improvements do not align with the original task. No changes were made."
             )
-
 
     def validate_list_operations(self, file_path):
         with open(file_path, "r") as f:
@@ -739,10 +750,12 @@ class NemoAgent:
             # Adjust pylint command for different file types
             pylint_cmd = ["poetry", "run", "pylint"]
             if is_test_file:
-                pylint_cmd.extend([
-                    "--disable=missing-function-docstring,missing-module-docstring,redefined-outer-name",
-                    "--max-line-length=120"
-                ])
+                pylint_cmd.extend(
+                    [
+                        "--disable=missing-function-docstring,missing-module-docstring,redefined-outer-name",
+                        "--max-line-length=120",
+                    ]
+                )
             elif is_init_file:
                 pylint_cmd.extend(["--disable=missing-module-docstring"])
             pylint_cmd.append(file_path)
@@ -838,11 +851,15 @@ class NemoAgent:
                     f.writelines(lines)
 
                 print(f"Updated test file: {test_file_path}")
-                print("Test improvements have been written. Please review the changes manually.")
+                print(
+                    "Test improvements have been written. Please review the changes manually."
+                )
             else:
                 print("No specific changes were suggested for the test file.")
         else:
-            print("Proposed test improvements do not align with the original task. No changes were made.")
+            print(
+                "Proposed test improvements do not align with the original task. No changes were made."
+            )
 
     def extract_test_file_changes(self, proposed_improvements):
         changes = []
@@ -854,18 +871,31 @@ class NemoAgent:
                     try:
                         line_num = int(parts[1].strip()) - 1  # Convert to 0-based index
                         suggested_change_line = next(
-                            (line for line in lines[line_index + 1:] if line.startswith("# Suggested change:")),
-                            None
+                            (
+                                line
+                                for line in lines[line_index + 1 :]
+                                if line.startswith("# Suggested change:")
+                            ),
+                            None,
                         )
                         if suggested_change_line:
-                            new_line_content = suggested_change_line.split(":", 1)[1].strip()
+                            new_line_content = suggested_change_line.split(":", 1)[
+                                1
+                            ].strip()
                             changes.append((line_num, new_line_content))
                     except ValueError:
                         continue
         return changes
 
     def improve_code(
-        self, file_path, current_score, pylint_output, is_test_file, is_init_file, attempt=1, test_output=""
+        self,
+        file_path,
+        current_score,
+        pylint_output,
+        is_test_file,
+        is_init_file,
+        attempt=1,
+        test_output="",
     ):
         if current_score >= 6.0:
             print(f"Code quality is already good. Score: {current_score}/10")
@@ -875,8 +905,14 @@ class NemoAgent:
             print(f"Maximum improvement attempts reached for {file_path}. Moving on.")
             return current_score
 
-        file_type = "test file" if is_test_file else "init file" if is_init_file else "regular Python file"
- 
+        file_type = (
+            "test file"
+            if is_test_file
+            else "init file"
+            if is_init_file
+            else "regular Python file"
+        )
+
         prompt = f"""
         The current pylint score for {file_path} (a {file_type}) is {current_score:.2f}/10. 
         Please analyze the pylint output and suggest improvements to the code implementation only.
@@ -966,9 +1002,13 @@ class NemoAgent:
             print("Maximum test coverage improvement attempts reached. Moving on.")
             return initial_coverage
 
-        coverage_result = initial_coverage if attempt == 1 else self.get_current_coverage()
+        coverage_result = (
+            initial_coverage if attempt == 1 else self.get_current_coverage()
+        )
         if coverage_result >= 80:
-            print(f"Test coverage is already at {coverage_result}%. No improvements needed.")
+            print(
+                f"Test coverage is already at {coverage_result}%. No improvements needed."
+            )
             return coverage_result
 
         git_diff = self.get_git_diff()
@@ -1426,7 +1466,9 @@ class NemoAgent:
             coverage_percentage = int(coverage_match.group(1)) if coverage_match else 0
 
             # Check if all tests passed
-            tests_passed = "failed" not in test_output.lower() and result.returncode == 0
+            tests_passed = (
+                "failed" not in test_output.lower() and result.returncode == 0
+            )
 
             if tests_passed and coverage_percentage >= 80:
                 print(
