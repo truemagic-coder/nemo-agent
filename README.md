@@ -93,6 +93,7 @@ Generate a fizzbuzz program:
 * Give `nemo-agent` up-to-date knowledge about PyPi libraries
 * Give `nemo-agent` up-to-date knowledge of the latest Python language features
 * Give `nemo-agent` up-to-date knowledge about other language libraries
+* Enable `nemo-agent` to write [Py03](https://github.com/PyO3/pyo3) extensions
 
 ## Contributing
 Contributions to Nemo Agent are welcome! Please feel free to submit a Pull Request.
