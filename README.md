@@ -4,7 +4,7 @@
 
 [![Nemo Agent](https://cdn.cometheart.com/nemo-agent-2.png)](https://cdn.cometheart.com/nemo-agent.mp4)
 
-Nemo Agent is a blazing fast local AI Agent for Python coding
+Nemo Agent is an expert Python software developer that can build fully-tested Python programs for your task.
 
 ## Features
 * Runs blazing fast locally on an RTX 4070 or greater
@@ -17,42 +17,13 @@ Nemo Agent is a blazing fast local AI Agent for Python coding
 * Automatically fixes and styles code using `pylint`
 * Utilizes `git` to commit and track changes
 
-## Ability
+## Coding Ability
 * Can solve some leetcode hards on some runs in about 30 seconds on an RTX 4090
 * Can apply time complexity constraints in task requirements
 
 ## Demo Video
 
 [Watch on Youtube](https://www.youtube.com/watch?v=i2Au5F4anME)
-
-## Installation
-You can install Nemo Agent using pip:
-
-`pip install nemo-agent`
-
-## Usage
-After installation, you can use Nemo Agent from the command line:
-
-`nemo-agent "Your task description here"`
-If you run nemo-agent without any arguments, it will prompt you to enter a task.
-
-## Examples
-Create a simple calculator:
-
-`nemo-agent "Create a simple calculator"`
-
-Generate a fizzbuzz program:
-
-`nemo-agent "Create a fizzbuzz script"`
-
-## Limitations
-
-* LLM codegen issues mean that web APIs like Flask and FastAPI are not supported.
-* Due to the LLM getting confused with paths and files - writing 1 code and 1 test file is only supported.
-
-## How It Works
-
-Nemo Agent leverages `mistral-nemo`, `Ollama`, `phidata`, `poetry`, `pytest`, `pylint`, and other libraries to build a complete working solution for your task.
 
 ## Local Install
 
@@ -92,6 +63,30 @@ Nemo Agent leverages `mistral-nemo`, `Ollama`, `phidata`, `poetry`, `pytest`, `p
 * Run on the pod: `pip install nemo-agent`
 * You are ready to use `nemo-agent`
 
+## Usage
+After installation, you can use Nemo Agent from the command line:
+
+`nemo-agent "Your task description here"`
+If you run nemo-agent without any arguments, it will prompt you to enter a task.
+
+## Examples
+Create a simple calculator:
+
+`nemo-agent "Create a simple calculator"`
+
+Generate a fizzbuzz program:
+
+`nemo-agent "Create a fizzbuzz script"`
+
+## Limitations
+
+* LLM codegen issues mean that web APIs like Flask and FastAPI are not supported.
+* Due to the LLM getting confused with paths and files - writing 1 code and 1 test file is only supported.
+
+## Notes
+* Tested all local models that can run on an RTX 4090 on Ollama other than `mistral-nemo` and none can be prompted to complete the task.
+* Tested with Mistral Nemo hosted API - the local/API models are not the same and the API version is very buggy with prompting
+
 ## Contributing
 Contributions to Nemo Agent are welcome! Please feel free to submit a Pull Request.
 
@@ -100,7 +95,3 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 
 ## Disclaimer
 Nemo Agent generates code using AI. While it strives for accuracy and best practices, the generated code should be reviewed and tested before being used in a production environment.
-
-## Notes
-* Tested all local models that can run on an RTX 4090 on Ollama other than `mistral-nemo` and none can be prompted to complete the task.
-* Tested with Mistral Nemo hosted API - the local/API models are not the same and the API version is very buggy with prompting
