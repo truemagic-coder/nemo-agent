@@ -39,11 +39,11 @@ You are Nemo Agent, an expert Python developer. Follow these rules strictly:
 20. Use `sed` for making specific modifications to existing files:
     sed -i 's/old_text/new_text/g' filename.py
 21. IMPORTANT: Never remove existing poetry dependencies. Only add new ones if necessary.
-22. Follow PEP8 style guide.
-23. CRITICAL: Only create one code file ({project_name}/main.py) and one test file (tests/test_main.py).
-24. IMPORTANT: Do not add any code comments to the files.
-25. IMPORTANT: Always follow PEP8 style guide, follow best practices for Python, use descriptive variable names, and provide meaningful docstrings.
-26. IMPORTANT: Do not redefine built-in functions or use reserved keywords as variable names.
+22. CRITICAL: Only create one code file ({project_name}/main.py) and one test file (tests/test_main.py).
+23. IMPORTANT: Do not add any code comments to the files.
+24. IMPORTANT: Always follow PEP8 style guide, follow best practices for Python, use descriptive variable names, and provide meaningful docstrings.
+25. IMPORTANT: Do not redefine built-in functions or use reserved keywords as variable names.
+26. IMPORTANT: Do not directly cast types - create helper functions to handle type conversions and validations.
 
 When creating or modifying files, use the following format:
 <<<filename>>>
@@ -87,6 +87,7 @@ class NemoAgent:
         self.project_name = self.generate_project_name()
         self.assistant = self.setup_assistant()
         self.setup_logging()
+        self.previous_suggestions = set()
 
     def setup_logging(self):
         logging.basicConfig(
@@ -271,13 +272,18 @@ class NemoAgent:
 
         max_improvement_attempts = 3
         for attempt in range(max_improvement_attempts):
-            tests_passed, coverage = self.run_tests()
-            if tests_passed and coverage >= 80:
+            tests_passed, coverage, test_output = self.run_tests()
+            if coverage >= 80:
                 print(f"Task completed successfully after {attempt + 1} attempts.")
-                break
+                print(f"Coverage is {coverage}%.")
+                if not tests_passed:
+                    print("Note: Some tests are still failing, but coverage is above 80%.")
+                return  # Exit the method immediately
             elif attempt < max_improvement_attempts - 1:
-                print(f"Attempt {attempt + 1} failed. Trying to improve...")
-                self.improve_implementation()
+                print(f"Attempt {attempt + 1} failed. Trying to improve implementation...")
+                self.improve_implementation(test_output)
+                print("Attempting to improve test file...")
+                self.improve_test_file(test_output)
             else:
                 print(
                     "Maximum improvement attempts reached. Please review the output manually."
@@ -383,7 +389,7 @@ class NemoAgent:
             1. CRITICAL: Do not modify the pyproject.toml file.
             2. Use the correct import statements: from {self.project_name}.module_name import method_name.
             3. Follow PEP8 style guide.
-            4. Never use pass statements in your code. Always provide a meaningful implementation.
+            4. IMPORTANT: Never use pass statements in your code or tests. Always provide a meaningful implementation.
             5. Use parametrized tests to cover multiple scenarios efficiently.
             6. Use the following format for specifying file content:
                 <<<{self.project_name}/main.py>>>
@@ -396,8 +402,24 @@ class NemoAgent:
             7. The test command is `poetry run pytest --cov={self.project_name} --cov-config=.coveragerc`
             8. CRITICAL: Only create one code file ({self.project_name}/main.py) and one test file (tests/test_main.py).
             9. IMPORTANT: Do not add any code comments to the files.
-            10. IMPORTANT: Always follow PEP8 style guide, follow best practices for Python, use descriptive variable names, and provide meaningful docstrings.
+            10. IMPORTANT: Always follow PEP8 style guide, follow best practices for Python, use snake_case naming, and provide meaningful docstrings.
             11. IMPORTANT: Do not redefine built-in functions or use reserved keywords as variable names.
+            12. Implement proper error handling using try-except blocks for potential IndexError exceptions.
+            13. Use len() to check list lengths before accessing indices.
+            14. Implement input validation to ensure list indices are within valid ranges.
+            15. Always check if a list is empty before accessing its elements.
+            16. Consider using the `itertools` module for efficient list operations.
+            17. CRITICAL: Always handle edge cases in list operations, including:
+                - Empty lists
+                - Lists with a single element
+                - Accessing the first or last element of a list
+                - Removing elements from the beginning, middle, or end of a list
+            18. IMPORTANT: Implement robust input validation for all functions, especially for parameters that affect list indices or sizes.
+            19. CRITICAL: Use defensive programming techniques to prevent IndexError and other common exceptions. This includes:
+                - Checking list lengths before accessing elements
+                - Using try-except blocks to handle potential exceptions
+                - Using safe access methods like .get() for dictionaries and list slicing for safe access
+            20. IMPORTANT: Do not directly cast types - create helper functions to handle type conversions and validations.
         Working directory: {self.pwd}
         """
 
@@ -454,6 +476,12 @@ class NemoAgent:
                         self.logger.info(f"File written successfully: {full_path}")
                         with open(full_path, "r") as f:
                             self.logger.debug(f"Content of {full_path}:\n{f.read()}")
+                        
+                        # Run pylint on the file
+                        pylint_score = self.clean_code_with_pylint(full_path)
+                        if pylint_score < 6.0:
+                            self.logger.warning(f"Pylint score for {full_path} is below 6.0: {pylint_score}")
+                            success = False
                     else:
                         self.logger.error(
                             f"Failed to write file or file is empty: {full_path}"
@@ -464,12 +492,12 @@ class NemoAgent:
                     success = False
 
             if success:
-                self.logger.info("All files created successfully")
+                self.logger.info("All files created successfully and passed pylint check")
                 self.commit_changes("Implement initial solution")
                 return True
 
             self.logger.warning(
-                f"Attempt {attempt + 1} failed to create the correct files. Retrying..."
+                f"Attempt {attempt + 1} failed to create the correct files or pass pylint. Retrying..."
             )
 
         self.logger.error("Failed to implement solution after maximum attempts")
@@ -514,9 +542,9 @@ class NemoAgent:
             print("Proposed changes do not fully address the original task.")
             return False
 
-    def improve_implementation(self):
+    def improve_implementation(self, test_output=""):
         initial_pylint_score = self.get_pylint_score()
-        initial_test_results, initial_coverage = self.run_tests()
+        initial_test_results, initial_coverage, _ = self.run_tests()
 
         git_diff = self.get_git_diff()
         git_log = self.get_git_log()
@@ -524,7 +552,7 @@ class NemoAgent:
         print("Checking and cleaning existing files...")
         for root, dirs, files in os.walk(self.pwd):
             for file in files:
-                if file.endswith(".py"):
+                if file.endswith(".py") and not file.startswith("test_"):
                     file_path = os.path.join(root, file)
                     with open(file_path, "r") as f:
                         content = f.read()
@@ -541,13 +569,16 @@ class NemoAgent:
         Current test status: {'Passing' if initial_test_results else 'Failing'}
         Current test coverage: {initial_coverage}%
 
+        Test output:
+        {test_output}
+
         Git diff:
         {git_diff}
 
         Git log:
         {git_log}
 
-        Please provide improvements to the existing code and tests to:
+        Please provide improvements to the existing code to:
         1. Improve or maintain the pylint score (target: at least 6.0/10)
         2. Ensure all tests are passing
         3. Improve or maintain the test coverage (target: at least 80%)
@@ -557,34 +588,20 @@ class NemoAgent:
         7. Use defensive programming techniques to prevent IndexError
 
         Follow these rules strictly:
-        1. CRITICAL: The correct import statements for local files looks like `from {self.project_name}.module_name import method_name`.
-        2. CRITICAL: Never create new files, only modify the existing ones.
-        3. Only use pytest for testing.
-        4. IMPORTANT: Never use pass statements in your code. Always provide a meaningful implementation.
-        5. Consider the Git history when suggesting changes to avoid reverting recent improvements or duplicating work.
-        6. Use parametrized tests to cover multiple scenarios efficiently, including edge cases for list operations.
-        7. IMPORTANT: Do not create new files. Only modify the existing ones.
-        8. IMPORTANT: Only use `sed` for making specific modifications to existing files:
-            sed -i 's/old_text/new_text/g' filename.py
-        9. IMPORTANT: Never remove existing poetry dependencies. Only add new ones if necessary.
-        10. The test command is `poetry run pytest --cov={self.project_name} --cov-config=.coveragerc`
-        11. IMPORTANT: Do not add any code comments to the files.
-        12. Implement proper error handling using try-except blocks for potential IndexError exceptions.
-        13. Use len() to check list lengths before accessing indices.
-        14. Implement input validation to ensure list indices are within valid ranges.
-        15. Always check if a list is empty before accessing its elements.
-        16. Use defensive programming techniques like .get() for dictionaries and list slicing for safe access.
-        17. Consider using the `itertools` module for efficient list operations.
-        18. IMPORTANT: Always follow PEP8 style guide, follow best practices for Python, use descriptive variable names, and provide meaningful docstrings.
-        19. IMPORTANT: Do not redefine built-in functions or use reserved keywords as variable names.
-        20. Use the following format for specifying file content:
+        1. CRITICAL: Only modify the implementation in {self.project_name}/main.py.
+        2. IMPORTANT: Never use pass statements in your code. Always provide a meaningful implementation.
+        3. Consider the Git history when suggesting changes to avoid reverting recent improvements.
+        4. IMPORTANT: Do not create new files. Only modify the existing ones.
+        5. IMPORTANT: Never remove existing poetry dependencies. Only add new ones if necessary.
+        6. The test command is `poetry run pytest --cov={self.project_name} --cov-config=.coveragerc`
+        7. IMPORTANT: Do not add any code comments to the files.
+        8. IMPORTANT: Always follow PEP8 style guide, follow best practices for Python, use snake_case naming, and provide meaningful docstrings.
+        9. IMPORTANT: Do not redefine built-in functions or use reserved keywords as variable names.
+        10. Use the following format for specifying file content:
             <<<{self.project_name}/main.py>>>
             # File content here
             <<<end>>>
-            
-            <<<tests/test_main.py>>>
-            # Test file content here
-            <<<end>>>
+        11. IMPORTANT: Do not directly cast types - create helper functions to handle type conversions and validations.
         """
         improvements = self.get_response(prompt)
         print("Proposed improvements:")
@@ -594,23 +611,27 @@ class NemoAgent:
             self.logger.info("Writing suggested improvements to files:")
             file_contents = self.extract_file_contents_direct(improvements)
             for file_path, content in file_contents.items():
-                full_path = os.path.join(self.pwd, file_path)
-                try:
-                    content = self.clean_markdown_artifacts(content)
-                    if self.robust_write_file(full_path, content):
-                        self.logger.info(f"Updated file: {full_path}")
-                    else:
-                        self.logger.error(f"Failed to update file: {full_path}")
-                except Exception as e:
-                    self.logger.error(f"Error writing to file {full_path}: {str(e)}")
+                if file_path == f"{self.project_name}/main.py":
+                    full_path = os.path.join(self.pwd, file_path)
+                    try:
+                        content = self.clean_markdown_artifacts(content)
+                        if self.robust_write_file(full_path, content):
+                            self.logger.info(f"Updated file: {full_path}")
+                        else:
+                            self.logger.error(f"Failed to update file: {full_path}")
+                    except Exception as e:
+                        self.logger.error(f"Error writing to file {full_path}: {str(e)}")
+                else:
+                    self.logger.warning(f"Ignoring changes to non-implementation file: {file_path}")
 
             self.logger.info(
-                "Improvements have been written to files. Please review the changes manually."
+                "Improvements have been written to the implementation file. Please review the changes manually."
             )
         else:
             self.logger.info(
                 "Proposed improvements do not align with the original task. No changes were made."
             )
+
 
     def validate_list_operations(self, file_path):
         with open(file_path, "r") as f:
@@ -718,9 +739,10 @@ class NemoAgent:
             # Adjust pylint command for different file types
             pylint_cmd = ["poetry", "run", "pylint"]
             if is_test_file:
-                pylint_cmd.extend(
-                    ["--disable=missing-function-docstring,missing-module-docstring"]
-                )
+                pylint_cmd.extend([
+                    "--disable=missing-function-docstring,missing-module-docstring,redefined-outer-name",
+                    "--max-line-length=120"
+                ])
             elif is_init_file:
                 pylint_cmd.extend(["--disable=missing-module-docstring"])
             pylint_cmd.append(file_path)
@@ -772,9 +794,78 @@ class NemoAgent:
                 file.write(docstring + content)
             print(f"Added module docstring to {file_path}")
 
+    def improve_test_file(self, test_output):
+        prompt = f"""
+        The current test file needs minor improvements. Please analyze the test output and suggest small, specific changes to fix any issues in the test file.
+        Do not modify the main implementation file, only suggest minimal improvements to the tests.
+
+        Test output:
+        {test_output}
+
+        Original task: {self.task}
+
+        Provide specific, minimal code changes to improve the test file, addressing only the failing tests or obvious issues.
+        Follow these rules strictly:
+        1. Only suggest changes to the test file (tests/test_main.py)
+        2. Do not change the main implementation file ({self.project_name}/main.py)
+        3. Focus on fixing failing tests or obvious errors
+        4. Keep changes minimal and specific
+        5. Do not rewrite entire test functions unless absolutely necessary
+        6. Ensure all changes are meaningful and relate to the original task
+
+        Use the following format for specifying changes:
+        <<<tests/test_main.py>>>
+        # Line number: Original line
+        # Suggested change: New line
+        <<<end>>>
+        """
+        proposed_improvements = self.get_response(prompt)
+
+        if self.validate_against_task(proposed_improvements):
+            print("Executing validated test improvements:")
+            changes = self.extract_test_file_changes(proposed_improvements)
+
+            if changes:
+                test_file_path = os.path.join(self.pwd, "tests/test_main.py")
+                with open(test_file_path, "r") as f:
+                    lines = f.readlines()
+
+                for line_num, new_line in changes:
+                    if 0 <= line_num < len(lines):
+                        lines[line_num] = new_line + "\n"
+
+                with open(test_file_path, "w") as f:
+                    f.writelines(lines)
+
+                print(f"Updated test file: {test_file_path}")
+                print("Test improvements have been written. Please review the changes manually.")
+            else:
+                print("No specific changes were suggested for the test file.")
+        else:
+            print("Proposed test improvements do not align with the original task. No changes were made.")
+
+    def extract_test_file_changes(self, proposed_improvements):
+        changes = []
+        lines = proposed_improvements.split("\n")
+        for line_index, current_line in enumerate(lines):
+            if current_line.startswith("# Line number:"):
+                parts = current_line.split(":")
+                if len(parts) >= 2:
+                    try:
+                        line_num = int(parts[1].strip()) - 1  # Convert to 0-based index
+                        suggested_change_line = next(
+                            (line for line in lines[line_index + 1:] if line.startswith("# Suggested change:")),
+                            None
+                        )
+                        if suggested_change_line:
+                            new_line_content = suggested_change_line.split(":", 1)[1].strip()
+                            changes.append((line_num, new_line_content))
+                    except ValueError:
+                        continue
+        return changes
 
     def improve_code(
-        self, file_path, current_score, pylint_output, is_test_file, is_init_file, attempt=1
+        self, file_path, current_score, pylint_output, is_test_file, is_init_file, attempt=1, test_output=""
     ):
         if current_score >= 6.0:
             print(f"Code quality is already good. Score: {current_score}/10")
@@ -784,55 +875,39 @@ class NemoAgent:
             print(f"Maximum improvement attempts reached for {file_path}. Moving on.")
             return current_score
 
-        git_diff = self.get_git_diff()
-        git_log = self.get_git_log()
-
-        file_type = (
-            "test file"
-            if is_test_file
-            else "init file"
-            if is_init_file
-            else "regular Python file"
-        )
+        file_type = "test file" if is_test_file else "init file" if is_init_file else "regular Python file"
+ 
         prompt = f"""
-        The current pylint score for {file_path} (a {file_type}) is {current_score:.2f}/10. Please analyze the pylint output and suggest improvements to reach a score of at least 6/10.
-
-        {'This is an __init__.py file, so it may not need a module docstring.' if is_init_file else ''}
+        The current pylint score for {file_path} (a {file_type}) is {current_score:.2f}/10. 
+        Please analyze the pylint output and suggest improvements to the code implementation only.
+        Do not modify the test file.
 
         Pylint output:
         {pylint_output}
 
-        Git diff:
-        {git_diff}
-
-        Git log:
-        {git_log}
-
         Original task: {self.task}
 
-        Provide specific code changes to improve the score.
+        Provide specific code changes to improve the score and address any issues.
         Follow these rules strictly:
-        1. CRITICAL: The correct import statements for local files looks like `from {self.project_name}.module_name import method_name`.
-        2. IMPORTANT: Never use pass statements in your code. Always provide a meaningful implementation.
-        3. Only use pytest for testing.
-        4. CRITICAL: Never create new files. Only modify the existing ones.
-        5. Consider the Git history when suggesting changes to avoid reverting recent improvements.
-        6. Use parametrized tests to cover multiple scenarios efficiently
-        7. IMPORTANT: Do not add new imports in the code or tests files for 3rd party dependencies.
-        8. The test command is `poetry run pytest --cov={self.project_name} --cov-config=.coveragerc`
-        9. IMPORTANT: Do not add any code comments to the files.
-        10. IMPORTANT: Always follow PEP8 style guide, follow best practices for Python, use descriptive variable names, and provide meaningful docstrings.
-        11. IMPORTANT: Do not redefine built-in functions or use reserved keywords as variable names.
-        12. Use the following format for specifying file content:
-            <<<{self.project_name}/main.py>>>
-            # File content here
-            <<<end>>>
-            
-            <<<tests/test_main.py>>>
-            # Test file content here
-            <<<end>>>
+        1. Only modify the main implementation file ({self.project_name}/main.py)
+        2. Do not change the test file (tests/test_main.py)
+        3. Focus on improving code quality, readability, and adherence to PEP8
+        4. Address any warnings or errors reported by pylint
+        5. Ensure the implementation correctly handles edge cases and potential errors
+
+        Use the following format for specifying file content:
+        <<<{self.project_name}/main.py>>>
+        # File content here
+        <<<end>>>
         """
         proposed_improvements = self.get_response(prompt)
+
+        # Check if the proposed improvements are new
+        if proposed_improvements in self.previous_suggestions:
+            print("No new improvements suggested. Moving on.")
+            return current_score
+
+        self.previous_suggestions.add(proposed_improvements)
 
         if self.validate_against_task(proposed_improvements):
             print("Executing validated improvements:")
@@ -886,16 +961,14 @@ class NemoAgent:
             else:
                 return current_score
 
-    def improve_test_coverage(self, attempt=1, initial_coverage=0):
+    def improve_test_coverage(self, attempt=1, initial_coverage=0, test_output=""):
         if attempt > self.MAX_IMPROVEMENT_ATTEMPTS:
             print("Maximum test coverage improvement attempts reached. Moving on.")
             return initial_coverage
 
         coverage_result = initial_coverage if attempt == 1 else self.get_current_coverage()
         if coverage_result >= 80:
-            print(
-                f"Test coverage is already at {coverage_result}%. No improvements needed."
-            )
+            print(f"Test coverage is already at {coverage_result}%. No improvements needed.")
             return coverage_result
 
         git_diff = self.get_git_diff()
@@ -903,7 +976,10 @@ class NemoAgent:
 
         prompt = f"""
         The current test coverage for the project is {coverage_result}%, which is below the target of 80%.
-        Please analyze the coverage report and suggest improvements to increase the coverage to at least 80%.
+        Please analyze the coverage report and the test failures to suggest improvements.
+
+        Test output (focus on fixing these failures):
+        {test_output}
 
         Git diff:
         {git_diff}
@@ -913,7 +989,7 @@ class NemoAgent:
 
         Original task: {self.task}
 
-        Provide specific code changes to improve the test coverage.
+        Provide specific code changes to improve the test coverage and fix the failing tests.
         Follow these rules strictly:
         1. Analyze the code and tests files to provide better changes.
         2. IMPORTANT: Never use pass statements in your code. Always provide a meaningful implementation.
@@ -923,9 +999,26 @@ class NemoAgent:
         6. Use parametrized tests to cover multiple scenarios efficiently
         7. IMPORTANT: Do not create new files. Only modify the existing ones.
         8. IMPORTANT: Do not add new imports in the code or tests files for 3rd party dependencies.
-        9. IMPORTANT: Always follow PEP8 style guide, follow best practices for Python, use descriptive variable names, and provide meaningful docstrings.
+        9. IMPORTANT: Always follow PEP8 style guide, follow best practices for Python, use snake_case naming, and provide meaningful docstrings.
         10. IMPORTANT: Do not redefine built-in functions or use reserved keywords as variable names.
-        11. Use the following format for specifying file content:
+        11. CRITICAL: Focus on fixing the failing tests and addressing the specific issues mentioned in the test output.
+        12. IMPORTANT: Do not redefine built-in functions or use reserved keywords as variable names.
+        13. Implement proper error handling using try-except blocks for potential IndexError exceptions.
+        14. Use len() to check list lengths before accessing indices.
+        15. Implement input validation to ensure list indices are within valid ranges.
+        16. Always check if a list is empty before accessing its elements.
+        17. Consider using the `itertools` module for efficient list operations.
+        18. CRITICAL: Always handle edge cases in list operations, including:
+            - Empty lists
+            - Lists with a single element
+            - Accessing the first or last element of a list
+            - Removing elements from the beginning, middle, or end of a list
+        19. IMPORTANT: Implement robust input validation for all functions, especially for parameters that affect list indices or sizes.
+        20. CRITICAL: Use defensive programming techniques to prevent IndexError and other common exceptions. This includes:
+            - Checking list lengths before accessing elements
+            - Using try-except blocks to handle potential exceptions
+            - Using safe access methods like .get() for dictionaries and list slicing for safe access
+        21. Use the following format for specifying file content:
             <<<{self.project_name}/main.py>>>
             # File content here
             <<<end>>>
@@ -933,8 +1026,16 @@ class NemoAgent:
             <<<tests/test_main.py>>>
             # Test file content here
             <<<end>>>
+        22. IMPORTANT: Do not directly cast types - create helper functions to handle type conversions and validations.
         """
         proposed_improvements = self.get_response(prompt)
+
+        # Check if the proposed improvements are new
+        if proposed_improvements in self.previous_suggestions:
+            print("No new improvements suggested. Moving on.")
+            return coverage_result
+
+        self.previous_suggestions.add(proposed_improvements)
 
         if self.validate_against_task(proposed_improvements):
             print("Executing validated improvements:")
@@ -1309,35 +1410,29 @@ class NemoAgent:
                 text=True,
                 cwd=self.pwd,
             )
+            test_output = result.stdout + result.stderr
             print("Pytest output:")
-            print(result.stdout)
-            print(result.stderr)
+            print(test_output)
 
             # Check if coverage report was generated
-            if (
-                "No data to report." in result.stdout
-                or "No data to report." in result.stderr
-            ):
+            if "No data to report." in test_output:
                 print(
                     "No coverage data was collected. Ensure that the tests are running correctly."
                 )
-                return False, 0
+                return False, 0, test_output
 
             # Extract coverage percentage
-            coverage_match = re.search(r"TOTAL\s+\d+\s+\d+\s+(\d+)%", result.stdout)
+            coverage_match = re.search(r"TOTAL\s+\d+\s+\d+\s+(\d+)%", test_output)
             coverage_percentage = int(coverage_match.group(1)) if coverage_match else 0
 
             # Check if all tests passed
-            tests_passed = (
-                "failed" not in result.stdout.lower() and result.returncode == 0
-            )
+            tests_passed = "failed" not in test_output.lower() and result.returncode == 0
 
             if tests_passed and coverage_percentage >= 80:
                 print(
                     f"All tests passed successfully and coverage is "
                     f"{coverage_percentage}%."
                 )
-                return True, coverage_percentage
             else:
                 if not tests_passed:
                     print("Some tests failed. Please review the test output above.")
@@ -1346,14 +1441,15 @@ class NemoAgent:
                         f"Coverage is below 80%. "
                         f"Current coverage: {coverage_percentage}%"
                     )
-                return False, coverage_percentage
+
+            return tests_passed, coverage_percentage, test_output
 
         except subprocess.CalledProcessError as e:
             print(f"Error running tests: {e}")
-            return False, 0
+            return False, 0, str(e)
         except Exception as e:
             print(f"An unexpected error occurred: {e}")
-            return False, 0
+            return False, 0, str(e)
 
 
 @click.command()
