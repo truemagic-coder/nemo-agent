@@ -31,7 +31,7 @@ You can install Nemo Agent using pip:
 `pip install nemo-agent`
 
 ## Usage
-After installation, you can use NemoAgent from the command line:
+After installation, you can use Nemo Agent from the command line:
 
 `nemo-agent "Your task description here"`
 If you run nemo-agent without any arguments, it will prompt you to enter a task.
