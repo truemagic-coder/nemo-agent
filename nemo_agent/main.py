@@ -1,7 +1,11 @@
 import ast
+from contextlib import contextmanager
+import fcntl
+import logging
 import os
 import random
 import re
+import shutil
 import subprocess
 import sys
 import time
@@ -39,6 +43,7 @@ You are Nemo Agent, an expert Python developer. Follow these rules strictly:
 23. CRITICAL: Only create one code file ({project_name}/main.py) and one test file (tests/test_main.py).
 24. IMPORTANT: Do not add any code comments to the files.
 25. IMPORTANT: Always follow PEP8 style guide, follow best practices for Python, use descriptive variable names, and provide meaningful docstrings.
+26. IMPORTANT: Do not redefine built-in functions or use reserved keywords as variable names.
 
 When creating or modifying files, use the following format:
 <<<filename>>>
@@ -72,6 +77,8 @@ class CustomSystemTools:
 
 class NemoAgent:
     MAX_IMPROVEMENT_ATTEMPTS = 10
+    MAX_WRITE_ATTEMPTS = 3
+    WRITE_RETRY_DELAY = 1  # second
 
     def __init__(self, task: str, model: str = "mistral-nemo"):
         self.pwd = os.getcwd()
@@ -79,6 +86,54 @@ class NemoAgent:
         self.model = model
         self.project_name = self.generate_project_name()
         self.assistant = self.setup_assistant()
+        self.setup_logging()
+
+    def setup_logging(self):
+        logging.basicConfig(
+            level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s"
+        )
+        self.logger = logging.getLogger(__name__)
+
+    @contextmanager
+    def file_lock(self, file_path):
+        lock_path = f"{file_path}.lock"
+        with open(lock_path, "w") as lock_file:
+            try:
+                fcntl.flock(lock_file, fcntl.LOCK_EX | fcntl.LOCK_NB)
+                yield
+            finally:
+                fcntl.flock(lock_file, fcntl.LOCK_UN)
+                os.remove(lock_path)
+
+    def robust_write_file(self, file_path: str, content: str) -> bool:
+        self.logger.info(f"Attempting to write to file: {file_path}")
+        for attempt in range(self.MAX_WRITE_ATTEMPTS):
+            try:
+                with self.file_lock(file_path):
+                    # Create a backup of the existing file
+                    if os.path.exists(file_path):
+                        backup_path = f"{file_path}.bak"
+                        shutil.copy2(file_path, backup_path)
+                        self.logger.info(f"Created backup: {backup_path}")
+
+                    # Write the new content
+                    with open(file_path, "w") as f:
+                        f.write(content)
+                    self.logger.info(f"Successfully wrote to file: {file_path}")
+                    return True
+            except IOError as e:
+                self.logger.error(f"IOError writing to {file_path}: {e}")
+                if attempt < self.MAX_WRITE_ATTEMPTS - 1:
+                    self.logger.info(f"Retrying in {self.WRITE_RETRY_DELAY} seconds...")
+                    time.sleep(self.WRITE_RETRY_DELAY)
+                else:
+                    self.logger.error(
+                        f"Failed to write to {file_path} after {self.MAX_WRITE_ATTEMPTS} attempts"
+                    )
+            except Exception as e:
+                self.logger.error(f"Unexpected error writing to {file_path}: {e}")
+                break
+        return False
 
     def setup_assistant(self):
         system_prompt = SYSTEM_PROMPT.format(
@@ -170,8 +225,7 @@ class NemoAgent:
     def commit_changes(self, message):
         try:
             subprocess.run(["git", "add", "."], check=True, cwd=self.pwd)
-            subprocess.run(["git", "commit", "-m", message],
-                           check=True, cwd=self.pwd)
+            subprocess.run(["git", "commit", "-m", message], check=True, cwd=self.pwd)
             print(f"Changes committed: {message}")
         except subprocess.CalledProcessError as e:
             print(f"Error committing changes: {e}")
@@ -214,7 +268,7 @@ class NemoAgent:
         self.ensure_poetry_installed()
         self.create_project_with_poetry()
         self.implement_solution()
-        
+
         max_improvement_attempts = 3
         for attempt in range(max_improvement_attempts):
             tests_passed, coverage = self.run_tests()
@@ -225,9 +279,13 @@ class NemoAgent:
                 print(f"Attempt {attempt + 1} failed. Trying to improve...")
                 self.improve_implementation()
             else:
-                print("Maximum improvement attempts reached. Please review the output manually.")
+                print(
+                    "Maximum improvement attempts reached. Please review the output manually."
+                )
 
-        print("Task completed. Please review the output and make any necessary manual adjustments.")
+        print(
+            "Task completed. Please review the output and make any necessary manual adjustments."
+        )
 
     def ensure_poetry_installed(self):
         try:
@@ -318,7 +376,6 @@ class NemoAgent:
         except Exception as e:
             print(f"Error: {str(e)}")
 
-
     def implement_solution(self, max_attempts=3):
         prompt = f"""
         Create a comprehensive implementation for the task: {self.task}.
@@ -340,62 +397,102 @@ class NemoAgent:
             8. CRITICAL: Only create one code file ({self.project_name}/main.py) and one test file (tests/test_main.py).
             9. IMPORTANT: Do not add any code comments to the files.
             10. IMPORTANT: Always follow PEP8 style guide, follow best practices for Python, use descriptive variable names, and provide meaningful docstrings.
+            11. IMPORTANT: Do not redefine built-in functions or use reserved keywords as variable names.
         Working directory: {self.pwd}
         """
 
         for attempt in range(max_attempts):
+            self.logger.info(f"Attempt {attempt + 1} to implement solution")
             solution = self.get_response(prompt)
-            print(f"Attempt {attempt + 1}: Executing solution:")
-            print(solution)
+            self.logger.info(f"Received solution:\n{solution}")
 
-            # Extract file contents from the solution
+            # Log the entire solution for debugging
+            self.logger.debug(f"Raw solution:\n{solution}")
+
             file_contents = self.extract_file_contents_direct(solution)
 
-            # Write files using standard Python file operations
+            if not file_contents:
+                self.logger.error("No file contents extracted from the solution")
+                self.logger.debug("Attempting to extract file contents manually")
+
+                # Manual extraction attempt
+                main_content = self.extract_content_between_markers(
+                    solution, f"<<<{self.project_name}/main.py>>>", "<<<end>>>"
+                )
+                test_content = self.extract_content_between_markers(
+                    solution, "<<<tests/test_main.py>>>", "<<<end>>>"
+                )
+
+                if main_content and test_content:
+                    file_contents = {
+                        f"{self.project_name}/main.py": main_content,
+                        "tests/test_main.py": test_content,
+                    }
+                    self.logger.info("Manually extracted file contents")
+                else:
+                    self.logger.error("Failed to manually extract file contents")
+                    continue
+
+            expected_files = {f"{self.project_name}/main.py", "tests/test_main.py"}
+            if set(file_contents.keys()) != expected_files:
+                self.logger.error(
+                    f"Incorrect files provided. Expected: {expected_files}, Got: {set(file_contents.keys())}"
+                )
+                continue
+
+            success = True
             for file_path, content in file_contents.items():
                 full_path = os.path.join(self.pwd, file_path)
                 try:
                     os.makedirs(os.path.dirname(full_path), exist_ok=True)
+                    content = self.clean_markdown_artifacts(content)
+
                     with open(full_path, "w") as f:
-                        content = self.clean_markdown_artifacts(content)
                         f.write(content)
-                    print(f"File written successfully: {full_path}")
+
+                    if os.path.exists(full_path) and os.path.getsize(full_path) > 0:
+                        self.logger.info(f"File written successfully: {full_path}")
+                        with open(full_path, "r") as f:
+                            self.logger.debug(f"Content of {full_path}:\n{f.read()}")
+                    else:
+                        self.logger.error(
+                            f"Failed to write file or file is empty: {full_path}"
+                        )
+                        success = False
                 except Exception as e:
-                    print(f"Error writing file {full_path}: {str(e)}")
+                    self.logger.error(f"Error writing file {full_path}: {str(e)}")
+                    success = False
 
-            # Verify that files were created
-            code_files = [f for f in os.listdir(os.path.join(
-                self.pwd, self.project_name)) if f.endswith(".py") and f != "__init__.py"]
-            test_files = [f for f in os.listdir(os.path.join(
-                self.pwd, "tests")) if f.startswith("test_") and f.endswith(".py")]
-
-            if len(code_files) == 1 and len(test_files) == 1 and os.path.exists(os.path.join(self.pwd, "pyproject.toml")):
-                print("Files successfully created.")
+            if success:
+                self.logger.info("All files created successfully")
                 self.commit_changes("Implement initial solution")
-                break
-            else:
-                print(
-                    f"Attempt {attempt + 1} failed to create the correct files. Retrying...")
+                return True
 
-            # Validate that the implementation matches the original task
-            if not self.validate_implementation():
-                self.improve_implementation()
+            self.logger.warning(
+                f"Attempt {attempt + 1} failed to create the correct files. Retrying..."
+            )
 
-            # Run poetry update to ensure all dependencies are installed
-            try:
-                subprocess.run(["poetry", "update"], check=True, cwd=self.pwd)
-                print("Poetry update completed successfully.")
-            except subprocess.CalledProcessError as e:
-                print(f"Error updating dependencies: {e}")
+        self.logger.error("Failed to implement solution after maximum attempts")
+        return False
+
+    def extract_content_between_markers(self, text, start_marker, end_marker):
+        start_index = text.find(start_marker)
+        if start_index == -1:
+            return None
+        start_index += len(start_marker)
+        end_index = text.find(end_marker, start_index)
+        if end_index == -1:
+            return None
+        return text[start_index:end_index].strip()
 
     def extract_file_contents_direct(self, solution):
         file_contents = {}
-        pattern = r'<<<(.+?)>>>\n(.*?)<<<end>>>'
+        pattern = r"<<<(.+?)>>>\n(.*?)<<<end>>>"
         matches = re.findall(pattern, solution, re.DOTALL)
-        
+
         for filename, content in matches:
             file_contents[filename.strip()] = content.strip()
-        
+
         return file_contents
 
     def validate_against_task(self, proposed_changes):
@@ -427,13 +524,13 @@ class NemoAgent:
         print("Checking and cleaning existing files...")
         for root, dirs, files in os.walk(self.pwd):
             for file in files:
-                if file.endswith('.py'):
+                if file.endswith(".py"):
                     file_path = os.path.join(root, file)
-                    with open(file_path, 'r') as f:
+                    with open(file_path, "r") as f:
                         content = f.read()
                     cleaned_content = self.validate_file_content(file_path, content)
                     if cleaned_content != content:
-                        with open(file_path, 'w') as f:
+                        with open(file_path, "w") as f:
                             f.write(cleaned_content)
                         print(f"Cleaned up file: {file_path}")
         print("File check and clean completed.")
@@ -479,41 +576,55 @@ class NemoAgent:
         16. Use defensive programming techniques like .get() for dictionaries and list slicing for safe access.
         17. Consider using the `itertools` module for efficient list operations.
         18. IMPORTANT: Always follow PEP8 style guide, follow best practices for Python, use descriptive variable names, and provide meaningful docstrings.
+        19. IMPORTANT: Do not redefine built-in functions or use reserved keywords as variable names.
+        20. Use the following format for specifying file content:
+            <<<{self.project_name}/main.py>>>
+            # File content here
+            <<<end>>>
+            
+            <<<tests/test_main.py>>>
+            # Test file content here
+            <<<end>>>
         """
         improvements = self.get_response(prompt)
         print("Proposed improvements:")
         print(improvements)
 
         if self.validate_against_task(improvements):
-            print("Writing suggested improvements to files:")
+            self.logger.info("Writing suggested improvements to files:")
             file_contents = self.extract_file_contents_direct(improvements)
             for file_path, content in file_contents.items():
                 full_path = os.path.join(self.pwd, file_path)
                 try:
-                    with open(full_path, 'w') as f:
-                        content = self.clean_markdown_artifacts(content)
-                        f.write(content)
-                    print(f"Updated file: {full_path}")
+                    content = self.clean_markdown_artifacts(content)
+                    if self.robust_write_file(full_path, content):
+                        self.logger.info(f"Updated file: {full_path}")
+                    else:
+                        self.logger.error(f"Failed to update file: {full_path}")
                 except Exception as e:
-                    print(f"Error writing to file {full_path}: {str(e)}")
-            
-            print("Improvements have been written to files. Please review the changes manually.")
+                    self.logger.error(f"Error writing to file {full_path}: {str(e)}")
+
+            self.logger.info(
+                "Improvements have been written to files. Please review the changes manually."
+            )
         else:
-            print("Proposed improvements do not align with the original task. No changes were made.")
+            self.logger.info(
+                "Proposed improvements do not align with the original task. No changes were made."
+            )
 
     def validate_list_operations(self, file_path):
-        with open(file_path, 'r') as f:
+        with open(file_path, "r") as f:
             content = f.read()
-        
+
         # Check for common patterns that might lead to IndexError
-        if '[0]' in content and 'if' not in content.split('[0]')[0].split('\n')[-1]:
+        if "[0]" in content and "if" not in content.split("[0]")[0].split("\n")[-1]:
             print(f"Warning: Possible unsafe list access in {file_path}")
             return False
-        
-        if 'except IndexError' not in content:
+
+        if "except IndexError" not in content:
             print(f"Warning: No explicit IndexError handling in {file_path}")
             return False
-        
+
         return True
 
     def validate_implementation(self):
@@ -524,7 +635,7 @@ class NemoAgent:
         Provide a brief explanation for your decision.
         """
         response = self.get_response(prompt)
-    
+
         if "VALID" in response.upper():
             print("Implementation validated successfully.")
             return True
@@ -580,8 +691,7 @@ class NemoAgent:
         try:
             # Check if the file is empty
             if os.path.getsize(file_path) == 0:
-                print(
-                    f"File {file_path} is empty. Skipping autopep8 and pylint check.")
+                print(f"File {file_path} is empty. Skipping autopep8 and pylint check.")
                 return 10.0  # Assume perfect score for empty files
 
             # Run autopep8 to automatically fix style issues
@@ -629,8 +739,7 @@ class NemoAgent:
 
             if score < 6.0:
                 print("Score is below 6.0. Attempting to improve the code...")
-                self.improve_code(file_path, score, output,
-                                  is_test_file, is_init_file)
+                self.improve_code(file_path, score, output, is_test_file, is_init_file)
 
             elif (
                 "missing-module-docstring" in output
@@ -663,23 +772,16 @@ class NemoAgent:
                 file.write(docstring + content)
             print(f"Added module docstring to {file_path}")
 
+
     def improve_code(
-        self,
-        file_path,
-        current_score,
-        pylint_output,
-        is_test_file,
-        is_init_file,
-        attempt=1,
+        self, file_path, current_score, pylint_output, is_test_file, is_init_file, attempt=1
     ):
         if current_score >= 6.0:
             print(f"Code quality is already good. Score: {current_score}/10")
             return current_score
 
         if attempt > self.MAX_IMPROVEMENT_ATTEMPTS:
-            # fmt: off
             print(f"Maximum improvement attempts reached for {file_path}. Moving on.")
-            # fmt: on
             return current_score
 
         git_diff = self.get_git_diff()
@@ -700,7 +802,7 @@ class NemoAgent:
         Pylint output:
         {pylint_output}
 
-         Git diff:
+        Git diff:
         {git_diff}
 
         Git log:
@@ -716,26 +818,43 @@ class NemoAgent:
         4. CRITICAL: Never create new files. Only modify the existing ones.
         5. Consider the Git history when suggesting changes to avoid reverting recent improvements.
         6. Use parametrized tests to cover multiple scenarios efficiently
-        7. IMPORTANT: Only use `sed` for making specific modifications to existing files:
-            sed -i 's/old_text/new_text/g' filename.py
-        8. IMPORTANT: Never modify the existing pyproject.toml dependencies.
-        9. IMPORTANT: Do not add new imports in the code or tests files for 3rd party dependencies.
-        10. The test command is `poetry run pytest --cov={self.project_name} --cov-config=.coveragerc`
-        11. IMPORTANT: Do not add any code comments to the files.
-        12. IMPORTANT: Always follow PEP8 style guide, follow best practices for Python, use descriptive variable names, and provide meaningful docstrings.
+        7. IMPORTANT: Do not add new imports in the code or tests files for 3rd party dependencies.
+        8. The test command is `poetry run pytest --cov={self.project_name} --cov-config=.coveragerc`
+        9. IMPORTANT: Do not add any code comments to the files.
+        10. IMPORTANT: Always follow PEP8 style guide, follow best practices for Python, use descriptive variable names, and provide meaningful docstrings.
+        11. IMPORTANT: Do not redefine built-in functions or use reserved keywords as variable names.
+        12. Use the following format for specifying file content:
+            <<<{self.project_name}/main.py>>>
+            # File content here
+            <<<end>>>
+            
+            <<<tests/test_main.py>>>
+            # Test file content here
+            <<<end>>>
         """
         proposed_improvements = self.get_response(prompt)
 
         if self.validate_against_task(proposed_improvements):
             print("Executing validated improvements:")
-            self.validate_and_execute_commands(proposed_improvements)
+            file_contents = self.extract_file_contents_direct(proposed_improvements)
+
+            for file_path, content in file_contents.items():
+                full_path = os.path.join(self.pwd, file_path)
+                cleaned_content = self.clean_markdown_artifacts(content)
+
+                try:
+                    with open(full_path, "w") as f:
+                        f.write(cleaned_content)
+                    print(f"Updated file: {full_path}")
+                except Exception as e:
+                    print(f"Error writing to file {full_path}: {str(e)}")
 
             new_score = self.clean_code_with_pylint(file_path)
 
             if new_score < 6.0:
-                # fmt: off
-                print(f"Score is still below 6.0. Attempting another improvement (attempt {attempt + 1})...")
-                # fmt: on
+                print(
+                    f"Score is still below 6.0. Attempting another improvement (attempt {attempt + 1})..."
+                )
                 return self.improve_code(
                     file_path,
                     new_score,
@@ -755,8 +874,7 @@ class NemoAgent:
                 "Proposed improvements do not align with the original task. Skipping this improvement attempt."
             )
             if attempt < self.MAX_IMPROVEMENT_ATTEMPTS:
-                print(
-                    f"Attempting another improvement (attempt {attempt + 1})...")
+                print(f"Attempting another improvement (attempt {attempt + 1})...")
                 return self.improve_code(
                     file_path,
                     current_score,
@@ -773,13 +891,11 @@ class NemoAgent:
             print("Maximum test coverage improvement attempts reached. Moving on.")
             return initial_coverage
 
-        coverage_result = (
-            initial_coverage if attempt == 1 else self.get_current_coverage()
-        )
+        coverage_result = initial_coverage if attempt == 1 else self.get_current_coverage()
         if coverage_result >= 80:
-            # fmt: off
-            print(f"Test coverage is already at {coverage_result}%. No improvements needed.")
-            # fmt: on
+            print(
+                f"Test coverage is already at {coverage_result}%. No improvements needed."
+            )
             return coverage_result
 
         git_diff = self.get_git_diff()
@@ -799,53 +915,66 @@ class NemoAgent:
 
         Provide specific code changes to improve the test coverage.
         Follow these rules strictly:
-        1. Analyze the code and tests files to provide better changes using the `cd`, `ls`, or `cat` commands.
+        1. Analyze the code and tests files to provide better changes.
         2. IMPORTANT: Never use pass statements in your code. Always provide a meaningful implementation.
         3. Only use pytest for testing.
         4. CRITICAL: Only modify the existing files. Do not create new files.
         5. Consider the Git history when suggesting changes to avoid reverting recent improvements or duplicating tests.
         6. Use parametrized tests to cover multiple scenarios efficiently
         7. IMPORTANT: Do not create new files. Only modify the existing ones.
-        8. IMPORTANT: Only use `sed` for making specific modifications to existing files:
-            sed -i 's/old_text/new_text/g' filename.py
-        9. IMPORTANT: Never modify the existing pyproject.toml dependencies.
-        10. IMPORTANT: Do not add new imports in the code or tests files for 3rd party dependencies.
-        21. IMPORTANT: Always follow PEP8 style guide, follow best practices for Python, use descriptive variable names, and provide meaningful docstrings.
+        8. IMPORTANT: Do not add new imports in the code or tests files for 3rd party dependencies.
+        9. IMPORTANT: Always follow PEP8 style guide, follow best practices for Python, use descriptive variable names, and provide meaningful docstrings.
+        10. IMPORTANT: Do not redefine built-in functions or use reserved keywords as variable names.
+        11. Use the following format for specifying file content:
+            <<<{self.project_name}/main.py>>>
+            # File content here
+            <<<end>>>
+            
+            <<<tests/test_main.py>>>
+            # Test file content here
+            <<<end>>>
         """
         proposed_improvements = self.get_response(prompt)
 
         if self.validate_against_task(proposed_improvements):
             print("Executing validated improvements:")
-            self.validate_and_execute_commands(proposed_improvements)
+            file_contents = self.extract_file_contents_direct(proposed_improvements)
+
+            for file_path, content in file_contents.items():
+                full_path = os.path.join(self.pwd, file_path)
+                cleaned_content = self.clean_markdown_artifacts(content)
+
+                try:
+                    with open(full_path, "w") as f:
+                        f.write(cleaned_content)
+                    print(f"Updated file: {full_path}")
+                except Exception as e:
+                    print(f"Error writing to file {full_path}: {str(e)}")
 
             new_coverage = self.get_current_coverage()
             if new_coverage < 80:
-                # fmt: off
-                print(f"Coverage is still below 80% (current: {new_coverage}%). Attempting another improvement (attempt {attempt + 1})...")
-                # fmt: on
+                print(
+                    f"Coverage is still below 80% (current: {new_coverage}%). Attempting another improvement (attempt {attempt + 1})..."
+                )
                 return self.improve_test_coverage(attempt + 1, new_coverage)
             else:
-                # fmt: off
                 print(f"Coverage goal achieved. Current coverage: {new_coverage}%")
-                # fmt: on
-                self.commit_changes(
-                    f"Improve test coverage to {new_coverage}%")
+                self.commit_changes(f"Improve test coverage to {new_coverage}%")
                 return new_coverage
         else:
             print(
                 "Proposed improvements do not align with the original task. Skipping this improvement attempt."
             )
             if attempt < self.MAX_IMPROVEMENT_ATTEMPTS:
-                print(
-                    f"Attempting another improvement (attempt {attempt + 1})...")
+                print(f"Attempting another improvement (attempt {attempt + 1})...")
                 return self.improve_test_coverage(attempt + 1, coverage_result)
             else:
                 return coverage_result
 
     def validate_file_content(self, file_path, content):
-        if file_path.endswith('.py'):
+        if file_path.endswith(".py"):
             # Check for markdown artifacts
-            if '```python' in content or '```' in content:
+            if "```python" in content or "```" in content:
                 print(f"Warning: Markdown artifacts found in {file_path}")
                 content = self.clean_markdown_artifacts(content)
 
@@ -860,9 +989,18 @@ class NemoAgent:
 
     def clean_markdown_artifacts(self, content):
         # Remove markdown code block syntax
-        content = re.sub(r'```python\n', '', content)
-        content = re.sub(r'```\n', '', content)
-        content = re.sub(r'```', '', content)
+        content = re.sub(r"```python\n", "", content)
+        content = re.sub(r"```\n", "", content)
+        content = re.sub(r"```", "", content)
+
+        # Remove any leading or trailing whitespace
+        content = content.strip()
+
+        # Remove any remaining markdown headers
+        content = re.sub(r"^#+\s+.*$", "", content, flags=re.MULTILINE)
+
+        # Remove any inline code markers
+        content = re.sub(r"`([^`]+)`", r"\1", content)
 
         return content
 
@@ -890,7 +1028,7 @@ class NemoAgent:
     "."
     ]
         """
-        with open(os.path.join(self.pwd, "pyproject.toml"), 'w') as f:
+        with open(os.path.join(self.pwd, "pyproject.toml"), "w") as f:
             f.write(default_content)
         print("Created default pyproject.toml")
 
@@ -900,22 +1038,24 @@ class NemoAgent:
 
         # Ensure the project name is correct
         fixed_content = re.sub(
-            r'name = ".*"', f'name = "{self.project_name}"', fixed_content)
+            r'name = ".*"', f'name = "{self.project_name}"', fixed_content
+        )
 
         # Ensure pytest-cov is in dev-dependencies
-        if 'pytest-cov' not in fixed_content:
+        if "pytest-cov" not in fixed_content:
             fixed_content = fixed_content.replace(
                 "[tool.poetry.dev-dependencies]",
-                "[tool.poetry.dev-dependencies]\npytest-cov = \"^2.12\""
+                '[tool.poetry.dev-dependencies]\npytest-cov = "^2.12"',
             )
 
         # Ensure pythonpath is set correctly
-        if '[tool.pytest.ini_options]' not in fixed_content:
+        if "[tool.pytest.ini_options]" not in fixed_content:
             fixed_content += '\n[tool.pytest.ini_options]\npythonpath = ["."]\n'
 
         # Fix unclosed inline table issue
         fixed_content = re.sub(
-            r'(\[.*?\].*?{[^}]*$)', r'\1}', fixed_content, flags=re.DOTALL)
+            r"(\[.*?\].*?{[^}]*$)", r"\1}", fixed_content, flags=re.DOTALL
+        )
 
         return fixed_content
 
@@ -933,8 +1073,7 @@ class NemoAgent:
                 text=True,
                 cwd=self.pwd,
             )
-            coverage_match = re.search(
-                r"TOTAL\s+\d+\s+\d+\s+(\d+)%", result.stdout)
+            coverage_match = re.search(r"TOTAL\s+\d+\s+\d+\s+(\d+)%", result.stdout)
             if coverage_match:
                 return int(coverage_match.group(1))
             else:
@@ -1096,8 +1235,7 @@ class NemoAgent:
             print(f"Error verifying file contents: {e}")
 
     def extract_python_code(self, command):
-        match = re.search(r"cat > .*\.py << EOL\n(.*?)\nEOL",
-                          command, re.DOTALL)
+        match = re.search(r"cat > .*\.py << EOL\n(.*?)\nEOL", command, re.DOTALL)
         if match:
             return match.group(1)
         return ""
@@ -1186,10 +1324,8 @@ class NemoAgent:
                 return False, 0
 
             # Extract coverage percentage
-            coverage_match = re.search(
-                r"TOTAL\s+\d+\s+\d+\s+(\d+)%", result.stdout)
-            coverage_percentage = int(
-                coverage_match.group(1)) if coverage_match else 0
+            coverage_match = re.search(r"TOTAL\s+\d+\s+\d+\s+(\d+)%", result.stdout)
+            coverage_percentage = int(coverage_match.group(1)) if coverage_match else 0
 
             # Check if all tests passed
             tests_passed = (
