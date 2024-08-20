@@ -4,7 +4,7 @@
 
 [![Nemo Agent](https://cdn.cometheart.com/nemo-agent-2.png)](https://cdn.cometheart.com/nemo-agent.mp4)
 
-Nemo Agent is an expert Python AI software developer!
+Nemo Agent is an AI Agent for Python coding!
 
 ## Features
 * Runs blazing fast locally on an RTX 4070 or greater
@@ -58,7 +58,7 @@ Nemo Agent is an expert Python AI software developer!
     * Add `environment variables` with `OLLAMA_HOST` key and `0.0.0.0` value
 * Deploy your pod
 * After deploying then login via SSH
-* Run on the pod: `curl -fsSL https://ollama.com/install.sh | sh && ollama serve`
+* Run on the pod: `(curl -fsSL https://ollama.com/install.sh | sh && ollama serve > ollama.log 2>&1) &` and then press CTRL+C to exit
 * Run on the pod: `ollama pull mistral-nemo`
 * Run on the pod: `pip install nemo-agent`
 * You are ready to use `nemo-agent`
