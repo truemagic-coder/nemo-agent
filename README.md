@@ -80,7 +80,7 @@ Generate a fizzbuzz program:
 
 ## Limitations
 
-* Due to the LLM getting confused with paths and files - writing 1 code and 1 test file is only supported.
+- Currently Nemo Agent can't build web apps as it gets confused - this is a WIP
 
 ## Roadmap
 * Refactor legacy Python code projects to `nemo-agent` code

@@ -358,7 +358,7 @@ class NemoAgent:
         prompt = f"""
             Create a comprehensive implementation for the task: {self.task}.
             You must follow these rules strictly:
-                1. CRITICAL: Do not modify the pyproject.toml file.
+                1. CRITICAL: Only add poetry dependencies if necessary using `poetry add package_name`.
                 2. Use the correct import statements: from {self.project_name}.module_name import method_name.
                 3. Follow PEP8 style guide.
                 4. IMPORTANT: Never use pass statements in your code or tests. Always provide a meaningful implementation.
@@ -372,14 +372,28 @@ class NemoAgent:
                     <<<tests/test_main.py>>>
                     # Test file content here
                     <<<end>>>      
+
+                    For HTML templates (Flask), use:
+                    <<<{self.project_name}/templates/template_name.html>>>
+                    <!-- HTML content here -->
+                    <<<end>>>
+                    
+                    For static files (CSS, JS), use:
+                    <<<{self.project_name}/static/filename.ext>>>
+                    // Static file content here
+                    <<<end>>>
                 7. The test command is `poetry run pytest --cov={self.project_name} --cov-config=.coveragerc`
                 8. IMPORTANT: Do not add any code comments to the files.
                 9. IMPORTANT: Always follow PEP8 style guide, follow best practices for Python, use snake_case naming, and provide meaningful docstrings.
                 10. IMPORTANT: Do not redefine built-in functions or use reserved keywords as variable names.
                 11. CRITICAL: Put all Python code in 1 file only: {self.project_name}/main.py
                 12. CRITICAL: Put all tests in 1 file only: tests/test_main.py
-                13. CRITICAL: Do not explain the task, only implement the required functionality in the code blocks.
-                14. CRITICAL: Your response should ONLY contain the code blocks. Do not include any explanations or additional text.
+                13. CRITICAL: Create any non-existent directories or files as needed that are not Python files.
+                14. CRITICAL: Do not explain the task, only implement the required functionality in the code blocks.
+                15. CRITICAL: Your response should ONLY contain the code blocks. Do not include any explanations or additional text.
+                16. IMPORTANT: For Flask apps, create necessary HTML templates in the 'templates' directory.
+                18. IMPORTANT: For Flask apps, create necessary static files (CSS, JS) in the 'static' directory.
+                19. CRITICAL: Do not edit pyproject.toml or poetry.lock files.
             Working directory: {self.pwd}
             """
 
