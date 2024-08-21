@@ -1,6 +1,7 @@
 import ast
 from contextlib import contextmanager
 import fcntl
+import json
 import logging
 import os
 import random
@@ -9,51 +10,8 @@ import shutil
 import subprocess
 import sys
 import time
-from phi.assistant import Assistant
-from phi.llm.ollama import Ollama
 import click
-
-SYSTEM_PROMPT = """
-You are Nemo Agent, an expert Python developer. Follow these rules strictly:
-
-1. The project has been created using `poetry new {project_name}`. Use this layout to write code in the proper directories.
-2. Always provide complete, fully functional code when creating or editing files.
-3. If a library is required, add it to the pyproject.toml and run `poetry update`.
-4. CRITICAL: Never execute the code you created other than tests.
-5. Always use Poetry for project setup and dependency management - never use requirements.txt.
-6. IMPORTANT: Write to disk after EVERY step, no matter how small.
-7. Only use pytest for testing.
-8. Always use module imports when referring to files in tests.
-9. IMPORTANT: Write to disk after EVERY step, no matter how small.
-10. Always break up tests into multiple test functions for better organization.
-11. Always mock external services, database calls, and APIs.
-12. Always include module docstrings at the beginning of Python files, unless they are test files or __init__.py files.
-13. You use your tools like `cd`, `ls`, and `cat` to verify and understand the contents of files and directories.
-14. Never use `poetry shell` only use `poetry run` for running commands.
-15. The test command is `poetry run pytest --cov={project_name} --cov-config=.coveragerc`
-16. IMPORTANT: Write to disk after EVERY step using `cat` or `sed`, no matter how small.
-17. You write code to the code directory on disk: {project_name}
-18. You write tests to the tests directory on disk: tests
-19. IMPORTANT: Never use pass statements in your code. Always provide a meaningful implementation.
-20. Use `sed` for making specific modifications to existing files:
-    sed -i 's/old_text/new_text/g' filename.py
-21. IMPORTANT: Never remove existing poetry dependencies. Only add new ones if necessary.
-22. CRITICAL: Only create one code file ({project_name}/main.py) and one test file (tests/test_main.py).
-23. IMPORTANT: Do not add any code comments to the files.
-24. IMPORTANT: Always follow PEP8 style guide, follow best practices for Python, use descriptive variable names, and provide meaningful docstrings.
-25. IMPORTANT: Do not redefine built-in functions or use reserved keywords as variable names.
-26. IMPORTANT: Do not directly cast types - create helper functions to handle type conversions and validations.
-
-When creating or modifying files, use the following format:
-<<<filename>>>
-File content here
-<<<end>>>
-This format should be used for all files, including Python files and pyproject.toml.
-Do not use heredoc syntax or cat commands.
-
-Current working directory: {pwd}
-"""
-
+import requests
 
 class CustomSystemTools:
     def __init__(self):
@@ -73,6 +31,36 @@ class CustomSystemTools:
         except subprocess.CalledProcessError as e:
             return f"Error executing command: {e.stderr}"
 
+class OllamaAPI:
+    def __init__(self, model):
+        self.model = model
+        self.base_url = "http://localhost:11434/api"
+
+    def generate(self, prompt):
+        url = f"{self.base_url}/generate"
+        data = {
+            "model": self.model,
+            "prompt": prompt,
+            "stream": True
+        }
+        response = requests.post(url, json=data, stream=True)
+        if response.status_code == 200:
+            full_response = ""
+            for line in response.iter_lines():
+                if line:
+                    decoded_line = line.decode('utf-8')
+                    try:
+                        json_line = json.loads(decoded_line)
+                        chunk = json_line.get('response', '')
+                        full_response += chunk
+                        print(chunk, end='', flush=True)
+                    except json.JSONDecodeError:
+                        print(f"Error decoding JSON: {decoded_line}")
+            print()  # Print a newline at the end
+            return full_response
+        else:
+            raise Exception(f"Ollama API error: {response.text}")
+
 
 class NemoAgent:
     MAX_IMPROVEMENT_ATTEMPTS = 10
@@ -83,9 +71,9 @@ class NemoAgent:
         self.pwd = os.getcwd()
         self.task = task
         self.model = model
-        self.project_name = self.generate_project_name()
-        self.assistant = self.setup_assistant()
         self.setup_logging()
+        self.project_name = self.generate_project_name()
+        self.ollama = self.setup_ollama()
         self.previous_suggestions = set()
 
     def setup_logging(self):
@@ -135,32 +123,10 @@ class NemoAgent:
                 break
         return False
 
-    def setup_assistant(self):
-        system_prompt = SYSTEM_PROMPT.format(
-            pwd=self.pwd,
-            project_name=self.project_name,
-            os_name=os.uname().sysname,
-            default_shell=os.environ.get("SHELL", "/bin/sh"),
-            home_dir=os.path.expanduser("~"),
-        )
-        custom_system_tools = CustomSystemTools()
-        return Assistant(
-            llm=Ollama(model=self.model),
-            system_prompt=system_prompt,
-            tools=[
-                custom_system_tools.execute_command,
-            ],
-            show_tool_calls=True,
-            markdown=True,
-        )
+    def setup_ollama(self):
+        return OllamaAPI(self.model)
 
     def generate_project_name(self):
-        temp_assistant = Assistant(
-            llm=Ollama(model=self.model),
-            system_prompt="You are a helpful assistant.",
-            show_tool_calls=True,
-            markdown=True,
-        )
         prompt = f"""
         Generate a two-word snake_case project name based on the following task:
         {self.task}
@@ -169,22 +135,21 @@ class NemoAgent:
         It must be exactly two words in snake_case format.
         Return only the project name, nothing else.
         """
-        response = self.get_response(prompt, assistant=temp_assistant)
+        response = self.get_response(prompt)
         project_name = response.strip().strip('"').strip("'").lower().replace(" ", "_")
 
         # Ensure the project name has exactly two segments
         segments = project_name.split("_")
         if len(segments) != 2:
             # If not, generate a default name
-            # fmt: off
             project_name = f"task_{segments[0]}" if segments else "default_project"
-            # fmt: on
 
         # Add a random 3-digit number as the third segment
         random_number = random.randint(100, 999)
         project_name = f"{project_name}_{random_number}"
 
         return project_name
+
 
     def initialize_git_repo(self):
         try:
@@ -251,16 +216,6 @@ class NemoAgent:
         except subprocess.CalledProcessError as e:
             print(f"Error getting Git log: {e}")
             return ""
-
-    def update_system_prompt(self):
-        updated_prompt = SYSTEM_PROMPT.format(
-            pwd=self.pwd,
-            project_name=self.project_name,
-            os_name=os.uname().sysname,
-            default_shell=os.environ.get("SHELL", "/bin/sh"),
-            home_dir=os.path.expanduser("~"),
-        )
-        self.assistant.system_prompt = updated_prompt
 
     def run_task(self):
         print(f"Current working directory: {os.getcwd()}")
@@ -329,9 +284,6 @@ class NemoAgent:
 
             # Initialize Git repository in the project directory
             self.initialize_git_repo()
-
-            # Update the system prompt with the new working directory
-            self.update_system_prompt()
 
             print(f"Current working directory: {os.getcwd()}")
             print("Contents of the directory:")
@@ -481,9 +433,9 @@ class NemoAgent:
 
                         # Run pylint on the file
                         pylint_score = self.clean_code_with_pylint(full_path)
-                        if pylint_score < 6.0:
+                        if pylint_score < 9.0:
                             self.logger.warning(
-                                f"Pylint score for {full_path} is below 6.0: {pylint_score}"
+                                f"Pylint score for {full_path} is below 9.0: {pylint_score}"
                             )
                             success = False
                     else:
@@ -585,7 +537,7 @@ class NemoAgent:
         {git_log}
 
         Please provide improvements to the existing code to:
-        1. Improve or maintain the pylint score (target: at least 6.0/10)
+        1. Improve or maintain the pylint score (target: at least 9.0/10)
         2. Ensure all tests are passing
         3. Improve or maintain the test coverage (target: at least 80%)
         4. CRITICAL: Handle list indices properly to avoid IndexError exceptions
@@ -689,33 +641,13 @@ class NemoAgent:
             print(f"Error running pylint: {e}")
             return 0.0
 
-    def get_response(self, prompt, assistant=None):
-        if assistant is None:
-            assistant = self.assistant
-        full_response = ""
-        current_line = ""
-        for response in assistant.run(prompt):
-            if isinstance(response, str):
-                full_response += response
-                current_line += response
-            elif isinstance(response, dict) and "content" in response:
-                content = response["content"]
-                full_response += content
-                current_line += content
-            else:
-                full_response += str(response)
-                print(str(response))
-
-            if "\n" in current_line:
-                lines = current_line.split("\n")
-                for line in lines[:-1]:
-                    print(line)
-                current_line = lines[-1]
-
-        if current_line:
-            print(current_line)
-
-        return full_response.strip()
+    def get_response(self, prompt):
+            try:
+                response = self.ollama.generate(prompt)
+                return response.strip()
+            except Exception as e:
+                self.logger.error(f"Error getting response from Ollama: {str(e)}")
+                return ""
 
     def clean_code_with_pylint(self, file_path):
         try:
@@ -770,8 +702,8 @@ class NemoAgent:
             print(output)
             print(f"Pylint score for {file_path}: {score}/10")
 
-            if score < 6.0:
-                print("Score is below 6.0. Attempting to improve the code...")
+            if score < 9.0:
+                print("Score is below 9.0. Attempting to improve the code...")
                 self.improve_code(file_path, score, output, is_test_file, is_init_file)
 
             elif (
@@ -895,7 +827,7 @@ class NemoAgent:
         attempt=1,
         test_output="",
     ):
-        if current_score >= 6.0:
+        if current_score >= 9.0:
             print(f"Code quality is already good. Score: {current_score}/10")
             return current_score
 
@@ -960,9 +892,9 @@ class NemoAgent:
 
             new_score = self.clean_code_with_pylint(file_path)
 
-            if new_score < 6.0:
+            if new_score < 9.0:
                 print(
-                    f"Score is still below 6.0. Attempting another improvement (attempt {attempt + 1})..."
+                    f"Score is still below 9.0. Attempting another improvement (attempt {attempt + 1})..."
                 )
                 return self.improve_code(
                     file_path,

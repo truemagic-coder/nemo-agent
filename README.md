@@ -80,12 +80,7 @@ Generate a fizzbuzz program:
 
 ## Limitations
 
-* LLM codegen issues mean that web APIs like Flask and FastAPI are not supported.
 * Due to the LLM getting confused with paths and files - writing 1 code and 1 test file is only supported.
-
-## Notes
-* Tested all local models that can run on an RTX 4090 on Ollama other than `mistral-nemo` and none can be prompted to complete the task.
-* Tested with Mistral Nemo hosted API - the local/API models are not the same and the API version is very buggy with prompting
 
 ## Roadmap
 * Refactor legacy Python code projects to `nemo-agent` code
