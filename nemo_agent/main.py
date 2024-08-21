@@ -82,29 +82,10 @@ class NemoAgent:
         return OllamaAPI(self.model)
 
     def generate_project_name(self):
-        prompt = f"""
-        Generate a two-word snake_case project name based on the following task:
-        {self.task}
-
-        The project name should be descriptive and relevant to the task.
-        It must be exactly two words in snake_case format.
-        Return only the project name, nothing else.
-        """
-        response = self.get_response(prompt)
-        project_name = response.strip().strip('"').strip("'").lower().replace(" ", "_")
-
-        # Ensure the project name has exactly two segments
-        segments = project_name.split("_")
-        if len(segments) != 2:
-            # If not, generate a default name
-            project_name = f"task_{segments[0]}" if segments else "default_project"
-
-        # Add a random 3-digit number as thefrob third segment
         random_number = random.randint(100, 999)
-        project_name = f"{project_name}_{random_number}"
+        project_name = f"project_{random_number}"
 
         return project_name
-
 
     def initialize_git_repo(self):
         try:
@@ -309,13 +290,14 @@ class NemoAgent:
                     with open(full_path, "r") as f:
                         self.logger.debug(f"Content of {full_path}:\n{f.read()}")
 
-                    # Run pylint on the file
-                    pylint_score = self.clean_code_with_pylint(full_path)
-                    if pylint_score < 8.0:
-                        self.logger.warning(
-                            f"Pylint score for {full_path} is below 8.0: {pylint_score}"
-                        )
-                        success = False
+                    # Run pylint only on files in the project folder
+                    if full_path.startswith(os.path.join(self.pwd, self.project_name)):
+                        pylint_score = self.clean_code_with_pylint(full_path)
+                        if pylint_score < 8.0:
+                            self.logger.warning(
+                                f"Pylint score for {full_path} is below 8.0: {pylint_score}"
+                            )
+                            success = False
                 else:
                     self.logger.error(
                         f"Failed to write file or file is empty: {full_path}"
@@ -364,8 +346,8 @@ class NemoAgent:
                 - Using try-except blocks to handle potential exceptions
                 - Using safe access methods like .get() for dictionaries and list slicing for safe access
             19. IMPORTANT: Do not directly cast types - create helper functions to handle type conversions and validations.
-            20. IMPORTANT: put all your code in the code directory: {self.pwd}/{self.project_name}
-            21. IMPORTANT: put all your tests in the tests directory: {self.pwd}/tests
+            20. IMPORTANT: put all your code in the code directory: {self.project_name}
+            21. IMPORTANT: put all your tests in the tests directory: tests
         Working directory: {self.pwd}
         """
 
@@ -489,8 +471,8 @@ class NemoAgent:
             # File content here
             <<<end>>>
         11. IMPORTANT: Do not directly cast types - create helper functions to handle type conversions and validations.
-        12. IMPORTANT: put all your code in the code directory: {self.pwd}/{self.project_name}
-        13. IMPORTANT: put all your tests in the tests directory: {self.pwd}/tests
+        12. IMPORTANT: put all your code in the code directory: {self.project_name}
+        13. IMPORTANT: put all your tests in the tests directory: tests
         Working directory: {self.pwd}
         """
         improvements = self.get_response(prompt)
@@ -671,8 +653,8 @@ class NemoAgent:
         4. Keep changes minimal and specific
         5. Do not rewrite entire test functions unless absolutely necessary
         6. Ensure all changes are meaningful and relate to the original task
-        7. IMPORTANT: put all your code in the code directory: {self.pwd}/{self.project_name}
-        8. IMPORTANT: put all your tests in the tests directory: {self.pwd}/tests
+        7. IMPORTANT: put all your code in the code directory: {self.project_name}
+        8. IMPORTANT: put all your tests in the tests directory: tests
         
         Working directory: {self.pwd}
         
@@ -765,8 +747,8 @@ class NemoAgent:
         3. Focus on improving code quality, readability, and adherence to PEP8
         4. Address any warnings or errors reported by pylint
         5. Ensure the implementation correctly handles edge cases and potential errors
-        6. IMPORTANT: put all your code in the code directory: {self.pwd}/{self.project_name}
-        7. IMPORTANT: put all your tests in the tests directory: {self.pwd}/tests
+        6. IMPORTANT: put all your code in the code directory: {self.project_name}
+        7. IMPORTANT: put all your tests in the tests directory: tests
         Working directory: {self.pwd}
 
         Use the following format for specifying file content:
@@ -883,8 +865,8 @@ class NemoAgent:
         3. Focus on improving code quality, readability, and adherence to PEP8
         4. Address any warnings or errors reported by pylint
         5. Ensure the implementation correctly handles edge cases and potential errors
-        6. IMPORTANT: put all your code in the code directory: {self.pwd}/{self.project_name}
-        7. IMPORTANT: put all your tests in the tests directory: {self.pwd}/tests
+        6. IMPORTANT: put all your code in the code directory: {self.project_name}
+        7. IMPORTANT: put all your tests in the tests directory: tests
         Working directory: {self.pwd}
 
         Use the following format for specifying file content:
