@@ -346,34 +346,35 @@ class NemoAgent:
             4. IMPORTANT: Never use pass statements in your code or tests. Always provide a meaningful implementation.
             5. Use parametrized tests to cover multiple scenarios efficiently.
             6. Use the following format for specifying file content:
-                <<<{self.project_name}/main.py>>>
+                <<<{self.project_name}/filename.py>>>
                 # File content here
                 <<<end>>>
                 
-                <<<tests/test_main.py>>>
+                <<<tests/test_filename.py>>>
                 # Test file content here
                 <<<end>>>
             7. The test command is `poetry run pytest --cov={self.project_name} --cov-config=.coveragerc`
-            8. CRITICAL: Only create one code file ({self.project_name}/main.py) and one test file (tests/test_main.py).
-            9. IMPORTANT: Do not add any code comments to the files.
-            10. IMPORTANT: Always follow PEP8 style guide, follow best practices for Python, use snake_case naming, and provide meaningful docstrings.
-            11. IMPORTANT: Do not redefine built-in functions or use reserved keywords as variable names.
-            12. Implement proper error handling using try-except blocks for potential IndexError exceptions.
-            13. Use len() to check list lengths before accessing indices.
-            14. Implement input validation to ensure list indices are within valid ranges.
-            15. Always check if a list is empty before accessing its elements.
-            16. Consider using the `itertools` module for efficient list operations.
-            17. CRITICAL: Always handle edge cases in list operations, including:
+            8. IMPORTANT: Do not add any code comments to the files.
+            9. IMPORTANT: Always follow PEP8 style guide, follow best practices for Python, use snake_case naming, and provide meaningful docstrings.
+            10. IMPORTANT: Do not redefine built-in functions or use reserved keywords as variable names.
+            11. Implement proper error handling using try-except blocks for potential IndexError exceptions.
+            12. Use len() to check list lengths before accessing indices.
+            13. Implement input validation to ensure list indices are within valid ranges.
+            14. Always check if a list is empty before accessing its elements.
+            15. Consider using the `itertools` module for efficient list operations.
+            16. CRITICAL: Always handle edge cases in list operations, including:
                 - Empty lists
                 - Lists with a single element
                 - Accessing the first or last element of a list
                 - Removing elements from the beginning, middle, or end of a list
-            18. IMPORTANT: Implement robust input validation for all functions, especially for parameters that affect list indices or sizes.
-            19. CRITICAL: Use defensive programming techniques to prevent IndexError and other common exceptions. This includes:
+            17. IMPORTANT: Implement robust input validation for all functions, especially for parameters that affect list indices or sizes.
+            18. CRITICAL: Use defensive programming techniques to prevent IndexError and other common exceptions. This includes:
                 - Checking list lengths before accessing elements
                 - Using try-except blocks to handle potential exceptions
                 - Using safe access methods like .get() for dictionaries and list slicing for safe access
-            20. IMPORTANT: Do not directly cast types - create helper functions to handle type conversions and validations.
+            19. IMPORTANT: Do not directly cast types - create helper functions to handle type conversions and validations.
+            20. IMPORTANT: put all your code in the code directory: {self.pwd}/{self.project_name}
+            21. IMPORTANT: put all your tests in the tests directory: {self.pwd}/tests
         Working directory: {self.pwd}
         """
 
@@ -390,31 +391,6 @@ class NemoAgent:
             if not file_contents:
                 self.logger.error("No file contents extracted from the solution")
                 self.logger.debug("Attempting to extract file contents manually")
-
-                # Manual extraction attempt
-                main_content = self.extract_content_between_markers(
-                    solution, f"<<<{self.project_name}/main.py>>>", "<<<end>>>"
-                )
-                test_content = self.extract_content_between_markers(
-                    solution, "<<<tests/test_main.py>>>", "<<<end>>>"
-                )
-
-                if main_content and test_content:
-                    file_contents = {
-                        f"{self.project_name}/main.py": main_content,
-                        "tests/test_main.py": test_content,
-                    }
-                    self.logger.info("Manually extracted file contents")
-                else:
-                    self.logger.error("Failed to manually extract file contents")
-                    continue
-
-            expected_files = {f"{self.project_name}/main.py", "tests/test_main.py"}
-            if set(file_contents.keys()) != expected_files:
-                self.logger.error(
-                    f"Incorrect files provided. Expected: {expected_files}, Got: {set(file_contents.keys())}"
-                )
-                continue
 
             success = True
             for file_path, content in file_contents.items():
@@ -546,7 +522,7 @@ class NemoAgent:
         7. Use defensive programming techniques to prevent IndexError
 
         Follow these rules strictly:
-        1. CRITICAL: Only modify the implementation in {self.project_name}/main.py.
+        1. CRITICAL: Only modify the code implementation in {self.project_name}.
         2. IMPORTANT: Never use pass statements in your code. Always provide a meaningful implementation.
         3. Consider the Git history when suggesting changes to avoid reverting recent improvements.
         4. IMPORTANT: Do not create new files. Only modify the existing ones.
@@ -556,10 +532,12 @@ class NemoAgent:
         8. IMPORTANT: Always follow PEP8 style guide, follow best practices for Python, use snake_case naming, and provide meaningful docstrings.
         9. IMPORTANT: Do not redefine built-in functions or use reserved keywords as variable names.
         10. Use the following format for specifying file content:
-            <<<{self.project_name}/main.py>>>
+            <<<{self.project_name}/filename.py>>>
             # File content here
             <<<end>>>
         11. IMPORTANT: Do not directly cast types - create helper functions to handle type conversions and validations.
+        12. IMPORTANT: put all your code in the code directory: {self.pwd}/{self.project_name}
+        13. IMPORTANT: put all your tests in the tests directory: {self.pwd}/tests
         """
         improvements = self.get_response(prompt)
         print("Proposed improvements:")
@@ -663,7 +641,6 @@ class NemoAgent:
                 "run",
                 "autopep8",
                 "--in-place",
-                "--aggressive",
                 "--aggressive",
                 file_path,
             ]
@@ -855,14 +832,14 @@ class NemoAgent:
 
         Provide specific code changes to improve the score and address any issues.
         Follow these rules strictly:
-        1. Only modify the main implementation file ({self.project_name}/main.py)
-        2. Do not change the test file (tests/test_main.py)
+        1. Only modify the code implementation files
+        2. Do not change the tests file
         3. Focus on improving code quality, readability, and adherence to PEP8
         4. Address any warnings or errors reported by pylint
         5. Ensure the implementation correctly handles edge cases and potential errors
 
         Use the following format for specifying file content:
-        <<<{self.project_name}/main.py>>>
+        <<<{self.project_name}/filename.py>>>
         # File content here
         <<<end>>>
         """
@@ -989,14 +966,16 @@ class NemoAgent:
             - Using try-except blocks to handle potential exceptions
             - Using safe access methods like .get() for dictionaries and list slicing for safe access
         21. Use the following format for specifying file content:
-            <<<{self.project_name}/main.py>>>
+            <<<{self.project_name}/filename.py>>>
             # File content here
             <<<end>>>
             
-            <<<tests/test_main.py>>>
+            <<<tests/test_filename.py>>>
             # Test file content here
             <<<end>>>
         22. IMPORTANT: Do not directly cast types - create helper functions to handle type conversions and validations.
+        23. IMPORTANT: put all your code in the code directory: {self.pwd}/{self.project_name}
+        24. IMPORTANT: put all your tests in the tests directory: {self.pwd}/tests
         """
         proposed_improvements = self.get_response(prompt)
 
