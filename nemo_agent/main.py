@@ -1,9 +1,13 @@
 import ast
+from contextlib import contextmanager
+from datetime import time
+import fcntl
 import json
 import logging
 import os
 import random
 import re
+import shutil
 import subprocess
 import sys
 import click
@@ -272,6 +276,47 @@ class NemoAgent:
         except Exception as e:
             print(f"Error: {str(e)}")
 
+    @contextmanager
+    def file_lock(self, file_path):
+        lock_path = f"{file_path}.lock"
+        with open(lock_path, "w") as lock_file:
+            try:
+                fcntl.flock(lock_file, fcntl.LOCK_EX | fcntl.LOCK_NB)
+                yield
+            finally:
+                fcntl.flock(lock_file, fcntl.LOCK_UN)
+                os.remove(lock_path)
+
+    def robust_write_file(self, file_path: str, content: str) -> bool:
+        self.logger.info(f"Attempting to write to file: {file_path}")
+        for attempt in range(self.MAX_WRITE_ATTEMPTS):
+            try:
+                with self.file_lock(file_path):
+                    # Create a backup of the existing file
+                    if os.path.exists(file_path):
+                        backup_path = f"{file_path}.bak"
+                        shutil.copy2(file_path, backup_path)
+                        self.logger.info(f"Created backup: {backup_path}")
+
+                    # Write the new content
+                    with open(file_path, "w") as f:
+                        f.write(content)
+                    self.logger.info(f"Successfully wrote to file: {file_path}")
+                    return True
+            except IOError as e:
+                self.logger.error(f"IOError writing to {file_path}: {e}")
+                if attempt < self.MAX_WRITE_ATTEMPTS - 1:
+                    self.logger.info(f"Retrying in {self.WRITE_RETRY_DELAY} seconds...")
+                    time.sleep(self.WRITE_RETRY_DELAY)
+                else:
+                    self.logger.error(
+                        f"Failed to write to {file_path} after {self.MAX_WRITE_ATTEMPTS} attempts"
+                    )
+            except Exception as e:
+                self.logger.error(f"Unexpected error writing to {file_path}: {e}")
+                break
+        return False
+
     def process_file_changes(self, proposed_changes):
         file_contents = self.extract_file_contents_direct(proposed_changes)
         success = True
@@ -283,7 +328,7 @@ class NemoAgent:
                 content = self.clean_markdown_artifacts(content)
 
                 with open(full_path, "w") as f:
-                    f.write(content)
+                    self.robust_write_file(full_path, content)
 
                 if os.path.exists(full_path) and os.path.getsize(full_path) > 0:
                     self.logger.info(f"File written successfully: {full_path}")
@@ -311,45 +356,32 @@ class NemoAgent:
 
     def implement_solution(self, max_attempts=3):
         prompt = f"""
-        Create a comprehensive implementation for the task: {self.task}.
-        You must follow these rules strictly:
-            1. CRITICAL: Do not modify the pyproject.toml file.
-            2. Use the correct import statements: from {self.project_name}.module_name import method_name.
-            3. Follow PEP8 style guide.
-            4. IMPORTANT: Never use pass statements in your code or tests. Always provide a meaningful implementation.
-            5. Use parametrized tests to cover multiple scenarios efficiently.
-            6. Use the following format for specifying file content:
-                <<<{self.project_name}/filename.py>>>
-                # File content here
-                <<<end>>>
+            Create a comprehensive implementation for the task: {self.task}.
+            You must follow these rules strictly:
+                1. CRITICAL: Do not modify the pyproject.toml file.
+                2. Use the correct import statements: from {self.project_name}.module_name import method_name.
+                3. Follow PEP8 style guide.
+                4. IMPORTANT: Never use pass statements in your code or tests. Always provide a meaningful implementation.
+                5. Use parametrized tests to cover multiple scenarios efficiently.
+                6. CRITICAL: Use the following code block format for specifying file content:
+                    <<<{self.project_name}/main.py>>>
+                    # File content here
+                    <<<end>>>
                 
-                <<<tests/test_filename.py>>>
-                # Test file content here
-                <<<end>>>
-            7. The test command is `poetry run pytest --cov={self.project_name} --cov-config=.coveragerc`
-            8. IMPORTANT: Do not add any code comments to the files.
-            9. IMPORTANT: Always follow PEP8 style guide, follow best practices for Python, use snake_case naming, and provide meaningful docstrings.
-            10. IMPORTANT: Do not redefine built-in functions or use reserved keywords as variable names.
-            11. Implement proper error handling using try-except blocks for potential IndexError exceptions.
-            12. Use len() to check list lengths before accessing indices.
-            13. Implement input validation to ensure list indices are within valid ranges.
-            14. Always check if a list is empty before accessing its elements.
-            15. Consider using the `itertools` module for efficient list operations.
-            16. CRITICAL: Always handle edge cases in list operations, including:
-                - Empty lists
-                - Lists with a single element
-                - Accessing the first or last element of a list
-                - Removing elements from the beginning, middle, or end of a list
-            17. IMPORTANT: Implement robust input validation for all functions, especially for parameters that affect list indices or sizes.
-            18. CRITICAL: Use defensive programming techniques to prevent IndexError and other common exceptions. This includes:
-                - Checking list lengths before accessing elements
-                - Using try-except blocks to handle potential exceptions
-                - Using safe access methods like .get() for dictionaries and list slicing for safe access
-            19. IMPORTANT: Do not directly cast types - create helper functions to handle type conversions and validations.
-            20. IMPORTANT: put all your code in the code directory: {self.project_name}
-            21. IMPORTANT: put all your tests in the tests directory: tests
-        Working directory: {self.pwd}
-        """
+                    For test files, use:
+                    <<<tests/test_main.py>>>
+                    # Test file content here
+                    <<<end>>>      
+                7. The test command is `poetry run pytest --cov={self.project_name} --cov-config=.coveragerc`
+                8. IMPORTANT: Do not add any code comments to the files.
+                9. IMPORTANT: Always follow PEP8 style guide, follow best practices for Python, use snake_case naming, and provide meaningful docstrings.
+                10. IMPORTANT: Do not redefine built-in functions or use reserved keywords as variable names.
+                11. CRITICAL: Put all Python code in 1 file only: {self.project_name}/main.py
+                12. CRITICAL: Put all tests in 1 file only: tests/test_main.py
+                13. CRITICAL: Do not explain the task, only implement the required functionality in the code blocks.
+                14. CRITICAL: Your response should ONLY contain the code blocks. Do not include any explanations or additional text.
+            Working directory: {self.pwd}
+            """
 
         for attempt in range(max_attempts):
             self.logger.info(f"Attempt {attempt + 1} to implement solution")
@@ -401,7 +433,7 @@ class NemoAgent:
 
         If the proposed changes are correct and fully address the task, respond with 'VALID'.
         If the proposed changes do not match the task or are incomplete, respond with 'INVALID'.
-        Provide a brief explanation for your decision.
+        Do not provide any additional information or explanations.
         """
         response = self.get_response(prompt)
         if "VALID" in response.upper():
@@ -466,13 +498,17 @@ class NemoAgent:
         7. IMPORTANT: Do not add any code comments to the files.
         8. IMPORTANT: Always follow PEP8 style guide, follow best practices for Python, use snake_case naming, and provide meaningful docstrings.
         9. IMPORTANT: Do not redefine built-in functions or use reserved keywords as variable names.
-        10. Use the following format for specifying file content:
-            <<<{self.project_name}/filename.py>>>
+        10. CRITICAL: Use the following code block format for specifying file content:
+            <<<{self.project_name}/main.py>>>
             # File content here
             <<<end>>>
-        11. IMPORTANT: Do not directly cast types - create helper functions to handle type conversions and validations.
-        12. IMPORTANT: put all your code in the code directory: {self.project_name}
-        13. IMPORTANT: put all your tests in the tests directory: tests
+        
+            For test files, use:
+            <<<tests/test_main.py>>>
+            # Test file content here
+            <<<end>>>
+        11. CRITICAL: Put all Python code in 1 file only: {self.project_name}/main.py
+        12. CRITICAL: Put all tests in 1 file only: tests/test_main.py.
         Working directory: {self.pwd}
         """
         improvements = self.get_response(prompt)
@@ -513,7 +549,7 @@ class NemoAgent:
         Review the current implementation and confirm if it correctly addresses the original task: {self.task}
         If the implementation is correct or mostly correct, respond with 'VALID'.
         If the implementation is completely unrelated or fundamentally flawed, respond with 'INVALID'.
-        Provide a brief explanation for your decision.
+        Do not provide any additional information or explanations.
         """
         response = self.get_response(prompt)
 
@@ -655,28 +691,67 @@ class NemoAgent:
         6. Ensure all changes are meaningful and relate to the original task
         7. IMPORTANT: put all your code in the code directory: {self.project_name}
         8. IMPORTANT: put all your tests in the tests directory: tests
-        
+        9. CRITICAL: Use the following format for specifying changes:
+                <<<tests/test_main.py>>>
+                # Line number: Original line
+                # Suggested change: New line
+                <<<end>>>  
+        10. CRITICAL: Do not explain the task only implement the required functionality in the code blocks.
         Working directory: {self.pwd}
-        
-        Use the following format for specifying changes:
-        <<<tests/test_filename.py>>>
-        # Line number: Original line
-        # Suggested change: New line
-        <<<end>>>
         """
         proposed_improvements = self.get_response(prompt)
 
         if self.validate_against_task(proposed_improvements):
             print("Executing validated test improvements:")
-            success = self.process_file_changes(proposed_improvements)
+            success = self.apply_test_file_changes(proposed_improvements)
             if success:
-                print("Test improvements have been written. Please review the changes manually.")
+                print("Test improvements have been applied. Please review the changes manually.")
             else:
                 print("Failed to apply some or all test improvements.")
         else:
-            print(
-                "Proposed test improvements do not align with the original task. No changes were made."
-            )
+            print("Proposed test improvements do not align with the original task. No changes were made.")
+
+    def apply_test_file_changes(self, proposed_improvements):
+        file_path = os.path.join(self.pwd, 'tests', 'test_main.py')
+        changes = self.extract_test_file_changes(proposed_improvements)
+        
+        try:
+            with open(file_path, 'r') as file:
+                lines = file.readlines()
+            
+            for line_num, new_content in changes:
+                if 0 <= line_num < len(lines):
+                    lines[line_num] = new_content + '\n'
+                else:
+                    print(f"Warning: Line number {line_num + 1} is out of range. Skipping this change.")
+            
+            with open(file_path, 'w') as file:
+                file.writelines(lines)
+            
+            return True
+        except Exception as e:
+            print(f"Error applying test file changes: {str(e)}")
+            return False
+
+    def extract_test_file_changes(self, proposed_improvements):
+        changes = []
+        lines = proposed_improvements.split("\n")
+        for line_index, current_line in enumerate(lines):
+            if current_line.startswith("# Line number:"):
+                parts = current_line.split(":")
+                if len(parts) >= 2:
+                    try:
+                        line_num = int(parts[1].strip()) - 1  # Convert to 0-based index
+                        suggested_change_line = next(
+                            (line for line in lines[line_index + 1:] if line.startswith("# Suggested change:")),
+                            None
+                        )
+                        if suggested_change_line:
+                            new_line_content = suggested_change_line.split(":", 1)[1].strip()
+                            changes.append((line_num, new_line_content))
+                    except ValueError:
+                        continue
+        return changes
 
     def extract_test_file_changes(self, proposed_improvements):
         changes = []
@@ -749,130 +824,18 @@ class NemoAgent:
         5. Ensure the implementation correctly handles edge cases and potential errors
         6. IMPORTANT: put all your code in the code directory: {self.project_name}
         7. IMPORTANT: put all your tests in the tests directory: tests
-        Working directory: {self.pwd}
-
-        Use the following format for specifying file content:
-        <<<{self.project_name}/filename.py>>>
-        # File content here
-        <<<end>>>
-        """
-        proposed_improvements = self.get_response(prompt)
-
-        # Check if the proposed improvements are new
-        if proposed_improvements in self.previous_suggestions:
-            print("No new improvements suggested. Moving on.")
-            return current_score
-
-        self.previous_suggestions.add(proposed_improvements)
-
-        if self.validate_against_task(proposed_improvements):
-            print("Executing validated improvements:")
-            success = self.process_file_changes(proposed_improvements)
+        8. CRITICAL: Use the following code block format for specifying file content:
+                <<<{self.project_name}/filename.py>>>
+                # File content here
+                <<<end>>>
             
-            if success:
-                new_score = self.clean_code_with_pylint(file_path)
-
-                if new_score < 8.0:
-                    print(
-                        f"Score is still below 8.0. Attempting another improvement (attempt {attempt + 1})..."
-                    )
-                    return self.improve_code(
-                        file_path,
-                        new_score,
-                        pylint_output,
-                        is_test_file,
-                        is_init_file,
-                        attempt + 1,
-                    )
-                else:
-                    print(f"Code quality improved. New score: {new_score}/10")
-                    self.commit_changes(
-                        f"Improve code quality for {file_path} to {new_score}/10"
-                    )
-                    return new_score
-            else:
-                print("Failed to apply some or all improvements.")
-                if attempt < self.MAX_IMPROVEMENT_ATTEMPTS:
-                    print(f"Attempting another improvement (attempt {attempt + 1})...")
-                    return self.improve_code(
-                        file_path,
-                        current_score,
-                        pylint_output,
-                        is_test_file,
-                        is_init_file,
-                        attempt + 1,
-                    )
-                else:
-                    return current_score
-        else:
-            print(
-                "Proposed improvements do not align with the original task. Skipping this improvement attempt."
-            )
-            if attempt < self.MAX_IMPROVEMENT_ATTEMPTS:
-                print(f"Attempting another improvement (attempt {attempt + 1})...")
-                return self.improve_code(
-                    file_path,
-                    current_score,
-                    pylint_output,
-                    is_test_file,
-                    is_init_file,
-                    attempt + 1,
-                )
-            else:
-                return current_score
-
-
-    def improve_code(
-        self,
-        file_path,
-        current_score,
-        pylint_output,
-        is_test_file,
-        is_init_file,
-        attempt=1,
-        test_output="",
-    ):
-        if current_score >= 8.0:
-            print(f"Code quality is already good. Score: {current_score}/10")
-            return current_score
-
-        if attempt > self.MAX_IMPROVEMENT_ATTEMPTS:
-            print(f"Maximum improvement attempts reached for {file_path}. Moving on.")
-            return current_score
-
-        file_type = (
-            "test file"
-            if is_test_file
-            else "init file"
-            if is_init_file
-            else "regular Python file"
-        )
-
-        prompt = f"""
-        The current pylint score for {file_path} (a {file_type}) is {current_score:.2f}/10. 
-        Please analyze the pylint output and suggest improvements to the code implementation only.
-        Do not modify the test file.
-
-        Pylint output:
-        {pylint_output}
-
-        Original task: {self.task}
-
-        Provide specific code changes to improve the score and address any issues.
-        Follow these rules strictly:
-        1. Only modify the code implementation files
-        2. Do not change the tests file
-        3. Focus on improving code quality, readability, and adherence to PEP8
-        4. Address any warnings or errors reported by pylint
-        5. Ensure the implementation correctly handles edge cases and potential errors
-        6. IMPORTANT: put all your code in the code directory: {self.project_name}
-        7. IMPORTANT: put all your tests in the tests directory: tests
+                For test files, use:
+                <<<tests/test_filename.py>>>
+                # Test file content here
+                <<<end>>>      
+                Replace 'filename' with the appropriate name for each file.
+        9. CRITICAL: Do not explain the task only implement the required functionality in the code blocks.
         Working directory: {self.pwd}
-
-        Use the following format for specifying file content:
-        <<<{self.project_name}/filename.py>>>
-        # File content here
-        <<<end>>>
         """
         proposed_improvements = self.get_response(prompt)
 
