@@ -11,7 +11,7 @@ Nemo Agent is an AI Agent for Python coding!
 * Generates Python project structures automatically using `poetry`
 * Writes Python code based on task descriptions
 * Executes development tasks using AI-generated commands
-* Utilizes the `mistral-nemo`, `OpenAI` or `Claude` language models for intelligent code generation
+* Utilizes the `mistral-nemo`, `OpenAI`, or `Claude` language models for intelligent code generation
 * Implements best practices in Python development automatically
 * Writes and runs passing tests up to 80%+ test coverage using `pytest`
 * Automatically fixes and styles code using `pylint`
@@ -88,7 +88,7 @@ Nemo Agent is an AI Agent for Python coding!
 
 * `mistral-nemo`: `nemo-agent "create a fizzbuzz script"`
 * `openai`: `nemo-agent "create a fizzbuzz script" --provider openai`
-* `claude`: `nemo-agent "create a fizzbuzz script" --provider claude --provider claude`
+* `claude`: `nemo-agent "create a fizzbuzz script" --provider claude`
 
 ## Model overrides
 
