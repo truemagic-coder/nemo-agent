@@ -41,6 +41,9 @@ Nemo Agent is an AI Agent for Python coding!
 * OR: Install OpenAI API Key for `zsh` shell
     * echo 'export OPENAI_API_KEY="YOUR_API_KEY"' >> ~/.zshrc
 * `pip install nemo-agent`
+* You are ready to use `nemo-agent`
+
+### OR
 
 ### Mistral-Nemo Local Install
 
@@ -58,6 +61,8 @@ Nemo Agent is an AI Agent for Python coding!
     * `ollama pull mistral-nemo`
 * `pip install nemo-agent`
 * You are ready to use `nemo-agent`
+
+### OR
 
 ### Mistral-Nemo Cloud Install
 
