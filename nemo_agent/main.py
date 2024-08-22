@@ -15,24 +15,6 @@ import requests
 import openai
 from anthropic import Anthropic
 
-class CustomSystemTools:
-    def __init__(self):
-        self.pwd = os.getcwd()
-
-    def execute_command(self, command: str) -> str:
-        try:
-            result = subprocess.run(
-                command,
-                shell=True,
-                check=True,
-                capture_output=True,
-                text=True,
-                cwd=self.pwd,
-            )
-            return result.stdout
-        except subprocess.CalledProcessError as e:
-            return f"Error executing command: {e.stderr}"
-
 class OllamaAPI:
     def __init__(self, model):
         self.model = model
