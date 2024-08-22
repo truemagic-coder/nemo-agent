@@ -12,6 +12,8 @@ import subprocess
 import sys
 import click
 import requests
+import openai
+from anthropic import Anthropic
 
 class CustomSystemTools:
     def __init__(self):
@@ -61,29 +63,94 @@ class OllamaAPI:
         else:
             raise Exception(f"Ollama API error: {response.text}")
 
+class OpenAIAPI:
+    def __init__(self, model):
+        if model == "mistral-nemo":
+            model = "gpt-4o-2024-08-06"
+        self.model = model
+        self.api_key = os.getenv("OPENAI_API_KEY")
+        if not self.api_key:
+            raise ValueError("OPENAI_API_KEY environment variable is not set")
+        openai.api_key = self.api_key
+
+    def generate(self, prompt):
+        try:
+            response = openai.chat.completions.create(
+                model=self.model,
+                messages=[{"role": "user", "content": prompt}],
+                stream=True
+            )
+            full_response = ""
+            for chunk in response:
+                if chunk.choices[0].delta.content:
+                    chunk_text = chunk.choices[0].delta.content
+                    full_response += chunk_text
+                    print(chunk_text, end='', flush=True)
+            print()  # Print a newline at the end
+            return full_response
+        except Exception as e:
+            raise Exception(f"OpenAI API error: {str(e)}")
+
+class ClaudeAPI:
+    def __init__(self, model):
+        if model == "mistral-nemo":
+            model = "claude-3-5-sonnet-20240620"
+        self.model = model
+        self.api_key = os.getenv("ANTHROPIC_API_KEY")
+        if not self.api_key:
+            raise ValueError("ANTHROPIC_API_KEY environment variable is not set")
+        self.client = Anthropic(api_key=self.api_key)
+
+    def generate(self, prompt):
+        try:
+            response = self.client.messages.create(
+                model=self.model,
+                messages=[{"role": "user", "content": prompt}],
+                stream=True,
+                max_tokens=1000
+            )
+            full_response = ""
+            for completion in response:
+                if completion.type == "content_block_delta":
+                    chunk_text = completion.delta.text
+                    full_response += chunk_text
+                    print(chunk_text, end='', flush=True)
+            print()  # Print a newline at the end
+            return full_response
+        except Exception as e:
+            raise Exception(f"Claude API error: {str(e)}")
+
 
 class NemoAgent:
     MAX_IMPROVEMENT_ATTEMPTS = 10
     MAX_WRITE_ATTEMPTS = 3
     WRITE_RETRY_DELAY = 1  # second
 
-    def __init__(self, task: str, model: str = "mistral-nemo"):
+    def __init__(self, task: str, model: str = "mistral-nemo", provider: str = "ollama"):
         self.pwd = os.getcwd()
         self.task = task
         self.model = model
+        self.provider = provider
         self.setup_logging()
         self.project_name = self.generate_project_name()
-        self.ollama = self.setup_ollama()
+        self.llm = self.setup_llm()
         self.previous_suggestions = set()
+
+    def setup_llm(self):
+        if self.provider == "ollama":
+            return OllamaAPI(self.model)
+        elif self.provider == "openai":
+            return OpenAIAPI(self.model)
+        elif self.provider == "claude":
+            return ClaudeAPI(self.model)
+        else:
+            raise ValueError(f"Unsupported provider: {self.provider}")
 
     def setup_logging(self):
         logging.basicConfig(
             level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s"
         )
         self.logger = logging.getLogger(__name__)
-
-    def setup_ollama(self):
-        return OllamaAPI(self.model)
 
     def generate_project_name(self):
         random_number = random.randint(100, 999)
@@ -591,12 +658,11 @@ class NemoAgent:
             return 0.0
 
     def get_response(self, prompt):
-            try:
-                response = self.ollama.generate(prompt)
-                return response.strip()
-            except Exception as e:
-                self.logger.error(f"Error getting response from Ollama: {str(e)}")
-                return ""
+        try:
+            return self.llm.generate(prompt)
+        except Exception as e:
+            self.logger.error(f"Error getting response from {self.provider}: {str(e)}")
+            return ""
 
     def clean_code_with_pylint(self, file_path):
         try:
@@ -1044,20 +1110,21 @@ class NemoAgent:
 
 @click.command()
 @click.argument("task", required=False)
-@click.option(
-    "--model", default="mistral-nemo", help="The model to use for the Ollama LLM"
-)
-def cli(task: str = None, model: str = "mistral-nemo"):
+@click.option("--model", default="mistral-nemo", help="The model to use for the LLM")
+@click.option("--provider", default="ollama", type=click.Choice(["ollama", "openai", "claude"]), help="The LLM provider to use")
+def cli(task: str = None, model: str = "mistral-nemo", provider: str = "ollama"):
     """
     Run Nemo Agent tasks to create Python projects using Poetry and Pytest.
     If no task is provided, it will prompt the user for input.
     """
-    if task is None:
-        task = click.prompt("Please enter the task for Nemo Agent")
+    # Check for API keys if using OpenAI or Anthropic
+    if provider == "openai" and not os.getenv("OPENAI_API_KEY"):
+        raise ValueError("OPENAI_API_KEY environment variable is not set")
+    elif provider == "claude" and not os.getenv("ANTHROPIC_API_KEY"):
+        raise ValueError("ANTHROPIC_API_KEY environment variable is not set")
 
-    nemo_agent = NemoAgent(task=task, model=model)
+    nemo_agent = NemoAgent(task=task, model=model, provider=provider)
     nemo_agent.run_task()
-
 
 if __name__ == "__main__":
     cli()
