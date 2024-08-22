@@ -7,48 +7,64 @@
 Nemo Agent is an AI Agent for Python coding!
 
 ## Features
-* Runs blazing fast locally on an RTX 4070 or greater
+* Runs blazing fast
 * Generates Python project structures automatically using `poetry`
 * Writes Python code based on task descriptions
 * Executes development tasks using AI-generated commands
-* Utilizes the `mistral-nemo` language model for intelligent code generation
+* Utilizes the `mistral-nemo`, `OpenAI` or `Claude` language models for intelligent code generation
 * Implements best practices in Python development automatically
 * Writes and runs passing tests up to 80%+ test coverage using `pytest`
 * Automatically fixes and styles code using `pylint`
 * Utilizes `git` to commit and track changes
 
 ## Coding Ability
-* Can solve some leetcode hards on some runs in about 30 seconds on an RTX 4090
+* Can solve leetcode hards in 30 seconds using larger models and sometimes with `mistral-nemo`
 * Can apply time complexity constraints in task requirements
 
 ## Demo Video
 
 [Watch on Youtube](https://www.youtube.com/watch?v=i2Au5F4anME)
 
-## Local Install
+## Install 
 
-### Requirements
+### Claude or OpenAI Local Install
+
+#### Requirements
+* Python 3.9 or higher
+* git
+* OpenAI or Claude API Key
+* Linux or Mac
+
+#### Requirements Installation
+* Install Claude API Key for `zsh` shell
+    * echo 'export ANTHROPIC_API_KEY="YOUR_API_KEY"' >> ~/.zshrc
+* OR: Install OpenAI API Key for `zsh` shell
+    * echo 'export OPENAI_API_KEY="YOUR_API_KEY"' >> ~/.zshrc
+* `pip install nemo-agent`
+
+### Mistral-Nemo Local Install
+
+#### Requirements
 * Python 3.9 or higher
 * git
 * curl
 * Ollama running `mistral-nemo`
 * Ubuntu (22.04 or 24.04) with a minimum of an RTX 4070
 
-### Requirements Installation
+#### Requirements Installation
 * Python, curl, git are pre-installed on Ubuntu
 * Ollama install instructions:
     * `curl -fsSL https://ollama.com/install.sh | sh`
     * `ollama pull mistral-nemo`
-* `nemo-agent` install:
-    * `pip install nemo-agent`
+* `pip install nemo-agent`
 * You are ready to use `nemo-agent`
 
-## Cloud Install
+### Mistral-Nemo Cloud Install
 
-### Requirements
+#### Requirements
 * [RunPod](https://runpod.io) account setup with your SSH and billing information
 
-### RunPod Setup
+#### RunPod Setup
 * Make sure you have setup your SSH keys
 * Select a `4090` pod
 * Select the `RunPod Pytorch 2.1.1` template
@@ -64,31 +80,17 @@ Nemo Agent is an AI Agent for Python coding!
 * You are ready to use `nemo-agent`
 
 ## Usage
-After installation, you can use Nemo Agent from the command line:
 
-`nemo-agent "Your task description here"`
-If you run nemo-agent without any arguments, it will prompt you to enter a task.
+* `mistral-nemo`: `nemo-agent "create a fizzbuzz script"`
+* `openai`: `nemo-agent "create a fizzbuzz script" --provider openai`
+* `claude`: `nemo-agent "create a fizzbuzz script" --provider claude --provider claude`
 
-## Examples
-Create a simple calculator:
+## Model overrides
 
-`nemo-agent "Create a simple calculator"`
-
-Generate a fizzbuzz program:
-
-`nemo-agent "Create a fizzbuzz script"`
-
-## Limitations
-
-- Currently Nemo Agent can't build web apps as it gets confused - this is a WIP
-
-## Roadmap
-* Refactor legacy Python code projects to `nemo-agent` code
-* Convert legacy non-Python projects to `nemo-agent` code
-* Give `nemo-agent` up-to-date knowledge about PyPi libraries
-* Give `nemo-agent` up-to-date knowledge of the latest Python language features
-* Give `nemo-agent` up-to-date knowledge about other language libraries
-* Enable `nemo-agent` to write [Py03](https://github.com/PyO3/pyo3) extensions
+* You can pass the `--model` flag to override the default model for the provider.
+* The default model for `openai` is `gpt-4o-2024-08-06`
+* The default model for `claude` is `claude-3-5-sonnet-20240620`
+* The default model for `ollama` is `mistral-nemo`
 
 ## Contributing
 Contributions to Nemo Agent are welcome! Please feel free to submit a Pull Request.
