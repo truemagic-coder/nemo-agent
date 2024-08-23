@@ -4,7 +4,7 @@
 
 [![Nemo Agent](https://cdn.cometheart.com/nemo-agent-2.png)](https://cdn.cometheart.com/nemo-agent.mp4)
 
-Nemo Agent is an AI Agent for Python coding!
+Nemo Agent is your Python AI Coder!
 
 ## Features
 * Runs blazing fast
