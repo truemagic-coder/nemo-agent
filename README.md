@@ -4,7 +4,9 @@
 
 [![Nemo Agent](https://cdn.cometheart.com/nemo-agent-2.png)](https://cdn.cometheart.com/nemo-agent.mp4)
 
-Nemo Agent is your Python AI Coder!
+## Nemo Agent is your Python AI Coder!
+
+<video src='https://cdn.cometheart.com/nemo-demo.mp4' />
 
 ## Features
 * Runs blazing fast
@@ -20,10 +22,6 @@ Nemo Agent is your Python AI Coder!
 ## Coding Ability
 * Can solve leetcode hards in 30 seconds using larger models and sometimes with `mistral-nemo`
 * Can apply time complexity constraints in task requirements
-
-## Demo Video
-
-[Watch on Youtube](https://www.youtube.com/watch?v=i2Au5F4anME)
 
 ## Install 
 
