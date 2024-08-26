@@ -6,8 +6,6 @@
 
 ## Nemo Agent is your Python AI Coder!
 
-<video src='https://cdn.cometheart.com/nemo-demo.mp4' />
-
 ## Features
 * Runs blazing fast
 * Generates Python project structures automatically using `poetry`
