@@ -17,8 +17,10 @@ https://github.com/user-attachments/assets/51cf6ad1-196c-44ab-99ba-0035365f1bbd
 * Executes development tasks using AI-generated commands
 * Utilizes the `mistral-nemo`, `OpenAI`, or `Claude` language models for intelligent code generation
 * Implements best practices in Python development automatically
-* Writes and runs passing tests up to 80%+ test coverage using `pytest`
-* Automatically fixes and styles code using `pylint`
+* Writes and runs passing tests using `pytest` up to 80%+ test coverage 
+* Automatically fixes and styles code using `pylint` up to 8+/10
+* Calculates and improves the complexity score using `complexipy` to be under 15
+* Auto-formats to the code with `autopep8`
 * Utilizes `git` to commit and track changes
 
 ## Coding Ability
