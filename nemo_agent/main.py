@@ -15,6 +15,7 @@ import requests
 import openai
 from anthropic import Anthropic
 
+
 class OllamaAPI:
     def __init__(self, model):
         self.model = model
@@ -45,6 +46,7 @@ class OllamaAPI:
         else:
             raise Exception(f"Ollama API error: {response.text}")
 
+
 class OpenAIAPI:
     def __init__(self, model):
         if model == "mistral-nemo":
@@ -73,6 +75,7 @@ class OpenAIAPI:
         except Exception as e:
             raise Exception(f"OpenAI API error: {str(e)}")
 
+
 class ClaudeAPI:
     def __init__(self, model):
         if model == "mistral-nemo":
@@ -80,7 +83,8 @@ class ClaudeAPI:
         self.model = model
         self.api_key = os.getenv("ANTHROPIC_API_KEY")
         if not self.api_key:
-            raise ValueError("ANTHROPIC_API_KEY environment variable is not set")
+            raise ValueError(
+                "ANTHROPIC_API_KEY environment variable is not set")
         self.client = Anthropic(api_key=self.api_key)
 
     def generate(self, prompt):
@@ -178,7 +182,8 @@ class NemoAgent:
     def commit_changes(self, message):
         try:
             subprocess.run(["git", "add", "."], check=True, cwd=self.pwd)
-            subprocess.run(["git", "commit", "-m", message], check=True, cwd=self.pwd)
+            subprocess.run(["git", "commit", "-m", message],
+                           check=True, cwd=self.pwd)
             print(f"Changes committed: {message}")
         except subprocess.CalledProcessError as e:
             print(f"Error committing changes: {e}")
@@ -216,7 +221,8 @@ class NemoAgent:
         for attempt in range(max_improvement_attempts):
             tests_passed, coverage, test_output = self.run_tests()
             if coverage >= 80:
-                print(f"Task completed successfully after {attempt + 1} attempts.")
+                print(f"Task completed successfully after {
+                      attempt + 1} attempts.")
                 print(f"Coverage is {coverage}%.")
                 if not tests_passed:
                     print(
@@ -225,7 +231,8 @@ class NemoAgent:
                 return  # Exit the method immediately
             elif attempt < max_improvement_attempts - 1:
                 print(
-                    f"Attempt {attempt + 1} failed. Trying to improve implementation..."
+                    f"Attempt {
+                        attempt + 1} failed. Trying to improve implementation..."
                 )
                 self.improve_implementation(test_output)
                 print("Attempting to improve test file...")
@@ -310,6 +317,7 @@ class NemoAgent:
                         "pytest-cov@*",
                         "pytest-flask@*",
                         "httpx@*",
+                        "complexipy@*",
                     ],
                     check=True,
                     cwd=self.pwd,
@@ -350,19 +358,23 @@ class NemoAgent:
                     # Write the new content
                     with open(file_path, "w") as f:
                         f.write(content)
-                    self.logger.info(f"Successfully wrote to file: {file_path}")
+                    self.logger.info(
+                        f"Successfully wrote to file: {file_path}")
                     return True
             except IOError as e:
                 self.logger.error(f"IOError writing to {file_path}: {e}")
                 if attempt < self.MAX_WRITE_ATTEMPTS - 1:
-                    self.logger.info(f"Retrying in {self.WRITE_RETRY_DELAY} seconds...")
+                    self.logger.info(
+                        f"Retrying in {self.WRITE_RETRY_DELAY} seconds...")
                     time.sleep(self.WRITE_RETRY_DELAY)
                 else:
                     self.logger.error(
-                        f"Failed to write to {file_path} after {self.MAX_WRITE_ATTEMPTS} attempts"
+                        f"Failed to write to {file_path} after {
+                            self.MAX_WRITE_ATTEMPTS} attempts"
                     )
             except Exception as e:
-                self.logger.error(f"Unexpected error writing to {file_path}: {e}")
+                self.logger.error(
+                    f"Unexpected error writing to {file_path}: {e}")
                 break
         return False
 
@@ -382,14 +394,16 @@ class NemoAgent:
                 if os.path.exists(full_path) and os.path.getsize(full_path) > 0:
                     self.logger.info(f"File written successfully: {full_path}")
                     with open(full_path, "r") as f:
-                        self.logger.debug(f"Content of {full_path}:\n{f.read()}")
+                        self.logger.debug(
+                            f"Content of {full_path}:\n{f.read()}")
 
                     # Run pylint only on files in the project folder
                     if full_path.startswith(os.path.join(self.pwd, self.project_name)):
-                        pylint_score = self.clean_code_with_pylint(full_path)
-                        if pylint_score < 8.0:
+                        pylint_score, complexipy_score = self.clean_code_with_pylint(full_path)
+                        if pylint_score < 8.0 and complexipy_score is not None and complexipy_score > 15:
                             self.logger.warning(
-                                f"Pylint score for {full_path} is below 8.0: {pylint_score}"
+                                f"Pylint score for {
+                                    full_path} is below 8.0: {pylint_score}"
                             )
                             success = False
                 else:
@@ -416,17 +430,17 @@ class NemoAgent:
                     <<<{self.project_name}/main.py>>>
                     # File content here
                     <<<end>>>
-                
+
                     For test files, use:
                     <<<tests/test_main.py>>>
                     # Test file content here
-                    <<<end>>>      
+                    <<<end>>>
 
                     For HTML templates (Flask), use:
                     <<<{self.project_name}/templates/template_name.html>>>
                     <!-- HTML content here -->
                     <<<end>>>
-                    
+
                     For static files (CSS, JS), use:
                     <<<{self.project_name}/static/filename.ext>>>
                     // Static file content here
@@ -461,10 +475,12 @@ class NemoAgent:
                 return True
 
             self.logger.warning(
-                f"Attempt {attempt + 1} failed to create the correct files or pass pylint. Retrying..."
+                f"Attempt {
+                    attempt + 1} failed to create the correct files or pass pylint. Retrying..."
             )
 
-        self.logger.error("Failed to implement solution after maximum attempts")
+        self.logger.error(
+            "Failed to implement solution after maximum attempts")
         return False
 
     def extract_content_between_markers(self, text, start_marker, end_marker):
@@ -508,6 +524,7 @@ class NemoAgent:
 
     def improve_implementation(self, test_output=""):
         initial_pylint_score = self.get_pylint_score()
+        initial_complexipy_score = self.get_complexipy_score()
         initial_test_results, initial_coverage, _ = self.run_tests()
 
         git_diff = self.get_git_diff()
@@ -520,7 +537,8 @@ class NemoAgent:
                     file_path = os.path.join(root, file)
                     with open(file_path, "r") as f:
                         content = f.read()
-                    cleaned_content = self.validate_file_content(file_path, content)
+                    cleaned_content = self.validate_file_content(
+                        file_path, content)
                     if cleaned_content != content:
                         with open(file_path, "w") as f:
                             f.write(cleaned_content)
@@ -530,6 +548,7 @@ class NemoAgent:
         prompt = f"""
         The current implementation needs improvement for the task: {self.task}
         Current pylint score: {initial_pylint_score:.2f}/10
+        Current complexipy score: {initial_complexipy_score}
         Current test status: {'Passing' if initial_test_results else 'Failing'}
         Current test coverage: {initial_coverage}%
 
@@ -565,7 +584,7 @@ class NemoAgent:
             <<<{self.project_name}/main.py>>>
             # File content here
             <<<end>>>
-        
+
             For test files, use:
             <<<tests/test_main.py>>>
             # Test file content here
@@ -602,7 +621,8 @@ class NemoAgent:
                 return False
 
             if "except IndexError" not in content:
-                print(f"Warning: No explicit IndexError handling in {file_path}")
+                print(f"Warning: No explicit IndexError handling in {
+                      file_path}")
                 return False
 
             return True
@@ -622,6 +642,21 @@ class NemoAgent:
         else:
             print("Implementation does not match the original task.")
             return False
+
+    def get_complexipy_score(self, file_path):
+        try:
+            result = subprocess.run(
+                ["poetry", "run", "complexipy", file_path],
+                capture_output=True,
+                text=True,
+                cwd=self.pwd
+            )
+            match = re.search(
+                r'Total Cognitive Complexity in .+: (\d+)', result.stdout)
+            return int(match.group(1)) if match else None
+        except subprocess.CalledProcessError as e:
+            print(f"Error running complexipy: {e}")
+            return None
 
     def get_pylint_score(self):
         try:
@@ -643,14 +678,16 @@ class NemoAgent:
         try:
             return self.llm.generate(prompt)
         except Exception as e:
-            self.logger.error(f"Error getting response from {self.provider}: {str(e)}")
+            self.logger.error(f"Error getting response from {
+                              self.provider}: {str(e)}")
             return ""
 
     def clean_code_with_pylint(self, file_path):
         try:
             # Check if the file is empty
             if os.path.getsize(file_path) == 0:
-                print(f"File {file_path} is empty. Skipping autopep8 and pylint check.")
+                print(
+                    f"File {file_path} is empty. Skipping autopep8 and pylint check.")
                 return 10.0  # Assume perfect score for empty files
 
             # Run autopep8 to automatically fix style issues
@@ -693,14 +730,30 @@ class NemoAgent:
             score_match = re.search(
                 r"Your code has been rated at (\d+\.\d+)/10", output
             )
-            score = float(score_match.group(1)) if score_match else 0.0
 
             print(output)
-            print(f"Pylint score for {file_path}: {score}/10")
+            pylint_score = float(score_match.group(1)) if score_match else 0.0
 
-            if score < 8.0:
-                print("Score is below 8.0. Attempting to improve the code...")
-                self.improve_code(file_path, score, output, is_test_file, is_init_file)
+            complexipy_cmd = ["poetry", "run", "complexipy", file_path]
+            result = subprocess.run(
+                complexipy_cmd, capture_output=True, text=True, cwd=self.pwd
+            )
+            output = result.stdout + result.stderr
+            score_match = re.search(
+                r'Total Cognitive Complexity in .+: (\d+)', result.stdout)
+
+            print(output)
+            complexipy_score = int(score_match.group(1)
+                                   ) if score_match else None
+
+            print(f"Pylint score for {file_path}: {pylint_score}/10")
+            print(f"Complexipy score for {file_path}: {complexipy_score}")
+
+            # You can define your own threshold for complexipy score
+            if pylint_score < 8.0 or (complexipy_score is not None and complexipy_score > 15):
+                print("Score is below threshold. Attempting to improve the code...")
+                self.improve_code(
+                    file_path, pylint_score, complexipy_score, output, is_test_file, is_init_file)
 
             elif (
                 "missing-module-docstring" in output
@@ -712,9 +765,10 @@ class NemoAgent:
                 return self.clean_code_with_pylint(file_path)
 
             else:
-                print(f"Code quality is good. Score: {score}/10")
+                print(f"Code quality is good. Pylint score: {
+                      pylint_score}/10, Complexipy score: {complexipy_score}")
 
-            return score
+            return pylint_score, complexipy_score
         except subprocess.CalledProcessError as e:
             print(f"Error running autopep8 or pylint: {e}")
             return 0.0
@@ -757,7 +811,7 @@ class NemoAgent:
                 <<<tests/test_main.py>>>
                 # Line number: Original line
                 # Suggested change: New line
-                <<<end>>>  
+                <<<end>>>
         10. CRITICAL: Do not explain the task only implement the required functionality in the code blocks.
         Working directory: {self.pwd}
         """
@@ -767,29 +821,32 @@ class NemoAgent:
             print("Executing validated test improvements:")
             success = self.apply_test_file_changes(proposed_improvements)
             if success:
-                print("Test improvements have been applied. Please review the changes manually.")
+                print(
+                    "Test improvements have been applied. Please review the changes manually.")
             else:
                 print("Failed to apply some or all test improvements.")
         else:
-            print("Proposed test improvements do not align with the original task. No changes were made.")
+            print(
+                "Proposed test improvements do not align with the original task. No changes were made.")
 
     def apply_test_file_changes(self, proposed_improvements):
         file_path = os.path.join(self.pwd, 'tests', 'test_main.py')
         changes = self.extract_test_file_changes(proposed_improvements)
-        
+
         try:
             with open(file_path, 'r') as file:
                 lines = file.readlines()
-            
+
             for line_num, new_content in changes:
                 if 0 <= line_num < len(lines):
                     lines[line_num] = new_content + '\n'
                 else:
-                    print(f"Warning: Line number {line_num + 1} is out of range. Skipping this change.")
-            
+                    print(f"Warning: Line number {
+                          line_num + 1} is out of range. Skipping this change.")
+
             with open(file_path, 'w') as file:
                 file.writelines(lines)
-            
+
             return True
         except Exception as e:
             print(f"Error applying test file changes: {str(e)}")
@@ -803,13 +860,16 @@ class NemoAgent:
                 parts = current_line.split(":")
                 if len(parts) >= 2:
                     try:
-                        line_num = int(parts[1].strip()) - 1  # Convert to 0-based index
+                        # Convert to 0-based index
+                        line_num = int(parts[1].strip()) - 1
                         suggested_change_line = next(
-                            (line for line in lines[line_index + 1:] if line.startswith("# Suggested change:")),
+                            (line for line in lines[line_index + 1:]
+                             if line.startswith("# Suggested change:")),
                             None
                         )
                         if suggested_change_line:
-                            new_line_content = suggested_change_line.split(":", 1)[1].strip()
+                            new_line_content = suggested_change_line.split(":", 1)[
+                                1].strip()
                             changes.append((line_num, new_line_content))
                     except ValueError:
                         continue
@@ -823,11 +883,12 @@ class NemoAgent:
                 parts = current_line.split(":")
                 if len(parts) >= 2:
                     try:
-                        line_num = int(parts[1].strip()) - 1  # Convert to 0-based index
+                        # Convert to 0-based index
+                        line_num = int(parts[1].strip()) - 1
                         suggested_change_line = next(
                             (
                                 line
-                                for line in lines[line_index + 1 :]
+                                for line in lines[line_index + 1:]
                                 if line.startswith("# Suggested change:")
                             ),
                             None,
@@ -844,20 +905,22 @@ class NemoAgent:
     def improve_code(
         self,
         file_path,
-        current_score,
+        current_pylint_score,
+        current_complexipy_score,
         pylint_output,
         is_test_file,
         is_init_file,
         attempt=1,
-        test_output="",
     ):
-        if current_score >= 8.0:
-            print(f"Code quality is already good. Score: {current_score}/10")
-            return current_score
+        if current_pylint_score >= 8.0 and (current_complexipy_score is None or current_complexipy_score <= 15):
+            print(f"Code quality is already good. Pylint score: {
+                  current_pylint_score}/10, Complexipy score: {current_complexipy_score}")
+            return current_pylint_score, current_complexipy_score
 
         if attempt > self.MAX_IMPROVEMENT_ATTEMPTS:
-            print(f"Maximum improvement attempts reached for {file_path}. Moving on.")
-            return current_score
+            print(f"Maximum improvement attempts reached for {
+                  file_path}. Moving on.")
+            return current_pylint_score, current_complexipy_score
 
         file_type = (
             "test file"
@@ -868,8 +931,10 @@ class NemoAgent:
         )
 
         prompt = f"""
-        The current pylint score for {file_path} (a {file_type}) is {current_score:.2f}/10. 
+        The current pylint score for {file_path} (a {file_type}) is {current_pylint_score:.2f}/10.
+        The current complexipy score is {current_complexipy_score}.
         Please analyze the pylint output and suggest improvements to the code implementation only.
+        Focus on reducing cognitive complexity while maintaining or improving the pylint score.
         Do not modify the test file.
 
         Pylint output:
@@ -890,11 +955,11 @@ class NemoAgent:
                 <<<{self.project_name}/filename.py>>>
                 # File content here
                 <<<end>>>
-            
+
                 For test files, use:
                 <<<tests/test_filename.py>>>
                 # Test file content here
-                <<<end>>>      
+                <<<end>>>
                 Replace 'filename' with the appropriate name for each file.
         9. CRITICAL: Do not explain the task only implement the required functionality in the code blocks.
         Working directory: {self.pwd}
@@ -904,66 +969,73 @@ class NemoAgent:
         # Check if the proposed improvements are new
         if proposed_improvements in self.previous_suggestions:
             print("No new improvements suggested. Moving on.")
-            return current_score
+            return current_pylint_score, current_complexipy_score
 
         self.previous_suggestions.add(proposed_improvements)
 
         if self.validate_against_task(proposed_improvements):
             print("Executing validated improvements:")
             success = self.process_file_changes(proposed_improvements)
-            
-            if success:
-                new_score = self.clean_code_with_pylint(file_path)
 
-                if new_score < 8.0:
+            if success:
+                new_pylint_score, new_complexipy_score = self.clean_code_with_pylint(file_path)
+
+                if new_pylint_score < 8.0 or (new_complexipy_score is not None and new_complexipy_score > 15):
                     print(
-                        f"Score is still below 8.0. Attempting another improvement (attempt {attempt + 1})..."
+                        f"Score is still below 8.0 or complexity is above 15. Attempting another improvement (attempt {
+                            attempt + 1})..."
                     )
                     return self.improve_code(
                         file_path,
-                        new_score,
+                        new_pylint_score,
+                        new_complexipy_score,
                         pylint_output,
                         is_test_file,
                         is_init_file,
                         attempt + 1,
                     )
                 else:
-                    print(f"Code quality improved. New score: {new_score}/10")
+                    print(f"Code quality improved. New score: {new_pylint_score}/10")
+                    print(f"Complexipy score: {new_complexipy_score}")
                     self.commit_changes(
-                        f"Improve code quality for {file_path} to {new_score}/10"
+                        f"Improve code quality for {
+                            file_path} to {new_score}/10"
                     )
                     return new_score
             else:
                 print("Failed to apply some or all improvements.")
                 if attempt < self.MAX_IMPROVEMENT_ATTEMPTS:
-                    print(f"Attempting another improvement (attempt {attempt + 1})...")
+                    print(
+                        f"Attempting another improvement (attempt {attempt + 1})...")
                     return self.improve_code(
                         file_path,
-                        current_score,
+                        current_pylint_score,
+                        current_complexipy_score,
                         pylint_output,
                         is_test_file,
                         is_init_file,
                         attempt + 1,
                     )
                 else:
-                    return current_score
+                    return current_pylint_score, current_complexipy_score
         else:
             print(
                 "Proposed improvements do not align with the original task. Skipping this improvement attempt."
             )
             if attempt < self.MAX_IMPROVEMENT_ATTEMPTS:
-                print(f"Attempting another improvement (attempt {attempt + 1})...")
+                print(
+                    f"Attempting another improvement (attempt {attempt + 1})...")
                 return self.improve_code(
                     file_path,
-                    current_score,
+                    current_pylint_score,
+                    current_complexipy_score,
                     pylint_output,
                     is_test_file,
                     is_init_file,
                     attempt + 1,
                 )
             else:
-                return current_score
-
+                return current_pylint_score, current_complexipy_score
 
     def validate_file_content(self, file_path, content):
         if file_path.endswith(".py"):
@@ -1058,8 +1130,10 @@ class NemoAgent:
                 return False, 0, test_output
 
             # Extract coverage percentage
-            coverage_match = re.search(r"TOTAL\s+\d+\s+\d+\s+(\d+)%", test_output)
-            coverage_percentage = int(coverage_match.group(1)) if coverage_match else 0
+            coverage_match = re.search(
+                r"TOTAL\s+\d+\s+\d+\s+(\d+)%", test_output)
+            coverage_percentage = int(
+                coverage_match.group(1)) if coverage_match else 0
 
             # Check if all tests passed
             tests_passed = (
@@ -1107,6 +1181,7 @@ def cli(task: str = None, model: str = "mistral-nemo", provider: str = "ollama")
 
     nemo_agent = NemoAgent(task=task, model=model, provider=provider)
     nemo_agent.run_task()
+
 
 if __name__ == "__main__":
     cli()
