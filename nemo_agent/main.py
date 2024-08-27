@@ -651,8 +651,9 @@ class NemoAgent:
                 text=True,
                 cwd=self.pwd
             )
-            match = re.search(
-                r'Total Cognitive Complexity in .+: (\d+)', result.stdout)
+            escaped_path = re.escape(file_path)
+            pattern = fr'🧠 Total Cognitive Complexity in\s*{escaped_path}:\s*(\d+)'
+            match = re.search(pattern, result.stdout, re.DOTALL)
             return int(match.group(1)) if match else None
         except subprocess.CalledProcessError as e:
             print(f"Error running complexipy: {e}")
@@ -739,12 +740,12 @@ class NemoAgent:
                 complexipy_cmd, capture_output=True, text=True, cwd=self.pwd
             )
             output = result.stdout + result.stderr
-            score_match = re.search(
-                r'Total Cognitive Complexity in .+: (\d+)', result.stdout)
-
+            escaped_path = re.escape(file_path)
+            pattern = fr'🧠 Total Cognitive Complexity in\s*{escaped_path}:\s*(\d+)'
+            score_match = re.search(pattern, output, re.DOTALL)
+            print(score_match)
             print(output)
-            complexipy_score = int(score_match.group(1)
-                                   ) if score_match else None
+            complexipy_score = int(score_match.group(1)) if score_match else None
 
             print(f"Pylint score for {file_path}: {pylint_score}/10")
             print(f"Complexipy score for {file_path}: {complexipy_score}")
@@ -765,8 +766,7 @@ class NemoAgent:
                 return self.clean_code_with_pylint(file_path)
 
             else:
-                print(f"Code quality is good. Pylint score: {
-                      pylint_score}/10, Complexipy score: {complexipy_score}")
+                print(f"Code quality is good. Pylint score: {pylint_score}/10, Complexipy score: {complexipy_score}")
 
             return pylint_score, complexipy_score
         except subprocess.CalledProcessError as e:
@@ -999,9 +999,9 @@ class NemoAgent:
                     print(f"Complexipy score: {new_complexipy_score}")
                     self.commit_changes(
                         f"Improve code quality for {
-                            file_path} to {new_score}/10"
+                            file_path} to {new_pylint_score}/10"
                     )
-                    return new_score
+                    return new_pylint_score, new_complexipy_score
             else:
                 print("Failed to apply some or all improvements.")
                 if attempt < self.MAX_IMPROVEMENT_ATTEMPTS:
