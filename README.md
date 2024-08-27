@@ -35,7 +35,7 @@ https://github.com/user-attachments/assets/51cf6ad1-196c-44ab-99ba-0035365f1bbd
 * Python 3.9 or higher
 * git
 * OpenAI or Claude API Key
-* Linux
+* Linux or Mac
 
 #### Requirements Installation
 * Install Claude API Key for `zsh` shell

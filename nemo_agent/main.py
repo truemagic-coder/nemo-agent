@@ -5,6 +5,7 @@ import fcntl
 import json
 import logging
 import os
+import platform
 import random
 import re
 import shutil
@@ -221,8 +222,7 @@ class NemoAgent:
         for attempt in range(max_improvement_attempts):
             tests_passed, coverage, test_output = self.run_tests()
             if coverage >= 80:
-                print(f"Task completed successfully after {
-                      attempt + 1} attempts.")
+                print(f"Task completed successfully after {attempt + 1} attempts.")
                 print(f"Coverage is {coverage}%.")
                 if not tests_passed:
                     print(
@@ -230,10 +230,7 @@ class NemoAgent:
                     )
                 return  # Exit the method immediately
             elif attempt < max_improvement_attempts - 1:
-                print(
-                    f"Attempt {
-                        attempt + 1} failed. Trying to improve implementation..."
-                )
+                print(f"Attempt {attempt + 1} failed. Trying to improve implementation...")
                 self.improve_implementation(test_output)
                 print("Attempting to improve test file...")
                 self.improve_test_file(test_output)
@@ -285,20 +282,37 @@ class NemoAgent:
             print("Contents of the directory:")
             print(os.listdir(self.pwd))
 
+            # Determine the operating system
+            is_mac = platform.system() == "Darwin"
+
+            # First sed command
+            sed_inplace = "-i ''" if is_mac else "-i"
+            sed_command_1 = f"""
+            sed {sed_inplace} '
+            /^\\[tool.poetry\\]/a\\
+            packages = [{{include = "{self.project_name}"}}]
+            ' pyproject.toml
+            """
+
             subprocess.run(
-                (
-                    f"sed -i '/^\\[tool.poetry\\]/a packages = [{{include = \""
-                    f"{self.project_name}\"}}]' pyproject.toml"
-                ),
+                sed_command_1,
                 shell=True,
                 check=True,
                 cwd=self.pwd,
             )
             print("Added packages variable to pyproject.toml")
 
-            # Add [tool.pytest.ini-options] section to pyproject.toml
+            # Second sed command
+            sed_command_2 = f"""
+            sed {sed_inplace} '
+            $a\\
+            [tool.pytest.ini-options]\\
+            python_paths = [".","tests"]
+            ' pyproject.toml
+            """
+
             subprocess.run(
-                'sed -i \'$a\\[tool.pytest.ini-options]\\npython_paths = [".", "tests"]\' pyproject.toml',
+                sed_command_2,
                 shell=True,
                 check=True,
                 cwd=self.pwd,
@@ -368,10 +382,7 @@ class NemoAgent:
                         f"Retrying in {self.WRITE_RETRY_DELAY} seconds...")
                     time.sleep(self.WRITE_RETRY_DELAY)
                 else:
-                    self.logger.error(
-                        f"Failed to write to {file_path} after {
-                            self.MAX_WRITE_ATTEMPTS} attempts"
-                    )
+                    self.logger.error(f"Failed to write to {file_path} after {self.MAX_WRITE_ATTEMPTS} attempts")
             except Exception as e:
                 self.logger.error(
                     f"Unexpected error writing to {file_path}: {e}")
@@ -401,10 +412,7 @@ class NemoAgent:
                     if full_path.startswith(os.path.join(self.pwd, self.project_name)):
                         pylint_score, complexipy_score = self.clean_code_with_pylint(full_path)
                         if pylint_score < 8.0 and complexipy_score is not None and complexipy_score > 15:
-                            self.logger.warning(
-                                f"Pylint score for {
-                                    full_path} is below 8.0: {pylint_score}"
-                            )
+                            self.logger.warning(f"Pylint score for {full_path} is below 8.0: {pylint_score}")
                             success = False
                 else:
                     self.logger.error(
@@ -474,10 +482,7 @@ class NemoAgent:
                 self.commit_changes("Implement initial solution")
                 return True
 
-            self.logger.warning(
-                f"Attempt {
-                    attempt + 1} failed to create the correct files or pass pylint. Retrying..."
-            )
+            self.logger.warning(f"Attempt {attempt + 1} failed to create the correct files or pass pylint. Retrying...")
 
         self.logger.error(
             "Failed to implement solution after maximum attempts")
@@ -621,8 +626,7 @@ class NemoAgent:
                 return False
 
             if "except IndexError" not in content:
-                print(f"Warning: No explicit IndexError handling in {
-                      file_path}")
+                print(f"Warning: No explicit IndexError handling in {file_path}")
                 return False
 
             return True
@@ -679,8 +683,7 @@ class NemoAgent:
         try:
             return self.llm.generate(prompt)
         except Exception as e:
-            self.logger.error(f"Error getting response from {
-                              self.provider}: {str(e)}")
+            self.logger.error(f"Error getting response from {self.provider}: {str(e)}")
             return ""
 
     def clean_code_with_pylint(self, file_path):
@@ -841,8 +844,7 @@ class NemoAgent:
                 if 0 <= line_num < len(lines):
                     lines[line_num] = new_content + '\n'
                 else:
-                    print(f"Warning: Line number {
-                          line_num + 1} is out of range. Skipping this change.")
+                    print(f"Warning: Line number {line_num + 1} is out of range. Skipping this change.")
 
             with open(file_path, 'w') as file:
                 file.writelines(lines)
@@ -913,13 +915,11 @@ class NemoAgent:
         attempt=1,
     ):
         if current_pylint_score >= 8.0 and (current_complexipy_score is None or current_complexipy_score <= 15):
-            print(f"Code quality is already good. Pylint score: {
-                  current_pylint_score}/10, Complexipy score: {current_complexipy_score}")
+            print(f"Code quality is already good. Pylint score: {current_pylint_score}/10, Complexipy score: {current_complexipy_score}")
             return current_pylint_score, current_complexipy_score
 
         if attempt > self.MAX_IMPROVEMENT_ATTEMPTS:
-            print(f"Maximum improvement attempts reached for {
-                  file_path}. Moving on.")
+            print(f"Maximum improvement attempts reached for {file_path}. Moving on.")
             return current_pylint_score, current_complexipy_score
 
         file_type = (
@@ -982,8 +982,7 @@ class NemoAgent:
 
                 if new_pylint_score < 8.0 or (new_complexipy_score is not None and new_complexipy_score > 15):
                     print(
-                        f"Score is still below 8.0 or complexity is above 15. Attempting another improvement (attempt {
-                            attempt + 1})..."
+                        f"Score is still below 8.0 or complexity is above 15. Attempting another improvement (attempt {attempt + 1})..."
                     )
                     return self.improve_code(
                         file_path,
@@ -998,8 +997,7 @@ class NemoAgent:
                     print(f"Code quality improved. New score: {new_pylint_score}/10")
                     print(f"Complexipy score: {new_complexipy_score}")
                     self.commit_changes(
-                        f"Improve code quality for {
-                            file_path} to {new_pylint_score}/10"
+                        f"Improve code quality for {file_path} to {new_pylint_score}/10"
                     )
                     return new_pylint_score, new_complexipy_score
             else:
