@@ -35,7 +35,7 @@ https://github.com/user-attachments/assets/51cf6ad1-196c-44ab-99ba-0035365f1bbd
 * Python 3.9 or higher
 * git
 * OpenAI or Claude API Key
-* Linux or Mac
+* Mac or Linux
 
 #### Requirements Installation
 * Install Claude API Key for `zsh` shell
@@ -54,10 +54,12 @@ https://github.com/user-attachments/assets/51cf6ad1-196c-44ab-99ba-0035365f1bbd
 * git
 * curl
 * Ollama running `mistral-nemo`
-* Ubuntu (22.04 or 24.04) with a minimum of an RTX 4070
+* Mac or Linux
+    * Linux Test Box: Ubuntu 24.04 with RTX 4070
+    * Mac Test Box: Mac Mini M2 Pro with 16GB
+    * May run on less powerful systems
 
 #### Requirements Installation
-* Python, curl, git are pre-installed on Ubuntu
 * Ollama install instructions:
     * `curl -fsSL https://ollama.com/install.sh | sh`
     * `ollama pull mistral-nemo`
