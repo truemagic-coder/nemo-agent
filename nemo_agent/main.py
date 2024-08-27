@@ -2,6 +2,7 @@ import ast
 from contextlib import contextmanager
 from datetime import time
 import fcntl
+import io
 import json
 import logging
 import os
@@ -11,6 +12,7 @@ import re
 import shutil
 import subprocess
 import sys
+import zipfile
 import click
 import requests
 import openai
@@ -363,12 +365,6 @@ class NemoAgent:
         for attempt in range(self.MAX_WRITE_ATTEMPTS):
             try:
                 with self.file_lock(file_path):
-                    # Create a backup of the existing file
-                    if os.path.exists(file_path):
-                        backup_path = f"{file_path}.bak"
-                        shutil.copy2(file_path, backup_path)
-                        self.logger.info(f"Created backup: {backup_path}")
-
                     # Write the new content
                     with open(file_path, "w") as f:
                         f.write(content)
@@ -616,21 +612,6 @@ class NemoAgent:
                 "Proposed improvements do not align with the original task. No changes were made."
             )
 
-        def validate_list_operations(self, file_path):
-            with open(file_path, "r") as f:
-                content = f.read()
-
-            # Check for common patterns that might lead to IndexError
-            if "[0]" in content and "if" not in content.split("[0]")[0].split("\n")[-1]:
-                print(f"Warning: Possible unsafe list access in {file_path}")
-                return False
-
-            if "except IndexError" not in content:
-                print(f"Warning: No explicit IndexError handling in {file_path}")
-                return False
-
-            return True
-
     def validate_implementation(self):
         prompt = f"""
         Review the current implementation and confirm if it correctly addresses the original task: {self.task}
@@ -647,15 +628,15 @@ class NemoAgent:
             print("Implementation does not match the original task.")
             return False
 
-    def get_complexipy_score(self, file_path):
+    def get_complexipy_score(self):
         try:
             result = subprocess.run(
-                ["poetry", "run", "complexipy", file_path],
+                ["poetry", "run", "complexipy", self.project_name],
                 capture_output=True,
                 text=True,
                 cwd=self.pwd
             )
-            escaped_path = re.escape(file_path)
+            escaped_path = re.escape(self.project_name)
             pattern = fr'🧠 Total Cognitive Complexity in\s*{escaped_path}:\s*(\d+)'
             match = re.search(pattern, result.stdout, re.DOTALL)
             return int(match.group(1)) if match else None
@@ -1166,11 +1147,15 @@ class NemoAgent:
 @click.argument("task", required=False)
 @click.option("--model", default="mistral-nemo", help="The model to use for the LLM")
 @click.option("--provider", default="ollama", type=click.Choice(["ollama", "openai", "claude"]), help="The LLM provider to use")
-def cli(task: str = None, model: str = "mistral-nemo", provider: str = "ollama"):
+@click.option("--zip", type=click.Path(), help="Path to save the zip file of the agent run")
+def cli(task: str = None, model: str = "mistral-nemo", provider: str = "ollama", zip: str = None):
     """
     Run Nemo Agent tasks to create Python projects using Poetry and Pytest.
     If no task is provided, it will prompt the user for input.
     """
+    # Store the original working directory
+    original_dir = os.getcwd()
+
     # Check for API keys if using OpenAI or Anthropic
     if provider == "openai" and not os.getenv("OPENAI_API_KEY"):
         raise ValueError("OPENAI_API_KEY environment variable is not set")
@@ -1179,6 +1164,27 @@ def cli(task: str = None, model: str = "mistral-nemo", provider: str = "ollama")
 
     nemo_agent = NemoAgent(task=task, model=model, provider=provider)
     nemo_agent.run_task()
+    
+    project_dir = nemo_agent.pwd
+
+    if zip:
+        # Ensure the zip file is created in the original directory
+        zip_path = os.path.join(original_dir, zip)
+        
+        # Create a zip file
+        with zipfile.ZipFile(zip_path, 'w', zipfile.ZIP_DEFLATED) as zipf:
+            for root, dirs, files in os.walk(project_dir):
+                for file in files:
+                    file_path = os.path.join(root, file)
+                    arcname = os.path.relpath(file_path, project_dir)
+                    zipf.write(file_path, arcname)
+        print(f"Project files have been zipped to: {zip_path}")
+
+        # Delete the project directory
+        shutil.rmtree(project_dir)
+        print(f"Project directory {project_dir} has been deleted.")
+    else:
+        print(f"Task completed. Project files are in: {nemo_agent.pwd}")
 
 
 if __name__ == "__main__":
