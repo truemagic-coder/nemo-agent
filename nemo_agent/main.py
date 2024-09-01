@@ -693,7 +693,11 @@ class NemoAgent:
             # Check if the file is empty
             if os.path.getsize(file_path) == 0:
                 print(f"File {file_path} is empty. Skipping autopep8 and pylint check.")
-                return 10.0  # Assume perfect score for empty files
+                return 10.0, 0  # Assume perfect score for empty files
+
+            # Check if the file is within the project directory and is a Python file
+            if not file_path.startswith(os.path.abspath(self.project_name)) or not file_path.endswith('.py'):
+                return 10.0, 0 # Assume perfect score for non-Python files
 
             # Run autopep8 to automatically fix style issues
             print(f"Running autopep8 on {file_path}")
@@ -710,22 +714,14 @@ class NemoAgent:
             )
             print("autopep8 completed successfully.")
 
-            # Determine if the file is a special file
-            file_name = os.path.basename(file_path)
-            is_test_file = "test" in file_name.lower()
-            is_init_file = file_name == "__init__.py"
-
             # Adjust pylint command for different file types
             pylint_cmd = ["poetry", "run", "pylint"]
-            if is_test_file:
-                pylint_cmd.extend(
-                    [
-                        "--disable=missing-function-docstring,missing-module-docstring,redefined-outer-name",
-                        "--max-line-length=120",
-                    ]
-                )
-            elif is_init_file:
-                pylint_cmd.extend(["--disable=missing-module-docstring"])
+            pylint_cmd.extend(
+                [
+                    "--disable=missing-function-docstring,missing-module-docstring",
+                    "--max-line-length=120",
+                ]
+            )
             pylint_cmd.append(file_path)
 
             result = subprocess.run(
@@ -764,19 +760,8 @@ class NemoAgent:
                     pylint_score,
                     complexipy_score,
                     output,
-                    is_test_file,
-                    is_init_file,
+                    1,
                 )
-
-            elif (
-                "missing-module-docstring" in output
-                and not is_test_file
-                and not is_init_file
-            ):
-                self.add_module_docstring(file_path)
-                # Re-run pylint after adding the docstring
-                return self.clean_code_with_pylint(file_path)
-
             else:
                 print(
                     f"Code quality is good. Pylint score: {pylint_score}/10, Complexipy score: {complexipy_score}"
@@ -903,8 +888,6 @@ class NemoAgent:
         current_pylint_score,
         current_complexipy_score,
         pylint_output,
-        is_test_file,
-        is_init_file,
         attempt=1,
     ):
         if current_pylint_score >= 7.0 and (
@@ -919,16 +902,8 @@ class NemoAgent:
             print(f"Maximum improvement attempts reached for {file_path}. Moving on.")
             return current_pylint_score, current_complexipy_score
 
-        file_type = (
-            "test file"
-            if is_test_file
-            else "init file"
-            if is_init_file
-            else "regular Python file"
-        )
-
         prompt = f"""
-        The current pylint score for {file_path} (a {file_type}) is {current_pylint_score:.2f}/10.
+        The current pylint score for {file_path} is {current_pylint_score:.2f}/10.
         The current complexipy score is {current_complexipy_score}.
         Please analyze the pylint output and suggest improvements to the code implementation only.
         Focus on reducing cognitive complexity while maintaining or improving the pylint score.
@@ -984,8 +959,6 @@ class NemoAgent:
                         new_pylint_score,
                         new_complexipy_score,
                         pylint_output,
-                        is_test_file,
-                        is_init_file,
                         attempt + 1,
                     )
                 else:
@@ -1004,8 +977,6 @@ class NemoAgent:
                         current_pylint_score,
                         current_complexipy_score,
                         pylint_output,
-                        is_test_file,
-                        is_init_file,
                         attempt + 1,
                     )
                 else:
@@ -1021,8 +992,6 @@ class NemoAgent:
                     current_pylint_score,
                     current_complexipy_score,
                     pylint_output,
-                    is_test_file,
-                    is_init_file,
                     attempt + 1,
                 )
             else:
