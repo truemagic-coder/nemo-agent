@@ -15,10 +15,10 @@ https://github.com/user-attachments/assets/51cf6ad1-196c-44ab-99ba-0035365f1bbd
 * Generates Python project structures automatically using `poetry`
 * Writes Python code based on task descriptions
 * Executes development tasks using AI-generated commands
-* Utilizes the `mistral-nemo`, `OpenAI`, or `Claude` language models for intelligent code generation
+* Utilizes the `mistral-nemo` or `OpenAI`language models for intelligent code generation
 * Implements best practices in Python development automatically
 * Writes and runs passing tests using `pytest` up to 80%+ test coverage 
-* Automatically fixes and styles code using `pylint` up to 8+/10
+* Automatically fixes and styles code using `pylint` up to 7+/10
 * Calculates and improves the complexity score using `complexipy` to be under 15
 * Auto-formats to the code with `autopep8`
 * Utilizes `git` to commit and track changes
@@ -29,19 +29,17 @@ https://github.com/user-attachments/assets/51cf6ad1-196c-44ab-99ba-0035365f1bbd
 
 ## Install 
 
-### Claude or OpenAI Local Install
+### OpenAI Local Install
 
 #### Requirements
 * Python 3.9 or higher
 * git
-* OpenAI or Claude API Key
+* OpenAI API KEY
 * Mac or Linux
 
 #### Requirements Installation
-* Install Claude API Key for `zsh` shell
-    * echo 'export ANTHROPIC_API_KEY="YOUR_API_KEY"' >> ~/.zshrc
-* OR: Install OpenAI API Key for `zsh` shell
-    * echo 'export OPENAI_API_KEY="YOUR_API_KEY"' >> ~/.zshrc
+* Install OpenAI API KEY for `zsh` shell
+    * `echo 'export OPENAI_API_KEY="YOUR_API_KEY"' >> ~/.zshrc`
 * `pip install nemo-agent`
 * You are ready to use `nemo-agent`
 
@@ -92,13 +90,11 @@ https://github.com/user-attachments/assets/51cf6ad1-196c-44ab-99ba-0035365f1bbd
 
 * `mistral-nemo`: `nemo-agent "create a fizzbuzz script"`
 * `openai`: `nemo-agent "create a fizzbuzz script" --provider openai`
-* `claude`: `nemo-agent "create a fizzbuzz script" --provider claude`
 
 ## Model overrides
 
 * You can pass the `--model` flag to override the default model for the provider.
 * The default model for `openai` is `gpt-4o-2024-08-06`
-* The default model for `claude` is `claude-3-5-sonnet-20240620`
 * The default model for `ollama` is `mistral-nemo`
 
 ## Contributing

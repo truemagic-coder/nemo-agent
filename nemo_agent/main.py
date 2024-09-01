@@ -407,8 +407,8 @@ class NemoAgent:
                     # Run pylint only on files in the project folder
                     if full_path.startswith(os.path.join(self.pwd, self.project_name)):
                         pylint_score, complexipy_score = self.clean_code_with_pylint(full_path)
-                        if pylint_score < 8.0 and complexipy_score is not None and complexipy_score > 15:
-                            self.logger.warning(f"Pylint score for {full_path} is below 8.0: {pylint_score}")
+                        if pylint_score < 7.0 and complexipy_score is not None and complexipy_score > 15:
+                            self.logger.warning(f"Pylint score for {full_path} is below 7.0: {pylint_score}")
                             success = False
                 else:
                     self.logger.error(
@@ -425,12 +425,12 @@ class NemoAgent:
         prompt = f"""
             Create a comprehensive implementation for the task: {self.task}.
             You must follow these rules strictly:
-                1. CRITICAL: Only add poetry dependencies if necessary using `poetry add package_name`.
-                2. Use the correct import statements: from {self.project_name}.module_name import method_name.
-                3. Follow PEP8 style guide.
-                4. IMPORTANT: Never use pass statements in your code or tests. Always provide a meaningful implementation.
-                5. Use parametrized tests to cover multiple scenarios efficiently.
-                6. CRITICAL: Use the following code block format for specifying file content:
+                1. Use the correct import statements: from {self.project_name}.module_name import method_name.
+                2. Follow PEP8 style guide.
+                3. IMPORTANT: Never use pass statements in your code or tests. Always provide a meaningful implementation.
+                4. Use parametrized tests to cover multiple scenarios efficiently.
+                5. CRITICAL: Use the following code block format for specifying file content:                
+                    For code files, use:
                     <<<{self.project_name}/main.py>>>
                     # File content here
                     <<<end>>>
@@ -441,26 +441,26 @@ class NemoAgent:
                     <<<end>>>
 
                     For HTML templates (Flask), use:
-                    <<<{self.project_name}/templates/template_name.html>>>
+                    <<<templates/template_name.html>>>
                     <!-- HTML content here -->
                     <<<end>>>
 
                     For static files (CSS, JS), use:
-                    <<<{self.project_name}/static/filename.ext>>>
+                    <<<static/filename.ext>>>
                     // Static file content here
                     <<<end>>>
-                7. The test command is `poetry run pytest --cov={self.project_name} --cov-config=.coveragerc`
-                8. IMPORTANT: Do not add any code comments to the files.
-                9. IMPORTANT: Always follow PEP8 style guide, follow best practices for Python, use snake_case naming, and provide meaningful docstrings.
-                10. IMPORTANT: Do not redefine built-in functions or use reserved keywords as variable names.
-                11. CRITICAL: Put all Python code in 1 file only: {self.project_name}/main.py
-                12. CRITICAL: Put all tests in 1 file only: tests/test_main.py
-                13. CRITICAL: Create any non-existent directories or files as needed that are not Python files.
-                14. CRITICAL: Do not explain the task, only implement the required functionality in the code blocks.
-                15. CRITICAL: Your response should ONLY contain the code blocks. Do not include any explanations or additional text.
-                16. IMPORTANT: For Flask apps, create necessary HTML templates in the 'templates' directory.
-                18. IMPORTANT: For Flask apps, create necessary static files (CSS, JS) in the 'static' directory.
-                19. CRITICAL: Do not edit pyproject.toml or poetry.lock files.
+                6. The test command is `poetry run pytest --cov={self.project_name} --cov-config=.coveragerc`
+                7. IMPORTANT: Do not add any code comments to the files.
+                8. IMPORTANT: Always follow PEP8 style guide, follow best practices for Python, use snake_case naming, and provide meaningful docstrings.
+                9. IMPORTANT: Do not redefine built-in functions or use reserved keywords as variable names.
+                10. CRITICAL: Create any non-existent directories or files as needed that are not Python files.
+                11. CRITICAL: Your response should ONLY contain the code blocks and `poetry add package_name` command at the end after all the code blocks. Do not include any explanations or additional text.
+                12. IMPORTANT: For Flask apps, create necessary HTML templates in the 'templates' directory.
+                13. IMPORTANT: For Flask apps, create necessary static files (CSS, JS) in the 'static' directory.
+                14. IMPORTANT: Do not modify the existing poetry dependencies. Only add new ones if necessary.
+                15. IMPORTANT: Use the flask-testing library for testing Flask apps.
+                16. IMPORTANT: Only create 1 file for the main implementation: {self.project_name}/main.py
+                17. IMPORTANT: Only create 1 file for the tests: tests/test_main.py
             Working directory: {self.pwd}
             """
 
@@ -468,6 +468,15 @@ class NemoAgent:
             self.logger.info(f"Attempt {attempt + 1} to implement solution")
             solution = self.get_response(prompt)
             self.logger.info(f"Received solution:\n{solution}")
+
+            # Parse and execute any poetry add commands
+            poetry_commands = [line.strip() for line in solution.split('\n') if line.strip().startswith('poetry add')]
+            for command in poetry_commands:
+                try:
+                    subprocess.run(command, shell=True, check=True)
+                    self.logger.info(f"Executed command: {command}")
+                except subprocess.CalledProcessError as e:
+                    self.logger.error(f"Failed to execute command: {command}. Error: {str(e)}")
 
             success = self.process_file_changes(solution)
 
@@ -563,7 +572,7 @@ class NemoAgent:
         {git_log}
 
         Please provide improvements to the existing code to:
-        1. Improve or maintain the pylint score (target: at least 8.0/10)
+        1. Improve or maintain the pylint score (target: at least 7.0/10)
         2. Ensure all tests are passing
         3. Improve or maintain the test coverage (target: at least 80%)
         4. CRITICAL: Handle list indices properly to avoid IndexError exceptions
@@ -592,6 +601,9 @@ class NemoAgent:
             <<<end>>>
         11. CRITICAL: Put all Python code in 1 file only: {self.project_name}/main.py
         12. CRITICAL: Put all tests in 1 file only: tests/test_main.py.
+        13. CRITICAL: Do not change the library dependencies from the original implementation.
+        14. CRITICAL: Make the minimum number of changes necessary to improve the code.
+        15. IMPORTANT: Use the flask-testing library for testing Flask apps.
         Working directory: {self.pwd}
         """
         improvements = self.get_response(prompt)
@@ -735,7 +747,7 @@ class NemoAgent:
             print(f"Complexipy score for {file_path}: {complexipy_score}")
 
             # You can define your own threshold for complexipy score
-            if pylint_score < 8.0 or (complexipy_score is not None and complexipy_score > 15):
+            if pylint_score < 7.0 or (complexipy_score is not None and complexipy_score > 15):
                 print("Score is below threshold. Attempting to improve the code...")
                 self.improve_code(
                     file_path, pylint_score, complexipy_score, output, is_test_file, is_init_file)
@@ -797,6 +809,7 @@ class NemoAgent:
                 # Suggested change: New line
                 <<<end>>>
         10. CRITICAL: Do not explain the task only implement the required functionality in the code blocks.
+        11. IMPORTANT: Use the flask-testing library for testing Flask apps.
         Working directory: {self.pwd}
         """
         proposed_improvements = self.get_response(prompt)
@@ -895,7 +908,7 @@ class NemoAgent:
         is_init_file,
         attempt=1,
     ):
-        if current_pylint_score >= 8.0 and (current_complexipy_score is None or current_complexipy_score <= 15):
+        if current_pylint_score >= 7.0 and (current_complexipy_score is None or current_complexipy_score <= 15):
             print(f"Code quality is already good. Pylint score: {current_pylint_score}/10, Complexipy score: {current_complexipy_score}")
             return current_pylint_score, current_complexipy_score
 
@@ -933,15 +946,9 @@ class NemoAgent:
         6. IMPORTANT: put all your code in the code directory: {self.project_name}
         7. IMPORTANT: put all your tests in the tests directory: tests
         8. CRITICAL: Use the following code block format for specifying file content:
-                <<<{self.project_name}/filename.py>>>
+                <<<{self.project_name}/main.py>>>
                 # File content here
                 <<<end>>>
-
-                For test files, use:
-                <<<tests/test_filename.py>>>
-                # Test file content here
-                <<<end>>>
-                Replace 'filename' with the appropriate name for each file.
         9. CRITICAL: Do not explain the task only implement the required functionality in the code blocks.
         Working directory: {self.pwd}
         """
@@ -961,9 +968,9 @@ class NemoAgent:
             if success:
                 new_pylint_score, new_complexipy_score = self.clean_code_with_pylint(file_path)
 
-                if new_pylint_score < 8.0 or (new_complexipy_score is not None and new_complexipy_score > 15):
+                if new_pylint_score < 7.0 or (new_complexipy_score is not None and new_complexipy_score > 15):
                     print(
-                        f"Score is still below 8.0 or complexity is above 15. Attempting another improvement (attempt {attempt + 1})..."
+                        f"Score is still below 7.0 or complexity is above 15. Attempting another improvement (attempt {attempt + 1})..."
                     )
                     return self.improve_code(
                         file_path,
