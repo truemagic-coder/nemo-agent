@@ -24,8 +24,9 @@ https://github.com/user-attachments/assets/51cf6ad1-196c-44ab-99ba-0035365f1bbd
 * Utilizes `git` to commit and track changes
 
 ## Coding Ability
-* Can solve leetcode hards in 30 seconds using larger models and sometimes with `mistral-nemo`
+* Can solve leetcode hards in 30 seconds using `OpenAI` and sometimes with `mistral-nemo`
 * Can apply time complexity constraints in task requirements
+* Can write API web services with tests using FastAPI
 
 ## Install 
 
