@@ -12,7 +12,7 @@ https://github.com/user-attachments/assets/51cf6ad1-196c-44ab-99ba-0035365f1bbd
 
 ## Features
 * Runs blazing fast
-* Generates Python project structures automatically using `poetry`
+* Generates Python project structures automatically using `uv`
 * Writes Python code based on task descriptions
 * Executes development tasks using AI-generated commands
 * Utilizes the `mistral-nemo` or `OpenAI`language models for intelligent code generation

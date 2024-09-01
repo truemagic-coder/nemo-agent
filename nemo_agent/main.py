@@ -2,11 +2,9 @@ import ast
 from contextlib import contextmanager
 from datetime import time
 import fcntl
-import io
 import json
 import logging
 import os
-import platform
 import random
 import re
 import shutil
@@ -216,8 +214,8 @@ class NemoAgent:
 
     def run_task(self):
         print(f"Current working directory: {os.getcwd()}")
-        self.ensure_poetry_installed()
-        self.create_project_with_poetry()
+        self.ensure_uv_installed()
+        self.create_project_with_uv()
         self.implement_solution()
 
         max_improvement_attempts = 3
@@ -245,26 +243,26 @@ class NemoAgent:
             "Task completed. Please review the output and make any necessary manual adjustments."
         )
 
-    def ensure_poetry_installed(self):
+    def ensure_uv_installed(self):
         try:
             subprocess.run(
-                ["poetry", "--version"], check=True, capture_output=True, text=True
+                ["uv", "--version"], check=True, capture_output=True, text=True
             )
-            print("Poetry is already installed.")
+            print("UV is already installed.")
         except FileNotFoundError:
-            print("Poetry is not installed. Installing Poetry...")
+            print("UV is not installed. Installing UV...")
             try:
-                subprocess.run("pip install poetry", shell=True, check=True)
-                print("Poetry installed successfully.")
+                subprocess.run("curl -LsSf https://astral.sh/uv/install.sh | sh", shell=True, check=True)
+                print("UV installed successfully.")
             except subprocess.CalledProcessError as e:
-                print(f"Error installing Poetry: {e}")
+                print(f"Error installing UV: {e}")
                 sys.exit(1)
 
-    def create_project_with_poetry(self):
-        print(f"Creating new Poetry project: {self.project_name}")
+    def create_project_with_uv(self):
+        print(f"Creating new UV project: {self.project_name}")
         try:
             result = subprocess.run(
-                ["poetry", "new", self.project_name],
+                ["uv", "init", self.project_name, "--no-workspace"],
                 capture_output=True,
                 text=True,
                 cwd=self.pwd,
@@ -284,68 +282,30 @@ class NemoAgent:
             print("Contents of the directory:")
             print(os.listdir(self.pwd))
 
-            # Determine the operating system
-            is_mac = platform.system() == "Darwin"
-
-            # First sed command
-            sed_inplace = "-i ''" if is_mac else "-i"
-            sed_command_1 = f"""
-            sed {sed_inplace} '
-            /^\\[tool.poetry\\]/a\\
-            packages = [{{include = "{self.project_name}"}}]
-            ' pyproject.toml
-            """
-
-            subprocess.run(
-                sed_command_1,
-                shell=True,
-                check=True,
-                cwd=self.pwd,
-            )
-            print("Added packages variable to pyproject.toml")
-
-            # Second sed command
-            sed_command_2 = f"""
-            sed {sed_inplace} '
-            $a\\
-            [tool.pytest.ini-options]\\
-            python_paths = [".","tests"]
-            ' pyproject.toml
-            """
-
-            subprocess.run(
-                sed_command_2,
-                shell=True,
-                check=True,
-                cwd=self.pwd,
-            )
-            print("Added [tool.pytest.ini-options] section to pyproject.toml")
-
             try:
                 subprocess.run(
                     [
-                        "poetry",
+                        "uv",
                         "add",
-                        "--dev",
-                        "pytest@*",
-                        "pylint@*",
-                        "autopep8@*",
-                        "pytest-cov@*",
-                        "pytest-flask@*",
-                        "httpx@*",
-                        "complexipy@*",
+                        "pytest",
+                        "pylint",
+                        "autopep8",
+                        "pytest-cov",
+                        "pytest-flask",
+                        "httpx",
+                        "complexipy",
                     ],
                     check=True,
                     cwd=self.pwd,
                 )
                 print(
-                    "Added pytest, pylint, autopep8, pytest-cov, pytest-flask, and httpx as development dependencies with latest versions."
+                    "Added pytest, pylint, autopep8, pytest-cov, pytest-flask, and httpx as dependencies with latest versions."
                 )
             except subprocess.CalledProcessError as e:
                 print(f"Error adding development dependencies: {e}")
 
         except subprocess.CalledProcessError as e:
-            print(f"Error creating Poetry project: {e.stderr}")
+            print(f"Error creating UV project: {e.stderr}")
         except Exception as e:
             print(f"Error: {str(e)}")
 
@@ -431,12 +391,12 @@ class NemoAgent:
                 4. Use parametrized tests to cover multiple scenarios efficiently.
                 5. CRITICAL: Use the following code block format for specifying file content:                
                     For code files, use:
-                    <<<{self.project_name}/main.py>>>
+                    <<<main.py>>>
                     # File content here
                     <<<end>>>
 
                     For test files, use:
-                    <<<tests/test_main.py>>>
+                    <<<test_main.py>>>
                     # Test file content here
                     <<<end>>>
 
@@ -449,18 +409,18 @@ class NemoAgent:
                     <<<static/filename.ext>>>
                     // Static file content here
                     <<<end>>>
-                6. The test command is `poetry run pytest --cov={self.project_name} --cov-config=.coveragerc`
+                6. The test command is `uv run pytest --cov-config=.coveragerc`
                 7. IMPORTANT: Do not add any code comments to the files.
                 8. IMPORTANT: Always follow PEP8 style guide, follow best practices for Python, use snake_case naming, and provide meaningful docstrings.
                 9. IMPORTANT: Do not redefine built-in functions or use reserved keywords as variable names.
                 10. CRITICAL: Create any non-existent directories or files as needed that are not Python files.
-                11. CRITICAL: Your response should ONLY contain the code blocks and `poetry add package_name` command at the end after all the code blocks. Do not include any explanations or additional text.
+                11. CRITICAL: Your response should ONLY contain the code blocks and `uv add package_name` command at the end after all the code blocks. Do not include any explanations or additional text.
                 12. IMPORTANT: For Flask apps, create necessary HTML templates in the 'templates' directory.
                 13. IMPORTANT: For Flask apps, create necessary static files (CSS, JS) in the 'static' directory.
-                14. IMPORTANT: Do not modify the existing poetry dependencies. Only add new ones if necessary.
+                14. IMPORTANT: Do not modify the existing uv dependencies. Only add new ones if necessary.
                 15. IMPORTANT: Use the flask-testing library for testing Flask apps.
-                16. IMPORTANT: Only create 1 file for the main implementation: {self.project_name}/main.py
-                17. IMPORTANT: Only create 1 file for the tests: tests/test_main.py
+                16. IMPORTANT: Only create 1 file for the main implementation: /main.py
+                17. IMPORTANT: Only create 1 file for the tests: test_main.py
             Working directory: {self.pwd}
             """
 
@@ -469,9 +429,9 @@ class NemoAgent:
             solution = self.get_response(prompt)
             self.logger.info(f"Received solution:\n{solution}")
 
-            # Parse and execute any poetry add commands
-            poetry_commands = [line.strip() for line in solution.split('\n') if line.strip().startswith('poetry add')]
-            for command in poetry_commands:
+            # Parse and execute any uv add commands
+            uv_commands = [line.strip() for line in solution.split('\n') if line.strip().startswith('uv add')]
+            for command in uv_commands:
                 try:
                     subprocess.run(command, shell=True, check=True)
                     self.logger.info(f"Executed command: {command}")
@@ -585,22 +545,22 @@ class NemoAgent:
         2. IMPORTANT: Never use pass statements in your code. Always provide a meaningful implementation.
         3. Consider the Git history when suggesting changes to avoid reverting recent improvements.
         4. IMPORTANT: Do not create new files. Only modify the existing ones.
-        5. IMPORTANT: Never remove existing poetry dependencies. Only add new ones if necessary.
-        6. The test command is `poetry run pytest --cov={self.project_name} --cov-config=.coveragerc`
+        5. IMPORTANT: Never remove existing ub dependencies. Only add new ones if necessary.
+        6. The test command is `uv run pytest --cov-config=.coveragerc`
         7. IMPORTANT: Do not add any code comments to the files.
         8. IMPORTANT: Always follow PEP8 style guide, follow best practices for Python, use snake_case naming, and provide meaningful docstrings.
         9. IMPORTANT: Do not redefine built-in functions or use reserved keywords as variable names.
         10. CRITICAL: Use the following code block format for specifying file content:
-            <<<{self.project_name}/main.py>>>
+            <<<main.py>>>
             # File content here
             <<<end>>>
 
             For test files, use:
-            <<<tests/test_main.py>>>
+            <<<test_main.py>>>
             # Test file content here
             <<<end>>>
-        11. CRITICAL: Put all Python code in 1 file only: {self.project_name}/main.py
-        12. CRITICAL: Put all tests in 1 file only: tests/test_main.py.
+        11. CRITICAL: Put all Python code in 1 file only: main.py
+        12. CRITICAL: Put all tests in 1 file only: test_main.py.
         13. CRITICAL: Do not change the library dependencies from the original implementation.
         14. CRITICAL: Make the minimum number of changes necessary to improve the code.
         15. IMPORTANT: Use the flask-testing library for testing Flask apps.
@@ -643,13 +603,12 @@ class NemoAgent:
     def get_complexipy_score(self):
         try:
             result = subprocess.run(
-                ["poetry", "run", "complexipy", self.project_name],
+                ["uv", "run", "complexipy"],
                 capture_output=True,
                 text=True,
                 cwd=self.pwd
             )
-            escaped_path = re.escape(self.project_name)
-            pattern = fr'🧠 Total Cognitive Complexity in\s*{escaped_path}:\s*(\d+)'
+            pattern = r'🧠 Total Cognitive Complexity in\s*:\s*(\d+)'
             match = re.search(pattern, result.stdout, re.DOTALL)
             return int(match.group(1)) if match else None
         except subprocess.CalledProcessError as e:
@@ -659,7 +618,7 @@ class NemoAgent:
     def get_pylint_score(self):
         try:
             result = subprocess.run(
-                ["poetry", "run", "pylint", self.project_name],
+                ["uv", "run", "pylint"],
                 capture_output=True,
                 text=True,
                 cwd=self.pwd,
@@ -690,7 +649,7 @@ class NemoAgent:
             # Run autopep8 to automatically fix style issues
             print(f"Running autopep8 on {file_path}")
             autopep8_cmd = [
-                "poetry",
+                "uv",
                 "run",
                 "autopep8",
                 "--in-place",
@@ -708,7 +667,7 @@ class NemoAgent:
             is_init_file = file_name == "__init__.py"
 
             # Adjust pylint command for different file types
-            pylint_cmd = ["poetry", "run", "pylint"]
+            pylint_cmd = ["uv", "run", "pylint"]
             if is_test_file:
                 pylint_cmd.extend(
                     [
@@ -731,7 +690,7 @@ class NemoAgent:
             print(output)
             pylint_score = float(score_match.group(1)) if score_match else 0.0
 
-            complexipy_cmd = ["poetry", "run", "complexipy", file_path]
+            complexipy_cmd = ["uv", "run", "complexipy", file_path]
             result = subprocess.run(
                 complexipy_cmd, capture_output=True, text=True, cwd=self.pwd
             )
@@ -864,35 +823,7 @@ class NemoAgent:
                             None
                         )
                         if suggested_change_line:
-                            new_line_content = suggested_change_line.split(":", 1)[
-                                1].strip()
-                            changes.append((line_num, new_line_content))
-                    except ValueError:
-                        continue
-        return changes
-
-    def extract_test_file_changes(self, proposed_improvements):
-        changes = []
-        lines = proposed_improvements.split("\n")
-        for line_index, current_line in enumerate(lines):
-            if current_line.startswith("# Line number:"):
-                parts = current_line.split(":")
-                if len(parts) >= 2:
-                    try:
-                        # Convert to 0-based index
-                        line_num = int(parts[1].strip()) - 1
-                        suggested_change_line = next(
-                            (
-                                line
-                                for line in lines[line_index + 1:]
-                                if line.startswith("# Suggested change:")
-                            ),
-                            None,
-                        )
-                        if suggested_change_line:
-                            new_line_content = suggested_change_line.split(":", 1)[
-                                1
-                            ].strip()
+                            new_line_content = suggested_change_line.split(":", 1)[1].strip()
                             changes.append((line_num, new_line_content))
                     except ValueError:
                         continue
@@ -1093,10 +1024,9 @@ class NemoAgent:
             # Run pytest with coverage
             result = subprocess.run(
                 [
-                    "poetry",
+                    "uv",
                     "run",
                     "pytest",
-                    "--cov=" + self.project_name,
                     "--cov-config=.coveragerc",
                     "--cov-report=term-missing",
                 ],
@@ -1157,7 +1087,7 @@ class NemoAgent:
 @click.option("--zip", type=click.Path(), help="Path to save the zip file of the agent run")
 def cli(task: str = None, model: str = "mistral-nemo", provider: str = "ollama", zip: str = None):
     """
-    Run Nemo Agent tasks to create Python projects using Poetry and Pytest.
+    Run Nemo Agent tasks to create Python projects using UV and Pytest.
     If no task is provided, it will prompt the user for input.
     """
     # Store the original working directory
