@@ -20,13 +20,13 @@ https://github.com/user-attachments/assets/51cf6ad1-196c-44ab-99ba-0035365f1bbd
 * Writes and runs passing tests using `pytest` up to 80%+ test coverage 
 * Automatically fixes and styles code using `pylint` up to 7+/10
 * Calculates and improves the complexity score using `complexipy` to be under 15
-* Auto-formats to the code with `autopep8`
+* Auto-formats the code with `autopep8`
 * Utilizes `git` to commit and track changes
 
 ## Coding Ability
 * Can solve leetcode hards in 30 seconds using `OpenAI` and sometimes with `mistral-nemo`
 * Can apply time complexity constraints in task requirements
-* Can write API web services with tests using FastAPI
+* Can write API web services with tests using FastAPI using `OpenAI`
 
 ## Install 
 
