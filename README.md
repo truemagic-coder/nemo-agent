@@ -15,7 +15,7 @@ https://github.com/user-attachments/assets/51cf6ad1-196c-44ab-99ba-0035365f1bbd
 * Generates Python project structures automatically using `poetry`
 * Writes Python code based on task descriptions
 * Executes development tasks using AI-generated commands
-* Utilizes the `mistral-nemo` or `OpenAI`language models for intelligent code generation
+* Utilizes the `mistral-nemo` language models for intelligent code generation
 * Implements best practices in Python development automatically
 * Writes and runs passing tests using `pytest` up to 80%+ test coverage 
 * Automatically fixes and styles code using `pylint` up to 7+/10
@@ -24,30 +24,14 @@ https://github.com/user-attachments/assets/51cf6ad1-196c-44ab-99ba-0035365f1bbd
 * Utilizes `git` to commit and track changes
 
 ## Coding Ability
-* Can solve leetcode hards in 30 seconds using `OpenAI` and sometimes with `mistral-nemo`
-* Can apply time complexity constraints in task requirements using `OpenAI` or `mistral-nemo`
-* Can write API web services with tests using `FastAPI` or `Flask` using `OpenAI`
-* Can write `Flask` Web Apps using `OpenAI`
+* Can solve leetcode hards in 30 seconds in some runs
+* Can apply time complexity constraints in task requirements
+* Can write API web services with tests using `FastAPI` or `Flask`
+* Can write `Flask` web apps
 
 ## Install 
 
-### OpenAI Local Install
-
-#### Requirements
-* Python 3.9 or higher
-* git
-* OpenAI API KEY
-* Mac or Linux
-
-#### Requirements Installation
-* Install OpenAI API KEY for `zsh` shell
-    * `echo 'export OPENAI_API_KEY="YOUR_API_KEY"' >> ~/.zshrc`
-* `pip install nemo-agent`
-* You are ready to use `nemo-agent`
-
-### OR
-
-### Mistral-Nemo Local Install
+### Local Install
 
 #### Requirements
 * Python 3.9 or higher
@@ -68,7 +52,7 @@ https://github.com/user-attachments/assets/51cf6ad1-196c-44ab-99ba-0035365f1bbd
 
 ### OR
 
-### Mistral-Nemo Cloud Install
+### Cloud Install
 
 #### Requirements
 * [RunPod](https://runpod.io) account setup with your SSH and billing information
@@ -90,15 +74,7 @@ https://github.com/user-attachments/assets/51cf6ad1-196c-44ab-99ba-0035365f1bbd
 
 ## Usage
 
-* `mistral-nemo`: `nemo-agent "create a fizzbuzz script"`
-* `openai basic example`: `nemo-agent "create a fizzbuzz script" --provider openai`
-* `openai advanced example`: `nemo-agent "create a flask todo web app with bootstrap styling and in-memory storage" --provider openai`
-
-## Model overrides
-
-* You can pass the `--model` flag to override the default model for the provider.
-* The default model for `openai` is `gpt-4o-2024-08-06`
-* The default model for `ollama` is `mistral-nemo`
+* `nemo-agent "create a fizzbuzz script"`
 
 ## Contributing
 Contributions to Nemo Agent are welcome! Please feel free to submit a Pull Request.
