@@ -326,7 +326,6 @@ class NemoAgent:
                         "pylint@*",
                         "autopep8@*",
                         "pytest-cov@*",
-                        "pytest-flask@*",
                         "httpx@*",
                         "complexipy@*",
                     ],
@@ -412,8 +411,7 @@ class NemoAgent:
             Create a comprehensive implementation for the task: {self.task}.
             You must follow these rules strictly:
                 1, IMPORTANT: Never use pass statements in your code or tests. Always provide a meaningful implementation.
-                2. Use parametrized tests to cover multiple scenarios efficiently.
-                3. CRITICAL: Use the following code block format for specifying file content:                
+                2. CRITICAL: Use the following code block format for specifying file content:                
                     For code files, use:
                     <<<{self.project_name}/main.py>>>
                     # File content here
@@ -428,17 +426,20 @@ class NemoAgent:
                     <<<{self.project_name}/templates/template_name.html>>>
                     <!-- HTML content here -->
                     <<<end>>>
-                4. The test command is `poetry run pytest --cov={self.project_name} --cov-config=.coveragerc`
-                5. IMPORTANT: Do not add any code comments to the files.
-                6. IMPORTANT: Always follow PEP8 style guide, follow best practices for Python, use snake_case naming, and provide meaningful docstrings.
-                7. IMPORTANT: Do not redefine built-in functions or use reserved keywords as variable names.
-                8. CRITICAL: Create any non-existent directories or files as needed that are not Python files.
-                9. CRITICAL: Your response should ONLY contain the code blocks and `poetry add package_name` command at the end after all the code blocks. Do not include any explanations or additional text.
-                10. IMPORTANT: Do not modify the existing poetry dependencies. Only add new ones if necessary.
-                11. IMPORTANT: Use the flask-testing library for testing Flask apps.
-                12. CRITICAL: Only create 1 file for the python code: {self.project_name}/main.py
-                13. CRITICAL: Only create 1 file for the python tests: tests/test_main.py
-                14. CRITICAL: Create a main method to run the app in main.py and if a web app run the app on port 8080.
+                3. The test command is `poetry run pytest --cov={self.project_name} --cov-config=.coveragerc`
+                4. IMPORTANT: Do not add any code comments to the files.
+                5. IMPORTANT: Always follow PEP8 style guide, follow best practices for Python, use snake_case naming, and provide meaningful docstrings.
+                6. IMPORTANT: Do not redefine built-in functions or use reserved keywords as variable names.
+                7. CRITICAL: Create any non-existent directories or files as needed that are not Python files.
+                8. CRITICAL: Your response should ONLY contain the code blocks and `poetry add package_name` command at the end after all the code blocks. Do not include any explanations or additional text.
+                9. IMPORTANT: Do not modify the existing poetry dependencies. Only add new ones if necessary.
+                10. CRITICAL: Only create 1 file for the python code: {self.project_name}/main.py
+                11. CRITICAL: Only create 1 file for the python tests: tests/test_main.py
+                12. CRITICAL: Create a main method to run the app in main.py and if a web app run the app on port 8080.
+                13. IMPORTANT: Use the proper import statements for the test file to import the main file and its functions using the {self.project_name} namespace.
+                14. IMPORTANT: Use pytest.fixture for any setup code that is reused across multiple tests including web servers like Flask and FastAPI.
+                15. IMPORTANT: Use the hypothesis library for property-based testing if applicable.
+                16. IMPORTANT: Use pytest parametrize for testing multiple inputs and outputs if applicable.
             Working directory: {self.pwd}
             """
 
@@ -620,7 +621,10 @@ class NemoAgent:
             # Test file content here
             <<<end>>>
         9. CRITICAL: Do not explain the task only implement the required functionality in the code blocks.
-        10. IMPORTANT: Use the flask-testing library for testing Flask apps.
+        10. IMPORTANT: Use the proper import statements for the test file to import the main file and its functions using the {self.project_name} namespace.
+        11. IMPORTANT: Use pytest.fixture for any setup code that is reused across multiple tests including web servers like Flask and FastAPI.
+        12. IMPORTANT: Use the hypothesis library for property-based testing if applicable.
+        13. IMPORTANT: Use pytest parametrize for testing multiple inputs and outputs if applicable.
         Working directory: {self.pwd}
         """
         proposed_improvements = self.get_response(prompt)
