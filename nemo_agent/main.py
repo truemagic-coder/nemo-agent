@@ -105,7 +105,7 @@ class ClaudeAPI:
 
 
 class NemoAgent:
-    MAX_IMPROVEMENT_ATTEMPTS = 10
+    MAX_IMPROVEMENT_ATTEMPTS = 5
     MAX_WRITE_ATTEMPTS = 3
     WRITE_RETRY_DELAY = 1  # second
 
@@ -215,28 +215,26 @@ class NemoAgent:
         self.create_project_with_poetry()
         self.implement_solution()
 
-        max_improvement_attempts = 3
-        for attempt in range(max_improvement_attempts):
-            tests_passed, coverage, test_output = self.run_tests()
-            if coverage >= 80:
-                print(f"Task completed successfully after {attempt + 1} attempts.")
-                print(f"Coverage is {coverage}%.")
-                if not tests_passed:
-                    print(
-                        "Note: Some tests are still failing, but coverage is above 80%."
-                    )
-                return  # Exit the method immediately
-            elif attempt < max_improvement_attempts - 1:
-                print(
-                    f"Attempt {attempt + 1} failed. Trying to improve implementation..."
-                )
-                self.improve_implementation(test_output)
-                print("Attempting to improve test file...")
-                self.improve_test_file(test_output)
+        pylint_score, complexipy_score, pylint_output, complexipy_output = self.code_check(f"{self.project_name}/main.py")
+
+        code_check_attempts = 1
+        while code_check_attempts < self.MAX_IMPROVEMENT_ATTEMPTS:
+            if pylint_score < 7 and complexipy_score > 15:
+                self.improve_code(f"{self.project_name}/main.py", pylint_score, complexipy_score, pylint_output, complexipy_output)
+                pylint_score, complexipy_score, pylint_output, complexipy_output = self.code_check(f"{self.project_name}/main.py")
             else:
-                print(
-                    "Maximum improvement attempts reached. Please review the output manually."
-                )
+                break
+            code_check_attempts += 1
+        
+        test_check_attempts = 1
+        while test_check_attempts < self.MAX_IMPROVEMENT_ATTEMPTS:
+            tests_passed, coverage, test_output = self.run_tests()
+            if not tests_passed or coverage < 80:
+                self.improve_test_file(test_output)
+                tests_passed, coverage, test_output = self.run_tests()
+            else:
+                break
+            test_check_attempts += 1
 
         print(
             "Task completed. Please review the output and make any necessary manual adjustments."
@@ -398,21 +396,6 @@ class NemoAgent:
                     self.logger.info(f"File written successfully: {full_path}")
                     with open(full_path, "r") as f:
                         self.logger.debug(f"Content of {full_path}:\n{f.read()}")
-
-                    # Run pylint only on files in the project folder
-                    if full_path.startswith(os.path.join(self.pwd, self.project_name)):
-                        pylint_score, complexipy_score = self.clean_code_with_pylint(
-                            full_path
-                        )
-                        if (
-                            pylint_score < 7.0
-                            and complexipy_score is not None
-                            and complexipy_score > 15
-                        ):
-                            self.logger.warning(
-                                f"Pylint score for {full_path} is below 7.0: {pylint_score}"
-                            )
-                            success = False
                 else:
                     self.logger.error(
                         f"Failed to write file or file is empty: {full_path}"
@@ -428,11 +411,9 @@ class NemoAgent:
         prompt = f"""
             Create a comprehensive implementation for the task: {self.task}.
             You must follow these rules strictly:
-                1. Use the correct import statements: from {self.project_name}.module_name import method_name.
-                2. Follow PEP8 style guide.
-                3. IMPORTANT: Never use pass statements in your code or tests. Always provide a meaningful implementation.
-                4. Use parametrized tests to cover multiple scenarios efficiently.
-                5. CRITICAL: Use the following code block format for specifying file content:                
+                1, IMPORTANT: Never use pass statements in your code or tests. Always provide a meaningful implementation.
+                2. Use parametrized tests to cover multiple scenarios efficiently.
+                3. CRITICAL: Use the following code block format for specifying file content:                
                     For code files, use:
                     <<<{self.project_name}/main.py>>>
                     # File content here
@@ -447,19 +428,17 @@ class NemoAgent:
                     <<<{self.project_name}/templates/template_name.html>>>
                     <!-- HTML content here -->
                     <<<end>>>
-                6. The test command is `poetry run pytest --cov={self.project_name} --cov-config=.coveragerc`
-                7. IMPORTANT: Do not add any code comments to the files.
-                8. IMPORTANT: Always follow PEP8 style guide, follow best practices for Python, use snake_case naming, and provide meaningful docstrings.
-                9. IMPORTANT: Do not redefine built-in functions or use reserved keywords as variable names.
-                10. CRITICAL: Create any non-existent directories or files as needed that are not Python files.
-                11. CRITICAL: Your response should ONLY contain the code blocks and `poetry add package_name` command at the end after all the code blocks. Do not include any explanations or additional text.
-                12. IMPORTANT: For Flask apps, create necessary HTML templates in the 'templates' directory.
-                14. IMPORTANT: Do not modify the existing poetry dependencies. Only add new ones if necessary.
-                15. IMPORTANT: Use the flask-testing library for testing Flask apps.
-                16. CRITICAL: Only create 1 file for the python code: {self.project_name}/main.py
-                17. CRITICAL: Only create 1 file for the python tests: tests/test_main.py
-                18. IMPORTANT: For Flask apps always create a template file and put all JS, HTML, and CSS in the template file.
-                19. CRITICAL: For Flask or FastAPI apps, create a main method to run the app in main.py and run the app on port 8080.
+                4. The test command is `poetry run pytest --cov={self.project_name} --cov-config=.coveragerc`
+                5. IMPORTANT: Do not add any code comments to the files.
+                6. IMPORTANT: Always follow PEP8 style guide, follow best practices for Python, use snake_case naming, and provide meaningful docstrings.
+                7. IMPORTANT: Do not redefine built-in functions or use reserved keywords as variable names.
+                8. CRITICAL: Create any non-existent directories or files as needed that are not Python files.
+                9. CRITICAL: Your response should ONLY contain the code blocks and `poetry add package_name` command at the end after all the code blocks. Do not include any explanations or additional text.
+                10. IMPORTANT: Do not modify the existing poetry dependencies. Only add new ones if necessary.
+                11. IMPORTANT: Use the flask-testing library for testing Flask apps.
+                12. CRITICAL: Only create 1 file for the python code: {self.project_name}/main.py
+                13. CRITICAL: Only create 1 file for the python tests: tests/test_main.py
+                14. CRITICAL: Create a main method to run the app in main.py and if a web app run the app on port 8080.
             Working directory: {self.pwd}
             """
 
@@ -519,164 +498,6 @@ class NemoAgent:
 
         return file_contents
 
-    def validate_against_task(self, proposed_changes):
-        prompt = f"""
-        Review the following proposed changes and confirm if they correctly address the original task: {self.task}
-
-        Proposed changes:
-        {proposed_changes}
-
-        If the proposed changes are correct and fully address the task, respond with 'VALID'.
-        If the proposed changes do not match the task or are incomplete, respond with 'INVALID'.
-        Do not provide any additional information or explanations.
-        """
-        response = self.get_response(prompt)
-        if "VALID" in response.upper():
-            print("Proposed changes validated successfully against the original task.")
-            return True
-        else:
-            print("Proposed changes do not fully address the original task.")
-            return False
-
-    def improve_implementation(self, test_output=""):
-        initial_pylint_score = self.get_pylint_score()
-        initial_complexipy_score = self.get_complexipy_score()
-        initial_test_results, initial_coverage, _ = self.run_tests()
-
-        git_diff = self.get_git_diff()
-        git_log = self.get_git_log()
-
-        print("Checking and cleaning existing files...")
-        for root, dirs, files in os.walk(self.pwd):
-            for file in files:
-                if file.endswith(".py") and not file.startswith("test_"):
-                    file_path = os.path.join(root, file)
-                    with open(file_path, "r") as f:
-                        content = f.read()
-                    cleaned_content = self.validate_file_content(file_path, content)
-                    if cleaned_content != content:
-                        with open(file_path, "w") as f:
-                            f.write(cleaned_content)
-                        print(f"Cleaned up file: {file_path}")
-        print("File check and clean completed.")
-
-        prompt = f"""
-        The current implementation needs improvement for the task: {self.task}
-        Current pylint score: {initial_pylint_score:.2f}/10
-        Current complexipy score: {initial_complexipy_score}
-        Current test status: {'Passing' if initial_test_results else 'Failing'}
-        Current test coverage: {initial_coverage}%
-
-        Test output:
-        {test_output}
-
-        Git diff:
-        {git_diff}
-
-        Git log:
-        {git_log}
-
-        Please provide improvements to the existing code to:
-        1. Improve or maintain the pylint score (target: at least 7.0/10)
-        2. Ensure all tests are passing
-        3. Improve or maintain the test coverage (target: at least 80%)
-        4. CRITICAL: Handle list indices properly to avoid IndexError exceptions
-        5. Implement input validation and error handling for list operations
-        6. Handle empty lists and edge cases correctly
-        7. Use defensive programming techniques to prevent IndexError
-
-        Follow these rules strictly:
-        1. CRITICAL: Only modify the code implementation in {self.project_name}.
-        2. IMPORTANT: Never use pass statements in your code. Always provide a meaningful implementation.
-        3. Consider the Git history when suggesting changes to avoid reverting recent improvements.
-        4. IMPORTANT: Do not create new files. Only modify the existing ones.
-        5. IMPORTANT: Never remove existing poetry dependencies. Only add new ones if necessary.
-        6. The test command is `poetry run pytest --cov={self.project_name} --cov-config=.coveragerc`
-        7. IMPORTANT: Do not add any code comments to the files.
-        8. IMPORTANT: Always follow PEP8 style guide, follow best practices for Python, use snake_case naming, and provide meaningful docstrings.
-        9. IMPORTANT: Do not redefine built-in functions or use reserved keywords as variable names.
-        10. CRITICAL: Use the following code block format for specifying file content:
-            <<<{self.project_name}/main.py>>>
-            # File content here
-            <<<end>>>
-
-            For test files, use:
-            <<<tests/test_main.py>>>
-            # Test file content here
-            <<<end>>>
-        11. CRITICAL: Put all Python code in 1 file only: {self.project_name}/main.py
-        12. CRITICAL: Put all tests in 1 file only: tests/test_main.py.
-        13. CRITICAL: Do not change the library dependencies from the original implementation.
-        14. CRITICAL: Make the minimum number of changes necessary to improve the code.
-        15. IMPORTANT: Use the flask-testing library for testing Flask apps.
-        Working directory: {self.pwd}
-        """
-        improvements = self.get_response(prompt)
-        print("Proposed improvements:")
-        print(improvements)
-
-        if self.validate_against_task(improvements):
-            self.logger.info("Writing suggested improvements to files:")
-            success = self.process_file_changes(improvements)
-            if success:
-                self.logger.info(
-                    "Improvements have been written to the implementation files. Please review the changes manually."
-                )
-            else:
-                self.logger.error("Failed to apply some or all improvements.")
-        else:
-            self.logger.info(
-                "Proposed improvements do not align with the original task. No changes were made."
-            )
-
-    def validate_implementation(self):
-        prompt = f"""
-        Review the current implementation and confirm if it correctly addresses the original task: {self.task}
-        If the implementation is correct or mostly correct, respond with 'VALID'.
-        If the implementation is completely unrelated or fundamentally flawed, respond with 'INVALID'.
-        Do not provide any additional information or explanations.
-        """
-        response = self.get_response(prompt)
-
-        if "VALID" in response.upper():
-            print("Implementation validated successfully.")
-            return True
-        else:
-            print("Implementation does not match the original task.")
-            return False
-
-    def get_complexipy_score(self):
-        try:
-            result = subprocess.run(
-                ["poetry", "run", "complexipy", self.project_name],
-                capture_output=True,
-                text=True,
-                cwd=self.pwd,
-            )
-            escaped_path = re.escape(self.project_name)
-            pattern = rf"🧠 Total Cognitive Complexity in\s*{escaped_path}:\s*(\d+)"
-            match = re.search(pattern, result.stdout, re.DOTALL)
-            return int(match.group(1)) if match else None
-        except subprocess.CalledProcessError as e:
-            print(f"Error running complexipy: {e}")
-            return None
-
-    def get_pylint_score(self):
-        try:
-            result = subprocess.run(
-                ["poetry", "run", "pylint", self.project_name],
-                capture_output=True,
-                text=True,
-                cwd=self.pwd,
-            )
-            score_match = re.search(
-                r"Your code has been rated at (\d+\.\d+)/10", result.stdout
-            )
-            return float(score_match.group(1)) if score_match else 0.0
-        except subprocess.CalledProcessError as e:
-            print(f"Error running pylint: {e}")
-            return 0.0
-
     def get_response(self, prompt):
         try:
             return self.llm.generate(prompt)
@@ -684,17 +505,8 @@ class NemoAgent:
             self.logger.error(f"Error getting response from {self.provider}: {str(e)}")
             return ""
 
-    def clean_code_with_pylint(self, file_path):
+    def code_check(self, file_path):
         try:
-            # Check if the file is empty
-            if os.path.getsize(file_path) == 0:
-                print(f"File {file_path} is empty. Skipping autopep8 and pylint check.")
-                return 10.0, 0  # Assume perfect score for empty files
-
-            # Check if the file is within the project directory and is a Python file
-            if not file_path.startswith(os.path.abspath(self.project_name)) or not file_path.endswith('.py'):
-                return 10.0, 0 # Assume perfect score for non-Python files
-
             # Run autopep8 to automatically fix style issues
             print(f"Running autopep8 on {file_path}")
             autopep8_cmd = [
@@ -723,24 +535,24 @@ class NemoAgent:
             result = subprocess.run(
                 pylint_cmd, capture_output=True, text=True, cwd=self.pwd
             )
-            output = result.stdout + result.stderr
+            pylint_output = result.stdout + result.stderr
             score_match = re.search(
-                r"Your code has been rated at (\d+\.\d+)/10", output
+                r"Your code has been rated at (\d+\.\d+)/10", pylint_output
             )
 
-            print(output)
+            print(pylint_output)
             pylint_score = float(score_match.group(1)) if score_match else 0.0
 
             complexipy_cmd = ["poetry", "run", "complexipy", file_path]
             result = subprocess.run(
                 complexipy_cmd, capture_output=True, text=True, cwd=self.pwd
             )
-            output = result.stdout + result.stderr
+            complexipy_output = result.stdout + result.stderr
             escaped_path = re.escape(file_path)
             pattern = rf"🧠 Total Cognitive Complexity in\s*{escaped_path}:\s*(\d+)"
-            score_match = re.search(pattern, output, re.DOTALL)
+            score_match = re.search(pattern, complexipy_output, re.DOTALL)
             print(score_match)
-            print(output)
+            print(complexipy_output)
             complexipy_score = int(score_match.group(1)) if score_match else None
 
             print(f"Pylint score for {file_path}: {pylint_score}/10")
@@ -755,7 +567,8 @@ class NemoAgent:
                     file_path,
                     pylint_score,
                     complexipy_score,
-                    output,
+                    pylint_output,
+                    complexipy_output,
                     1,
                 )
             else:
@@ -763,7 +576,7 @@ class NemoAgent:
                     f"Code quality is good. Pylint score: {pylint_score}/10, Complexipy score: {complexipy_score}"
                 )
 
-            return pylint_score, complexipy_score
+            return pylint_score, complexipy_score, pylint_output, complexipy_output
         except subprocess.CalledProcessError as e:
             print(f"Error running autopep8 or pylint: {e}")
             return 0.0
@@ -794,28 +607,27 @@ class NemoAgent:
 
         Provide specific, minimal code changes to improve the test file, addressing only the failing tests or obvious issues.
         Follow these rules strictly:
-        1. Only suggest changes to the test file (tests/test_main.py)
-        2. Do not change the code files in the {self.pwd}/{self.project_name}
+        1. CRITICAL: Only suggest changes to the test file (tests/test_main.py)
+        2. Do not change the code file in {self.project_name}/main.py
         3. Focus on fixing failing tests or obvious errors
         4. Keep changes minimal and specific
         5. Do not rewrite entire test functions unless absolutely necessary
-        6. Ensure all changes are meaningful and relate to the original task
-        7. IMPORTANT: put all your code in the code directory: {self.project_name}
-        8. IMPORTANT: put all your tests in the tests directory: tests
-        9. CRITICAL: Use the following format for specifying changes:
-                <<<tests/test_main.py>>>
-                # Line number: Original line
-                # Suggested change: New line
-                <<<end>>>
-        10. CRITICAL: Do not explain the task only implement the required functionality in the code blocks.
-        11. IMPORTANT: Use the flask-testing library for testing Flask apps.
+        6. IMPORTANT: put all your code in the code directory: {self.project_name}
+        7. IMPORTANT: put all your tests in the tests directory: tests
+        8. CRITICAL: Use the following code block format for specifying file content:
+            For test files, use:
+            <<<tests/test_main.py>>>
+            # Test file content here
+            <<<end>>>
+        9. CRITICAL: Do not explain the task only implement the required functionality in the code blocks.
+        10. IMPORTANT: Use the flask-testing library for testing Flask apps.
         Working directory: {self.pwd}
         """
         proposed_improvements = self.get_response(prompt)
 
-        if self.validate_against_task(proposed_improvements):
+        if self.validate_implementation(proposed_improvements):
             print("Executing validated test improvements:")
-            success = self.apply_test_file_changes(proposed_improvements)
+            success = self.process_file_changes(proposed_improvements)
             if success:
                 print(
                     "Test improvements have been applied. Please review the changes manually."
@@ -827,56 +639,21 @@ class NemoAgent:
                 "Proposed test improvements do not align with the original task. No changes were made."
             )
 
-    def apply_test_file_changes(self, proposed_improvements):
-        file_path = os.path.join(self.pwd, "tests", "test_main.py")
-        changes = self.extract_test_file_changes(proposed_improvements)
+    def validate_implementation(self, proposed_improvements):
+        prompt = f"""
+        Review the proposed improvements: {proposed_improvements} and confirm if it correctly addresses the original task: {self.task}
+        If the implementation is correct or mostly correct, respond with 'VALID'.
+        If the implementation is completely unrelated or fundamentally flawed, respond with 'INVALID'.
+        Do not provide any additional information or explanations.
+        """
+        response = self.get_response(prompt)
 
-        try:
-            with open(file_path, "r") as file:
-                lines = file.readlines()
-
-            for line_num, new_content in changes:
-                if 0 <= line_num < len(lines):
-                    lines[line_num] = new_content + "\n"
-                else:
-                    print(
-                        f"Warning: Line number {line_num + 1} is out of range. Skipping this change."
-                    )
-
-            with open(file_path, "w") as file:
-                file.writelines(lines)
-
+        if "VALID" in response.upper():
+            print("Implementation validated successfully.")
             return True
-        except Exception as e:
-            print(f"Error applying test file changes: {str(e)}")
+        else:
+            print("Implementation does not match the original task.")
             return False
-
-    def extract_test_file_changes(self, proposed_improvements):
-        changes = []
-        lines = proposed_improvements.split("\n")
-        for line_index, current_line in enumerate(lines):
-            if current_line.startswith("# Line number:"):
-                parts = current_line.split(":")
-                if len(parts) >= 2:
-                    try:
-                        # Convert to 0-based index
-                        line_num = int(parts[1].strip()) - 1
-                        suggested_change_line = next(
-                            (
-                                line
-                                for line in lines[line_index + 1 :]
-                                if line.startswith("# Suggested change:")
-                            ),
-                            None,
-                        )
-                        if suggested_change_line:
-                            new_line_content = suggested_change_line.split(":", 1)[
-                                1
-                            ].strip()
-                            changes.append((line_num, new_line_content))
-                    except ValueError:
-                        continue
-        return changes
 
     def improve_code(
         self,
@@ -884,20 +661,8 @@ class NemoAgent:
         current_pylint_score,
         current_complexipy_score,
         pylint_output,
-        attempt=1,
+        complexipy_output,
     ):
-        if current_pylint_score >= 7.0 and (
-            current_complexipy_score is None or current_complexipy_score <= 15
-        ):
-            print(
-                f"Code quality is already good. Pylint score: {current_pylint_score}/10, Complexipy score: {current_complexipy_score}"
-            )
-            return current_pylint_score, current_complexipy_score
-
-        if attempt > self.MAX_IMPROVEMENT_ATTEMPTS:
-            print(f"Maximum improvement attempts reached for {file_path}. Moving on.")
-            return current_pylint_score, current_complexipy_score
-
         prompt = f"""
         The current pylint score for {file_path} is {current_pylint_score:.2f}/10.
         The current complexipy score is {current_complexipy_score}.
@@ -907,6 +672,9 @@ class NemoAgent:
 
         Pylint output:
         {pylint_output}
+
+        Complexipy output:
+        {complexipy_output}
 
         Original task: {self.task}
 
@@ -935,63 +703,9 @@ class NemoAgent:
 
         self.previous_suggestions.add(proposed_improvements)
 
-        if self.validate_against_task(proposed_improvements):
+        if self.validate_implementation(proposed_improvements):
             print("Executing validated improvements:")
             success = self.process_file_changes(proposed_improvements)
-
-            if success:
-                new_pylint_score, new_complexipy_score = self.clean_code_with_pylint(
-                    file_path
-                )
-
-                if new_pylint_score < 7.0 or (
-                    new_complexipy_score is not None and new_complexipy_score > 15
-                ):
-                    print(
-                        f"Score is still below 7.0 or complexity is above 15. Attempting another improvement (attempt {attempt + 1})..."
-                    )
-                    return self.improve_code(
-                        file_path,
-                        new_pylint_score,
-                        new_complexipy_score,
-                        pylint_output,
-                        attempt + 1,
-                    )
-                else:
-                    print(f"Code quality improved. New score: {new_pylint_score}/10")
-                    print(f"Complexipy score: {new_complexipy_score}")
-                    self.commit_changes(
-                        f"Improve code quality for {file_path} to {new_pylint_score}/10"
-                    )
-                    return new_pylint_score, new_complexipy_score
-            else:
-                print("Failed to apply some or all improvements.")
-                if attempt < self.MAX_IMPROVEMENT_ATTEMPTS:
-                    print(f"Attempting another improvement (attempt {attempt + 1})...")
-                    return self.improve_code(
-                        file_path,
-                        current_pylint_score,
-                        current_complexipy_score,
-                        pylint_output,
-                        attempt + 1,
-                    )
-                else:
-                    return current_pylint_score, current_complexipy_score
-        else:
-            print(
-                "Proposed improvements do not align with the original task. Skipping this improvement attempt."
-            )
-            if attempt < self.MAX_IMPROVEMENT_ATTEMPTS:
-                print(f"Attempting another improvement (attempt {attempt + 1})...")
-                return self.improve_code(
-                    file_path,
-                    current_pylint_score,
-                    current_complexipy_score,
-                    pylint_output,
-                    attempt + 1,
-                )
-            else:
-                return current_pylint_score, current_complexipy_score
 
     def validate_file_content(self, file_path, content):
         if file_path.endswith(".py"):
@@ -1029,14 +743,6 @@ class NemoAgent:
     def run_tests(self):
         print("Running tests and checking code quality...")
         try:
-            # Run pylint only on non-test Python files in the project
-            for root, dirs, files in os.walk(self.pwd):
-                if "tests" not in root:  # Skip the tests directory
-                    for file in files:
-                        if file.endswith(".py"):
-                            file_path = os.path.join(root, file)
-                            self.clean_code_with_pylint(file_path)
-
             # Create a .coveragerc file to exclude empty files and __init__.py
             coveragerc_content = f"""
     [run]
