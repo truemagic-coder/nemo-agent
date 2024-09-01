@@ -25,8 +25,9 @@ https://github.com/user-attachments/assets/51cf6ad1-196c-44ab-99ba-0035365f1bbd
 
 ## Coding Ability
 * Can solve leetcode hards in 30 seconds using `OpenAI` and sometimes with `mistral-nemo`
-* Can apply time complexity constraints in task requirements
-* Can write API web services with tests using FastAPI using `OpenAI`
+* Can apply time complexity constraints in task requirements using `OpenAI` or `mistral-nemo`
+* Can write API web services with tests using `FastAPI` or `Flask` using `OpenAI`
+* Can write `Flask` Web Apps using `OpenAI`
 
 ## Install 
 
@@ -90,7 +91,8 @@ https://github.com/user-attachments/assets/51cf6ad1-196c-44ab-99ba-0035365f1bbd
 ## Usage
 
 * `mistral-nemo`: `nemo-agent "create a fizzbuzz script"`
-* `openai`: `nemo-agent "create a fizzbuzz script" --provider openai`
+* `openai basic example`: `nemo-agent "create a fizzbuzz script" --provider openai`
+* `openai advanced example`: `nemo-agent "create a flask todo web app with bootstrap styling and in-memory storage" --provider openai`
 
 ## Model overrides
 

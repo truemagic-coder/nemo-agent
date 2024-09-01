@@ -444,13 +444,8 @@ class NemoAgent:
                     <<<end>>>
 
                     For HTML templates (Flask), use:
-                    <<<templates/template_name.html>>>
+                    <<<{self.project_name}/templates/template_name.html>>>
                     <!-- HTML content here -->
-                    <<<end>>>
-
-                    For static files (CSS, JS), use:
-                    <<<static/filename.ext>>>
-                    // Static file content here
                     <<<end>>>
                 6. The test command is `poetry run pytest --cov={self.project_name} --cov-config=.coveragerc`
                 7. IMPORTANT: Do not add any code comments to the files.
@@ -459,11 +454,12 @@ class NemoAgent:
                 10. CRITICAL: Create any non-existent directories or files as needed that are not Python files.
                 11. CRITICAL: Your response should ONLY contain the code blocks and `poetry add package_name` command at the end after all the code blocks. Do not include any explanations or additional text.
                 12. IMPORTANT: For Flask apps, create necessary HTML templates in the 'templates' directory.
-                13. IMPORTANT: For Flask apps, create necessary static files (CSS, JS) in the 'static' directory.
                 14. IMPORTANT: Do not modify the existing poetry dependencies. Only add new ones if necessary.
                 15. IMPORTANT: Use the flask-testing library for testing Flask apps.
-                16. IMPORTANT: Only create 1 file for the main implementation: {self.project_name}/main.py
-                17. IMPORTANT: Only create 1 file for the tests: tests/test_main.py
+                16. CRITICAL: Only create 1 file for the python code: {self.project_name}/main.py
+                17. CRITICAL: Only create 1 file for the python tests: tests/test_main.py
+                18. IMPORTANT: For Flask apps always create a template file and put all JS, HTML, and CSS in the template file.
+                19. CRITICAL: For Flask or FastAPI apps, create a main method to run the app in main.py and run the app on port 8080.
             Working directory: {self.pwd}
             """
 
