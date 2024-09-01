@@ -2,7 +2,6 @@ import ast
 from contextlib import contextmanager
 from datetime import time
 import fcntl
-import io
 import json
 import logging
 import os
@@ -26,22 +25,18 @@ class OllamaAPI:
 
     def generate(self, prompt):
         url = f"{self.base_url}/generate"
-        data = {
-            "model": self.model,
-            "prompt": prompt,
-            "stream": True
-        }
+        data = {"model": self.model, "prompt": prompt, "stream": True}
         response = requests.post(url, json=data, stream=True)
         if response.status_code == 200:
             full_response = ""
             for line in response.iter_lines():
                 if line:
-                    decoded_line = line.decode('utf-8')
+                    decoded_line = line.decode("utf-8")
                     try:
                         json_line = json.loads(decoded_line)
-                        chunk = json_line.get('response', '')
+                        chunk = json_line.get("response", "")
                         full_response += chunk
-                        print(chunk, end='', flush=True)
+                        print(chunk, end="", flush=True)
                     except json.JSONDecodeError:
                         print(f"Error decoding JSON: {decoded_line}")
             print()  # Print a newline at the end
@@ -65,14 +60,14 @@ class OpenAIAPI:
             response = openai.chat.completions.create(
                 model=self.model,
                 messages=[{"role": "user", "content": prompt}],
-                stream=True
+                stream=True,
             )
             full_response = ""
             for chunk in response:
                 if chunk.choices[0].delta.content:
                     chunk_text = chunk.choices[0].delta.content
                     full_response += chunk_text
-                    print(chunk_text, end='', flush=True)
+                    print(chunk_text, end="", flush=True)
             print()  # Print a newline at the end
             return full_response
         except Exception as e:
@@ -86,8 +81,7 @@ class ClaudeAPI:
         self.model = model
         self.api_key = os.getenv("ANTHROPIC_API_KEY")
         if not self.api_key:
-            raise ValueError(
-                "ANTHROPIC_API_KEY environment variable is not set")
+            raise ValueError("ANTHROPIC_API_KEY environment variable is not set")
         self.client = Anthropic(api_key=self.api_key)
 
     def generate(self, prompt):
@@ -96,14 +90,14 @@ class ClaudeAPI:
                 model=self.model,
                 messages=[{"role": "user", "content": prompt}],
                 stream=True,
-                max_tokens=1000
+                max_tokens=1000,
             )
             full_response = ""
             for completion in response:
                 if completion.type == "content_block_delta":
                     chunk_text = completion.delta.text
                     full_response += chunk_text
-                    print(chunk_text, end='', flush=True)
+                    print(chunk_text, end="", flush=True)
             print()  # Print a newline at the end
             return full_response
         except Exception as e:
@@ -115,7 +109,9 @@ class NemoAgent:
     MAX_WRITE_ATTEMPTS = 3
     WRITE_RETRY_DELAY = 1  # second
 
-    def __init__(self, task: str, model: str = "mistral-nemo", provider: str = "ollama"):
+    def __init__(
+        self, task: str, model: str = "mistral-nemo", provider: str = "ollama"
+    ):
         self.pwd = os.getcwd()
         self.task = task
         self.model = model
@@ -185,8 +181,7 @@ class NemoAgent:
     def commit_changes(self, message):
         try:
             subprocess.run(["git", "add", "."], check=True, cwd=self.pwd)
-            subprocess.run(["git", "commit", "-m", message],
-                           check=True, cwd=self.pwd)
+            subprocess.run(["git", "commit", "-m", message], check=True, cwd=self.pwd)
             print(f"Changes committed: {message}")
         except subprocess.CalledProcessError as e:
             print(f"Error committing changes: {e}")
@@ -232,7 +227,9 @@ class NemoAgent:
                     )
                 return  # Exit the method immediately
             elif attempt < max_improvement_attempts - 1:
-                print(f"Attempt {attempt + 1} failed. Trying to improve implementation...")
+                print(
+                    f"Attempt {attempt + 1} failed. Trying to improve implementation..."
+                )
                 self.improve_implementation(test_output)
                 print("Attempting to improve test file...")
                 self.improve_test_file(test_output)
@@ -368,20 +365,19 @@ class NemoAgent:
                     # Write the new content
                     with open(file_path, "w") as f:
                         f.write(content)
-                    self.logger.info(
-                        f"Successfully wrote to file: {file_path}")
+                    self.logger.info(f"Successfully wrote to file: {file_path}")
                     return True
             except IOError as e:
                 self.logger.error(f"IOError writing to {file_path}: {e}")
                 if attempt < self.MAX_WRITE_ATTEMPTS - 1:
-                    self.logger.info(
-                        f"Retrying in {self.WRITE_RETRY_DELAY} seconds...")
+                    self.logger.info(f"Retrying in {self.WRITE_RETRY_DELAY} seconds...")
                     time.sleep(self.WRITE_RETRY_DELAY)
                 else:
-                    self.logger.error(f"Failed to write to {file_path} after {self.MAX_WRITE_ATTEMPTS} attempts")
+                    self.logger.error(
+                        f"Failed to write to {file_path} after {self.MAX_WRITE_ATTEMPTS} attempts"
+                    )
             except Exception as e:
-                self.logger.error(
-                    f"Unexpected error writing to {file_path}: {e}")
+                self.logger.error(f"Unexpected error writing to {file_path}: {e}")
                 break
         return False
 
@@ -401,14 +397,21 @@ class NemoAgent:
                 if os.path.exists(full_path) and os.path.getsize(full_path) > 0:
                     self.logger.info(f"File written successfully: {full_path}")
                     with open(full_path, "r") as f:
-                        self.logger.debug(
-                            f"Content of {full_path}:\n{f.read()}")
+                        self.logger.debug(f"Content of {full_path}:\n{f.read()}")
 
                     # Run pylint only on files in the project folder
                     if full_path.startswith(os.path.join(self.pwd, self.project_name)):
-                        pylint_score, complexipy_score = self.clean_code_with_pylint(full_path)
-                        if pylint_score < 7.0 and complexipy_score is not None and complexipy_score > 15:
-                            self.logger.warning(f"Pylint score for {full_path} is below 7.0: {pylint_score}")
+                        pylint_score, complexipy_score = self.clean_code_with_pylint(
+                            full_path
+                        )
+                        if (
+                            pylint_score < 7.0
+                            and complexipy_score is not None
+                            and complexipy_score > 15
+                        ):
+                            self.logger.warning(
+                                f"Pylint score for {full_path} is below 7.0: {pylint_score}"
+                            )
                             success = False
                 else:
                     self.logger.error(
@@ -470,13 +473,19 @@ class NemoAgent:
             self.logger.info(f"Received solution:\n{solution}")
 
             # Parse and execute any poetry add commands
-            poetry_commands = [line.strip() for line in solution.split('\n') if line.strip().startswith('poetry add')]
+            poetry_commands = [
+                line.strip()
+                for line in solution.split("\n")
+                if line.strip().startswith("poetry add")
+            ]
             for command in poetry_commands:
                 try:
                     subprocess.run(command, shell=True, check=True)
                     self.logger.info(f"Executed command: {command}")
                 except subprocess.CalledProcessError as e:
-                    self.logger.error(f"Failed to execute command: {command}. Error: {str(e)}")
+                    self.logger.error(
+                        f"Failed to execute command: {command}. Error: {str(e)}"
+                    )
 
             success = self.process_file_changes(solution)
 
@@ -487,10 +496,11 @@ class NemoAgent:
                 self.commit_changes("Implement initial solution")
                 return True
 
-            self.logger.warning(f"Attempt {attempt + 1} failed to create the correct files or pass pylint. Retrying...")
+            self.logger.warning(
+                f"Attempt {attempt + 1} failed to create the correct files or pass pylint. Retrying..."
+            )
 
-        self.logger.error(
-            "Failed to implement solution after maximum attempts")
+        self.logger.error("Failed to implement solution after maximum attempts")
         return False
 
     def extract_content_between_markers(self, text, start_marker, end_marker):
@@ -547,8 +557,7 @@ class NemoAgent:
                     file_path = os.path.join(root, file)
                     with open(file_path, "r") as f:
                         content = f.read()
-                    cleaned_content = self.validate_file_content(
-                        file_path, content)
+                    cleaned_content = self.validate_file_content(file_path, content)
                     if cleaned_content != content:
                         with open(file_path, "w") as f:
                             f.write(cleaned_content)
@@ -646,10 +655,10 @@ class NemoAgent:
                 ["poetry", "run", "complexipy", self.project_name],
                 capture_output=True,
                 text=True,
-                cwd=self.pwd
+                cwd=self.pwd,
             )
             escaped_path = re.escape(self.project_name)
-            pattern = fr'🧠 Total Cognitive Complexity in\s*{escaped_path}:\s*(\d+)'
+            pattern = rf"🧠 Total Cognitive Complexity in\s*{escaped_path}:\s*(\d+)"
             match = re.search(pattern, result.stdout, re.DOTALL)
             return int(match.group(1)) if match else None
         except subprocess.CalledProcessError as e:
@@ -683,8 +692,7 @@ class NemoAgent:
         try:
             # Check if the file is empty
             if os.path.getsize(file_path) == 0:
-                print(
-                    f"File {file_path} is empty. Skipping autopep8 and pylint check.")
+                print(f"File {file_path} is empty. Skipping autopep8 and pylint check.")
                 return 10.0  # Assume perfect score for empty files
 
             # Run autopep8 to automatically fix style issues
@@ -737,7 +745,7 @@ class NemoAgent:
             )
             output = result.stdout + result.stderr
             escaped_path = re.escape(file_path)
-            pattern = fr'🧠 Total Cognitive Complexity in\s*{escaped_path}:\s*(\d+)'
+            pattern = rf"🧠 Total Cognitive Complexity in\s*{escaped_path}:\s*(\d+)"
             score_match = re.search(pattern, output, re.DOTALL)
             print(score_match)
             print(output)
@@ -747,10 +755,18 @@ class NemoAgent:
             print(f"Complexipy score for {file_path}: {complexipy_score}")
 
             # You can define your own threshold for complexipy score
-            if pylint_score < 7.0 or (complexipy_score is not None and complexipy_score > 15):
+            if pylint_score < 7.0 or (
+                complexipy_score is not None and complexipy_score > 15
+            ):
                 print("Score is below threshold. Attempting to improve the code...")
                 self.improve_code(
-                    file_path, pylint_score, complexipy_score, output, is_test_file, is_init_file)
+                    file_path,
+                    pylint_score,
+                    complexipy_score,
+                    output,
+                    is_test_file,
+                    is_init_file,
+                )
 
             elif (
                 "missing-module-docstring" in output
@@ -762,7 +778,9 @@ class NemoAgent:
                 return self.clean_code_with_pylint(file_path)
 
             else:
-                print(f"Code quality is good. Pylint score: {pylint_score}/10, Complexipy score: {complexipy_score}")
+                print(
+                    f"Code quality is good. Pylint score: {pylint_score}/10, Complexipy score: {complexipy_score}"
+                )
 
             return pylint_score, complexipy_score
         except subprocess.CalledProcessError as e:
@@ -819,28 +837,32 @@ class NemoAgent:
             success = self.apply_test_file_changes(proposed_improvements)
             if success:
                 print(
-                    "Test improvements have been applied. Please review the changes manually.")
+                    "Test improvements have been applied. Please review the changes manually."
+                )
             else:
                 print("Failed to apply some or all test improvements.")
         else:
             print(
-                "Proposed test improvements do not align with the original task. No changes were made.")
+                "Proposed test improvements do not align with the original task. No changes were made."
+            )
 
     def apply_test_file_changes(self, proposed_improvements):
-        file_path = os.path.join(self.pwd, 'tests', 'test_main.py')
+        file_path = os.path.join(self.pwd, "tests", "test_main.py")
         changes = self.extract_test_file_changes(proposed_improvements)
 
         try:
-            with open(file_path, 'r') as file:
+            with open(file_path, "r") as file:
                 lines = file.readlines()
 
             for line_num, new_content in changes:
                 if 0 <= line_num < len(lines):
-                    lines[line_num] = new_content + '\n'
+                    lines[line_num] = new_content + "\n"
                 else:
-                    print(f"Warning: Line number {line_num + 1} is out of range. Skipping this change.")
+                    print(
+                        f"Warning: Line number {line_num + 1} is out of range. Skipping this change."
+                    )
 
-            with open(file_path, 'w') as file:
+            with open(file_path, "w") as file:
                 file.writelines(lines)
 
             return True
@@ -859,32 +881,9 @@ class NemoAgent:
                         # Convert to 0-based index
                         line_num = int(parts[1].strip()) - 1
                         suggested_change_line = next(
-                            (line for line in lines[line_index + 1:]
-                             if line.startswith("# Suggested change:")),
-                            None
-                        )
-                        if suggested_change_line:
-                            new_line_content = suggested_change_line.split(":", 1)[
-                                1].strip()
-                            changes.append((line_num, new_line_content))
-                    except ValueError:
-                        continue
-        return changes
-
-    def extract_test_file_changes(self, proposed_improvements):
-        changes = []
-        lines = proposed_improvements.split("\n")
-        for line_index, current_line in enumerate(lines):
-            if current_line.startswith("# Line number:"):
-                parts = current_line.split(":")
-                if len(parts) >= 2:
-                    try:
-                        # Convert to 0-based index
-                        line_num = int(parts[1].strip()) - 1
-                        suggested_change_line = next(
                             (
                                 line
-                                for line in lines[line_index + 1:]
+                                for line in lines[line_index + 1 :]
                                 if line.startswith("# Suggested change:")
                             ),
                             None,
@@ -908,8 +907,12 @@ class NemoAgent:
         is_init_file,
         attempt=1,
     ):
-        if current_pylint_score >= 7.0 and (current_complexipy_score is None or current_complexipy_score <= 15):
-            print(f"Code quality is already good. Pylint score: {current_pylint_score}/10, Complexipy score: {current_complexipy_score}")
+        if current_pylint_score >= 7.0 and (
+            current_complexipy_score is None or current_complexipy_score <= 15
+        ):
+            print(
+                f"Code quality is already good. Pylint score: {current_pylint_score}/10, Complexipy score: {current_complexipy_score}"
+            )
             return current_pylint_score, current_complexipy_score
 
         if attempt > self.MAX_IMPROVEMENT_ATTEMPTS:
@@ -966,9 +969,13 @@ class NemoAgent:
             success = self.process_file_changes(proposed_improvements)
 
             if success:
-                new_pylint_score, new_complexipy_score = self.clean_code_with_pylint(file_path)
+                new_pylint_score, new_complexipy_score = self.clean_code_with_pylint(
+                    file_path
+                )
 
-                if new_pylint_score < 7.0 or (new_complexipy_score is not None and new_complexipy_score > 15):
+                if new_pylint_score < 7.0 or (
+                    new_complexipy_score is not None and new_complexipy_score > 15
+                ):
                     print(
                         f"Score is still below 7.0 or complexity is above 15. Attempting another improvement (attempt {attempt + 1})..."
                     )
@@ -991,8 +998,7 @@ class NemoAgent:
             else:
                 print("Failed to apply some or all improvements.")
                 if attempt < self.MAX_IMPROVEMENT_ATTEMPTS:
-                    print(
-                        f"Attempting another improvement (attempt {attempt + 1})...")
+                    print(f"Attempting another improvement (attempt {attempt + 1})...")
                     return self.improve_code(
                         file_path,
                         current_pylint_score,
@@ -1009,8 +1015,7 @@ class NemoAgent:
                 "Proposed improvements do not align with the original task. Skipping this improvement attempt."
             )
             if attempt < self.MAX_IMPROVEMENT_ATTEMPTS:
-                print(
-                    f"Attempting another improvement (attempt {attempt + 1})...")
+                print(f"Attempting another improvement (attempt {attempt + 1})...")
                 return self.improve_code(
                     file_path,
                     current_pylint_score,
@@ -1116,10 +1121,8 @@ class NemoAgent:
                 return False, 0, test_output
 
             # Extract coverage percentage
-            coverage_match = re.search(
-                r"TOTAL\s+\d+\s+\d+\s+(\d+)%", test_output)
-            coverage_percentage = int(
-                coverage_match.group(1)) if coverage_match else 0
+            coverage_match = re.search(r"TOTAL\s+\d+\s+\d+\s+(\d+)%", test_output)
+            coverage_percentage = int(coverage_match.group(1)) if coverage_match else 0
 
             # Check if all tests passed
             tests_passed = (
@@ -1153,9 +1156,21 @@ class NemoAgent:
 @click.command()
 @click.argument("task", required=False)
 @click.option("--model", default="mistral-nemo", help="The model to use for the LLM")
-@click.option("--provider", default="ollama", type=click.Choice(["ollama", "openai", "claude"]), help="The LLM provider to use")
-@click.option("--zip", type=click.Path(), help="Path to save the zip file of the agent run")
-def cli(task: str = None, model: str = "mistral-nemo", provider: str = "ollama", zip: str = None):
+@click.option(
+    "--provider",
+    default="ollama",
+    type=click.Choice(["ollama", "openai", "claude"]),
+    help="The LLM provider to use",
+)
+@click.option(
+    "--zip", type=click.Path(), help="Path to save the zip file of the agent run"
+)
+def cli(
+    task: str = None,
+    model: str = "mistral-nemo",
+    provider: str = "ollama",
+    zip: str = None,
+):
     """
     Run Nemo Agent tasks to create Python projects using Poetry and Pytest.
     If no task is provided, it will prompt the user for input.
@@ -1171,15 +1186,15 @@ def cli(task: str = None, model: str = "mistral-nemo", provider: str = "ollama",
 
     nemo_agent = NemoAgent(task=task, model=model, provider=provider)
     nemo_agent.run_task()
-    
+
     project_dir = nemo_agent.pwd
 
     if zip:
         # Ensure the zip file is created in the original directory
         zip_path = os.path.join(original_dir, zip)
-        
+
         # Create a zip file
-        with zipfile.ZipFile(zip_path, 'w', zipfile.ZIP_DEFLATED) as zipf:
+        with zipfile.ZipFile(zip_path, "w", zipfile.ZIP_DEFLATED) as zipf:
             for root, dirs, files in os.walk(project_dir):
                 for file in files:
                     file_path = os.path.join(root, file)
