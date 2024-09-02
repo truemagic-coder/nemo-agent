@@ -12,7 +12,7 @@ https://github.com/user-attachments/assets/51cf6ad1-196c-44ab-99ba-0035365f1bbd
 
 ## Features
 * Runs blazing fast
-* Generates Python project structures automatically using `poetry`
+* Generates Python project structures automatically using `uv`
 * Writes Python code based on task descriptions
 * Executes development tasks using AI-generated commands
 * Utilizes the `mistral-nemo` or `OpenAI` language models for intelligent code generation
@@ -51,13 +51,9 @@ https://github.com/user-attachments/assets/51cf6ad1-196c-44ab-99ba-0035365f1bbd
 
 #### Requirements
 * Python 3.9 or higher
-* curl
 * Ollama running `mistral-nemo`
-* Mac or Linux
-    * Linux Test Box: Ubuntu 24.04 with RTX 4070
-    * Mac Test Box: Mac Mini M2 Pro with 16GB
-    * May run on less powerful systems
-
+* Linux with minimum specs of Ubuntu 24.04 with RTX 4070
+  
 #### Requirements Installation
 * Ollama install instructions:
     * `curl -fsSL https://ollama.com/install.sh | sh`
@@ -89,8 +85,13 @@ https://github.com/user-attachments/assets/51cf6ad1-196c-44ab-99ba-0035365f1bbd
 
 ## Usage
 
+### Prompt
 * `mistral-nemo`: `nemo-agent "create a fizzbuzz script"`
 * `openai`: `nemo-agent "create a fizzbuzz script" --provider openai`
+
+### Markdown File
+* `mistral-nemo`: `nemo-agent --file example.md`
+* `openai`: `nemo-agent --file example.md --provider openai`
 
 ## Model overrides
 

@@ -5,7 +5,6 @@ import fcntl
 import json
 import logging
 import os
-import platform
 import random
 import re
 import shutil
@@ -112,12 +111,12 @@ class NemoAgent:
     def __init__(
         self, task: str, model: str = "mistral-nemo", provider: str = "ollama"
     ):
-        self.pwd = os.getcwd()
         self.task = task
         self.model = model
         self.provider = provider
         self.setup_logging()
         self.project_name = self.generate_project_name()
+        self.pwd = os.getcwd() + "/" + self.project_name
         self.llm = self.setup_llm()
         self.previous_suggestions = set()
 
@@ -145,17 +144,17 @@ class NemoAgent:
 
     def run_task(self):
         print(f"Current working directory: {os.getcwd()}")
-        self.ensure_poetry_installed()
-        self.create_project_with_poetry()
+        self.ensure_uv_installed()
+        self.create_project_with_uv()
         self.implement_solution()
 
-        pylint_score, complexipy_score, pylint_output, complexipy_output = self.code_check(f"{self.project_name}/main.py")
+        pylint_score, complexipy_score, pylint_output, complexipy_output = self.code_check("main.py")
 
         code_check_attempts = 1
         while code_check_attempts < self.MAX_IMPROVEMENT_ATTEMPTS:
             if pylint_score < 7 and complexipy_score > 15:
-                self.improve_code(f"{self.project_name}/main.py", pylint_score, complexipy_score, pylint_output, complexipy_output)
-                pylint_score, complexipy_score, pylint_output, complexipy_output = self.code_check(f"{self.project_name}/main.py")
+                self.improve_code("main.py", pylint_score, complexipy_score, pylint_output, complexipy_output)
+                pylint_score, complexipy_score, pylint_output, complexipy_output = self.code_check("main.py")
             else:
                 break
             code_check_attempts += 1
@@ -174,91 +173,42 @@ class NemoAgent:
             "Task completed. Please review the output and make any necessary manual adjustments."
         )
 
-    def ensure_poetry_installed(self):
+    def ensure_uv_installed(self):
         try:
             subprocess.run(
-                ["poetry", "--version"], check=True, capture_output=True, text=True
+                ["uv", "--version"], check=True, capture_output=True, text=True
             )
-            print("Poetry is already installed.")
+            print("uv is already installed.")
         except FileNotFoundError:
-            print("Poetry is not installed. Installing Poetry...")
+            print("uv is not installed. Installing uv...")
             try:
-                subprocess.run("pip install poetry", shell=True, check=True)
-                print("Poetry installed successfully.")
+                subprocess.run("pip install uv", shell=True, check=True)
+                print("uv installed successfully.")
             except subprocess.CalledProcessError as e:
-                print(f"Error installing Poetry: {e}")
+                print(f"Error installing uv: {e}")
                 sys.exit(1)
 
-    def create_project_with_poetry(self):
-        print(f"Creating new Poetry project: {self.project_name}")
+    def create_project_with_uv(self):
+        print(f"Creating new uv project: {self.project_name}")
         try:
             result = subprocess.run(
-                ["poetry", "new", self.project_name],
+                ["uv", "init", self.project_name, "--no-workspace"],
                 capture_output=True,
                 text=True,
-                cwd=self.pwd,
                 check=True,
             )
             print(result.stdout)
 
-            self.pwd = os.path.join(self.pwd, self.project_name)
-            os.chdir(self.pwd)
-
-            print(f"Project directory created: {self.pwd}")
-
-            print(f"Current working directory: {os.getcwd()}")
-            print("Contents of the directory:")
-            print(os.listdir(self.pwd))
-
-            # Determine the operating system
-            is_mac = platform.system() == "Darwin"
-
-            # First sed command
-            sed_inplace = "-i ''" if is_mac else "-i"
-            sed_command_1 = f"""
-            sed {sed_inplace} '
-            /^\\[tool.poetry\\]/a\\
-            packages = [{{include = "{self.project_name}"}}]
-            ' pyproject.toml
-            """
-
-            subprocess.run(
-                sed_command_1,
-                shell=True,
-                check=True,
-                cwd=self.pwd,
-            )
-            print("Added packages variable to pyproject.toml")
-
-            # Second sed command
-            sed_command_2 = f"""
-            sed {sed_inplace} '
-            $a\\
-            [tool.pytest.ini-options]\\
-            python_paths = [".","tests"]
-            ' pyproject.toml
-            """
-
-            subprocess.run(
-                sed_command_2,
-                shell=True,
-                check=True,
-                cwd=self.pwd,
-            )
-            print("Added [tool.pytest.ini-options] section to pyproject.toml")
-
             try:
                 subprocess.run(
                     [
-                        "poetry",
+                        "uv",
                         "add",
-                        "--dev",
-                        "pytest@*",
-                        "pylint@*",
-                        "autopep8@*",
-                        "pytest-cov@*",
-                        "httpx@*",
-                        "complexipy@*",
+                        "pytest",
+                        "pylint",
+                        "autopep8",
+                        "pytest-cov",
+                        "complexipy",
                     ],
                     check=True,
                     cwd=self.pwd,
@@ -268,9 +218,21 @@ class NemoAgent:
                 )
             except subprocess.CalledProcessError as e:
                 print(f"Error adding development dependencies: {e}")
+        
+            try:
+                # Create the __init__.py file in the tests directory
+                tests_dir = os.path.join(self.pwd, "tests")
+                os.makedirs(tests_dir)
+                os.remove(f"{self.pwd}/hello.py")
+                init_file_path = os.path.join(tests_dir, '__init__.py')
+                with open(init_file_path, 'w') as f:
+                    f.write("# This file is required to make Python treat the directories as containing packages.\n")
+
+            except Exception as e:
+                print(f"Error creating tests/__init__.py: {str(e)}")
 
         except subprocess.CalledProcessError as e:
-            print(f"Error creating Poetry project: {e.stderr}")
+            print(f"Error creating uv project: {e.stderr}")
         except Exception as e:
             print(f"Error: {str(e)}")
 
@@ -344,7 +306,7 @@ class NemoAgent:
                 1, IMPORTANT: Never use pass statements in your code or tests. Always provide a meaningful implementation.
                 2. CRITICAL: Use the following code block format for specifying file content:                
                     For code files, use:
-                    <<<{self.project_name}/main.py>>>
+                    <<<main.py>>>
                     # File content here
                     <<<end>>>
 
@@ -354,22 +316,22 @@ class NemoAgent:
                     <<<end>>>
 
                     For HTML templates (Flask), use:
-                    <<<{self.project_name}/templates/template_name.html>>>
+                    <<<templates/template_name.html>>>
                     <!-- HTML content here -->
                     <<<end>>>
-                3. The test command is `poetry run pytest --cov={self.project_name} --cov-config=.coveragerc`
-                4. IMPORTANT: Do not add any code comments to the files.
-                5. IMPORTANT: Always follow PEP8 style guide, follow best practices for Python, use snake_case naming, and provide meaningful docstrings.
-                6. IMPORTANT: Do not redefine built-in functions or use reserved keywords as variable names.
-                7. CRITICAL: Create any non-existent directories or files as needed that are not Python files.
-                8. CRITICAL: Your response should ONLY contain the code blocks and `poetry add package_name` command at the end after all the code blocks. Do not include any explanations or additional text.
-                9. IMPORTANT: Do not modify the existing poetry dependencies. Only add new ones if necessary.
-                10. CRITICAL: Only create 1 file for the python code: {self.project_name}/main.py
-                11. CRITICAL: Only create 1 file for the python tests: tests/test_main.py
-                12. CRITICAL: Create a main method to run the app in main.py and if a web app run the app on port 8080.
-                13. IMPORTANT: Use the proper import statements for the test file to import the main file and its functions using the {self.project_name} namespace.
-                14. IMPORTANT: Use pytest fixture setup code for app servers like Flask and FastAPI.
-                15. IMPORTANT: Break down tests into multiple test functions for different cases.
+                3. IMPORTANT: Do not add any code comments to the files.
+                4. IMPORTANT: Always follow PEP8 style guide, follow best practices for Python, use snake_case naming, and provide meaningful docstrings.
+                5. IMPORTANT: Do not redefine built-in functions or use reserved keywords as variable names.
+                6. CRITICAL: Create any non-existent directories or files as needed that are not Python files.
+                7. CRITICAL: Your response should ONLY contain the code blocks and `uv add package_names` command at the end after all the code blocks. Do not include any explanations or additional text.
+                8. IMPORTANT: Do not modify the existing uv dependencies. Only add new ones if necessary.
+                9. CRITICAL: Only create 1 file for the python code: main.py
+                10. CRITICAL: Only create 1 file for the python tests: tests/test_main.py
+                11. CRITICAL: Create a main method to run the app in main.py and if a web app run the app on port 8080.
+                12. IMPORTANT: Only use pytest fixtures for Flask and FastAPI servers.
+                13. IMPORTANT: Always pytest parameterize tests for different cases.
+                14. CRITICAL: Always use `import main` to import the main.py file in the test file.
+                15. IMPORTANT: Only mock external services or APIs in tests.
             Working directory: {self.pwd}
             """
 
@@ -378,15 +340,15 @@ class NemoAgent:
             solution = self.get_response(prompt)
             self.logger.info(f"Received solution:\n{solution}")
 
-            # Parse and execute any poetry add commands
-            poetry_commands = [
+            # Parse and execute any uv add commands
+            uv_commands = [
                 line.strip()
                 for line in solution.split("\n")
-                if line.strip().startswith("poetry add")
+                if line.strip().strip('.').startswith("uv add")
             ]
-            for command in poetry_commands:
+            for command in uv_commands:
                 try:
-                    subprocess.run(command, shell=True, check=True)
+                    subprocess.run(command, shell=True, check=True, cwd=self.pwd)
                     self.logger.info(f"Executed command: {command}")
                 except subprocess.CalledProcessError as e:
                     self.logger.error(
@@ -440,7 +402,7 @@ class NemoAgent:
             # Run autopep8 to automatically fix style issues
             print(f"Running autopep8 on {file_path}")
             autopep8_cmd = [
-                "poetry",
+                "uv",
                 "run",
                 "autopep8",
                 "--in-place",
@@ -453,7 +415,7 @@ class NemoAgent:
             print("autopep8 completed successfully.")
 
             # Adjust pylint command for different file types
-            pylint_cmd = ["poetry", "run", "pylint"]
+            pylint_cmd = ["uv", "run", "pylint"]
             pylint_cmd.extend(
                 [
                     "--disable=missing-function-docstring,missing-module-docstring",
@@ -473,7 +435,7 @@ class NemoAgent:
             print(pylint_output)
             pylint_score = float(score_match.group(1)) if score_match else 0.0
 
-            complexipy_cmd = ["poetry", "run", "complexipy", file_path]
+            complexipy_cmd = ["uv", "run", "complexipy", file_path]
             result = subprocess.run(
                 complexipy_cmd, capture_output=True, text=True, cwd=self.pwd
             )
@@ -499,7 +461,6 @@ class NemoAgent:
                     complexipy_score,
                     pylint_output,
                     complexipy_output,
-                    1,
                 )
             else:
                 print(
@@ -509,26 +470,12 @@ class NemoAgent:
             return pylint_score, complexipy_score, pylint_output, complexipy_output
         except subprocess.CalledProcessError as e:
             print(f"Error running autopep8 or pylint: {e}")
-            return 0.0
-
-    def add_module_docstring(self, file_path):
-        with open(file_path, "r") as file:
-            content = file.read()
-
-        if not content.startswith('"""'):
-            module_name = os.path.basename(file_path).replace(".py", "")
-            docstring = (
-                f'"""\nThis module contains the implementation for '
-                f'{module_name}.\n"""\n\n'
-            )
-            with open(file_path, "w") as file:
-                file.write(docstring + content)
-            print(f"Added module docstring to {file_path}")
+            return 0.0, 0, "", ""
 
     def improve_test_file(self, test_output):
         prompt = f"""
         The current test file needs minor improvements. Please analyze the test output and suggest small, specific changes to fix any issues in the test file.
-        Do not modify the main implementation file, only suggest minimal improvements to the tests.
+        Do not modify the main implementation file, only suggest minimal improvements to the tests but write out the full test file content.
 
         Test output:
         {test_output}
@@ -538,21 +485,19 @@ class NemoAgent:
         Provide specific, minimal code changes to improve the test file, addressing only the failing tests or obvious issues.
         Follow these rules strictly:
         1. CRITICAL: Only suggest changes to the test file (tests/test_main.py)
-        2. Do not change the code file in {self.project_name}/main.py
+        2. Do not change the code file in main.py
         3. Focus on fixing failing tests or obvious errors
-        4. Keep changes minimal and specific
-        5. Do not rewrite entire test functions unless absolutely necessary
-        6. IMPORTANT: put all your code in the code directory: {self.project_name}
-        7. IMPORTANT: put all your tests in the tests directory: tests
-        8. CRITICAL: Use the following code block format for specifying file content:
+        4. Do not rewrite entire test functions unless absolutely necessary
+        5. CRITICAL: Use the following code block format for specifying file content:
             For test files, use:
             <<<tests/test_main.py>>>
             # Test file content here
             <<<end>>>
-        9. CRITICAL: Do not explain the task only implement the required functionality in the code blocks.
-        10. IMPORTANT: Use the proper import statements for the test file to import the main file and its functions using the {self.project_name} namespace.
-        11. IMPORTANT: Use pytest fixture for app servers like Flask and FastAPI.
-        12. IMPORTANT: Break down tests into multiple test functions for different cases.
+        6. CRITICAL: Do not explain the task only implement the required functionality in the code blocks.
+        7. IMPORTANT: Only use pytest fixtures for Flask and FastAPI servers.
+        8. IMPORTANT: Always pytest parameterize tests for different cases.
+        9. CRITICAL: Always use `import main` to import the main.py file in the test file.
+        10. IMPORTANT: Only mock external services or APIs in tests.
         Working directory: {self.pwd}
         """
         proposed_improvements = self.get_response(prompt)
@@ -617,13 +562,11 @@ class NemoAgent:
         3. Focus on improving code quality, readability, and adherence to PEP8
         4. Address any warnings or errors reported by pylint
         5. Ensure the implementation correctly handles edge cases and potential errors
-        6. IMPORTANT: put all your code in the code directory: {self.project_name}
-        7. IMPORTANT: put all your tests in the tests directory: tests
-        8. CRITICAL: Use the following code block format for specifying file content:
-                <<<{self.project_name}/main.py>>>
+        6. CRITICAL: Use the following code block format for specifying file content:
+                <<<main.py>>>
                 # File content here
                 <<<end>>>
-        9. CRITICAL: Do not explain the task only implement the required functionality in the code blocks.
+        7. CRITICAL: Do not explain the task only implement the required functionality in the code blocks.
         Working directory: {self.pwd}
         """
         proposed_improvements = self.get_response(prompt)
@@ -701,12 +644,13 @@ class NemoAgent:
             # Run pytest with coverage
             result = subprocess.run(
                 [
-                    "poetry",
+                    "uv",
                     "run",
                     "pytest",
-                    "--cov=" + self.project_name,
+                    "--cov=" + self.pwd,
                     "--cov-config=.coveragerc",
                     "--cov-report=term-missing",
+                    "-vv"
                 ],
                 capture_output=True,
                 text=True,
@@ -758,6 +702,7 @@ class NemoAgent:
 
 @click.command()
 @click.argument("task", required=False)
+@click.option( "--file", type=click.Path(exists=True), help="Path to a markdown file containing the task")
 @click.option("--model", default="mistral-nemo", help="The model to use for the LLM")
 @click.option(
     "--provider",
@@ -770,12 +715,13 @@ class NemoAgent:
 )
 def cli(
     task: str = None,
+    file: str = None,
     model: str = "mistral-nemo",
     provider: str = "ollama",
     zip: str = None,
 ):
     """
-    Run Nemo Agent tasks to create Python projects using Poetry and Pytest.
+    Run Nemo Agent tasks to create Python projects using uv and pytest.
     If no task is provided, it will prompt the user for input.
     """
     # Store the original working directory
@@ -786,6 +732,13 @@ def cli(
         raise ValueError("OPENAI_API_KEY environment variable is not set")
     elif provider == "claude" and not os.getenv("ANTHROPIC_API_KEY"):
         raise ValueError("ANTHROPIC_API_KEY environment variable is not set")
+
+    # Read task from file if provided
+    if file:
+        with open(file, 'r') as f:
+            task = f.read().strip()
+    elif not task:
+        task = click.prompt("Please enter your task")
 
     nemo_agent = NemoAgent(task=task, model=model, provider=provider)
     nemo_agent.run_task()
