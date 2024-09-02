@@ -105,7 +105,7 @@ class ClaudeAPI:
 
 
 class NemoAgent:
-    MAX_IMPROVEMENT_ATTEMPTS = 5
+    MAX_IMPROVEMENT_ATTEMPTS = 3
     MAX_WRITE_ATTEMPTS = 3
     WRITE_RETRY_DELAY = 1  # second
 
