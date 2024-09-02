@@ -143,72 +143,6 @@ class NemoAgent:
 
         return project_name
 
-    def initialize_git_repo(self):
-        try:
-            subprocess.run(["git", "init"], check=True, cwd=self.pwd)
-            print("Git repository initialized.")
-
-            # Set Git user name and email
-            subprocess.run(
-                ["git", "config", "user.name", "Nemo Agent"], check=True, cwd=self.pwd
-            )
-            subprocess.run(
-                ["git", "config", "user.email", "hello@nemo-agent.com"],
-                check=True,
-                cwd=self.pwd,
-            )
-            print("Git user name and email configured.")
-
-            # Create .gitignore file
-            gitignore_content = """
-            __pycache__/
-            *.py[cod]
-            .pytest_cache/
-            .coverage
-            """
-            with open(os.path.join(self.pwd, ".gitignore"), "w") as f:
-                f.write(gitignore_content)
-
-            # Initial commit
-            subprocess.run(["git", "add", "."], check=True, cwd=self.pwd)
-            subprocess.run(
-                ["git", "commit", "-m", "Initial commit"], check=True, cwd=self.pwd
-            )
-            print("Initial commit created.")
-        except subprocess.CalledProcessError as e:
-            print(f"Error initializing Git repository: {e}")
-
-    def commit_changes(self, message):
-        try:
-            subprocess.run(["git", "add", "."], check=True, cwd=self.pwd)
-            subprocess.run(["git", "commit", "-m", message], check=True, cwd=self.pwd)
-            print(f"Changes committed: {message}")
-        except subprocess.CalledProcessError as e:
-            print(f"Error committing changes: {e}")
-
-    def get_git_diff(self):
-        try:
-            result = subprocess.run(
-                ["git", "diff", "HEAD"], capture_output=True, text=True, cwd=self.pwd
-            )
-            return result.stdout
-        except subprocess.CalledProcessError as e:
-            print(f"Error getting Git diff: {e}")
-            return ""
-
-    def get_git_log(self, num_commits=5):
-        try:
-            result = subprocess.run(
-                ["git", "log", f"-{num_commits}", "--oneline"],
-                capture_output=True,
-                text=True,
-                cwd=self.pwd,
-            )
-            return result.stdout
-        except subprocess.CalledProcessError as e:
-            print(f"Error getting Git log: {e}")
-            return ""
-
     def run_task(self):
         print(f"Current working directory: {os.getcwd()}")
         self.ensure_poetry_installed()
@@ -272,9 +206,6 @@ class NemoAgent:
 
             print(f"Project directory created: {self.pwd}")
 
-            # Initialize Git repository in the project directory
-            self.initialize_git_repo()
-
             print(f"Current working directory: {os.getcwd()}")
             print("Contents of the directory:")
             print(os.listdir(self.pwd))
@@ -333,7 +264,7 @@ class NemoAgent:
                     cwd=self.pwd,
                 )
                 print(
-                    "Added pytest, pylint, autopep8, pytest-cov, pytest-flask, and httpx as development dependencies with latest versions."
+                    "Added dev dependencies with latest versions."
                 )
             except subprocess.CalledProcessError as e:
                 print(f"Error adding development dependencies: {e}")
@@ -468,7 +399,6 @@ class NemoAgent:
                 self.logger.info(
                     "All files created successfully and passed pylint check"
                 )
-                self.commit_changes("Implement initial solution")
                 return True
 
             self.logger.warning(

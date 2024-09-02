@@ -21,7 +21,6 @@ https://github.com/user-attachments/assets/51cf6ad1-196c-44ab-99ba-0035365f1bbd
 * Automatically fixes and styles code using `pylint` up to 7+/10
 * Calculates and improves the complexity score using `complexipy` to be under 15
 * Auto-formats the code with `autopep8`
-* Utilizes `git` to commit and track changes
 
 ## Coding Ability
 * `OpenAI` is better than `mistral-nemo` as the model is larger
