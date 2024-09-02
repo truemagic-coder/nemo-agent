@@ -437,9 +437,8 @@ class NemoAgent:
                 11. CRITICAL: Only create 1 file for the python tests: tests/test_main.py
                 12. CRITICAL: Create a main method to run the app in main.py and if a web app run the app on port 8080.
                 13. IMPORTANT: Use the proper import statements for the test file to import the main file and its functions using the {self.project_name} namespace.
-                14. IMPORTANT: Use pytest.fixture for any setup code that is reused across multiple tests including web servers like Flask and FastAPI.
-                15. IMPORTANT: Use the hypothesis library for property-based testing if applicable.
-                16. IMPORTANT: Use pytest parametrize for testing multiple inputs and outputs if applicable.
+                14. IMPORTANT: Use pytest fixture setup code for app servers like Flask and FastAPI.
+                15. IMPORTANT: Break down tests into multiple test functions for different cases.
             Working directory: {self.pwd}
             """
 
@@ -622,9 +621,8 @@ class NemoAgent:
             <<<end>>>
         9. CRITICAL: Do not explain the task only implement the required functionality in the code blocks.
         10. IMPORTANT: Use the proper import statements for the test file to import the main file and its functions using the {self.project_name} namespace.
-        11. IMPORTANT: Use pytest.fixture for any setup code that is reused across multiple tests including web servers like Flask and FastAPI.
-        12. IMPORTANT: Use the hypothesis library for property-based testing if applicable.
-        13. IMPORTANT: Use pytest parametrize for testing multiple inputs and outputs if applicable.
+        11. IMPORTANT: Use pytest fixture for app servers like Flask and FastAPI.
+        12. IMPORTANT: Break down tests into multiple test functions for different cases.
         Working directory: {self.pwd}
         """
         proposed_improvements = self.get_response(prompt)
