@@ -24,7 +24,7 @@ https://github.com/user-attachments/assets/51cf6ad1-196c-44ab-99ba-0035365f1bbd
 * Utilizes `git` to commit and track changes
 
 ## Coding Ability
-* Leetcode hards (app works - tests pass)
+* Some leetcode hards (app works - tests pass)
 * `fastapi` or `flask` APIs (app works - tests pass)
 * `flask` web apps (app works - tests pass)
 * `streamlit` apps (app works - tests fail)  
