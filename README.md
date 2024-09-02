@@ -84,4 +84,4 @@ Contributions to Nemo Agent are welcome! Please feel free to submit a Pull Reque
 This project is licensed under the MIT License - see the LICENSE file for details.
 
 ## Disclaimer
-Nemo Agent generates code using AI. While it strives for accuracy and best practices, the generated code should be reviewed and tested before being used in a production environment.
+Nemo Agent generates code using an LLM. Every run is different as the LLM generated code is different. While it strives for accuracy and best practices, the generated code should be reviewed and tested before being used in a production environment.
