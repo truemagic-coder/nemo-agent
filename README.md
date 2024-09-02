@@ -36,7 +36,6 @@ https://github.com/user-attachments/assets/51cf6ad1-196c-44ab-99ba-0035365f1bbd
 
 #### Requirements
 * Python 3.9 or higher
-* git
 * OpenAI API KEY
 * Mac or Linux
 
@@ -52,7 +51,6 @@ https://github.com/user-attachments/assets/51cf6ad1-196c-44ab-99ba-0035365f1bbd
 
 #### Requirements
 * Python 3.9 or higher
-* git
 * curl
 * Ollama running `mistral-nemo`
 * Mac or Linux
