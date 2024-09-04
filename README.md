@@ -22,12 +22,17 @@ https://github.com/user-attachments/assets/51cf6ad1-196c-44ab-99ba-0035365f1bbd
 * Calculates and improves the complexity score using `complexipy` to be under 15
 * Auto-formats the code with `autopep8`
 
+## Community
+* Join our community - [Nemo Agent Telegram Group](https://t.me/+f-6nu2mUpgtiOGUx)
+
 ## Coding Ability
 * `leetcode` hards (app works - tests pass)
 * `fastapi` or `flask` APIs (app works - tests pass)
 * `flask` web apps (app works - tests pass)
 * `streamlit` apps (app works - tests fail)  
 * `tkinter` apps (app works - tests fail)
+* Note: `OpenAI` succeeds more often the `mistral-nemo` in their runs
+* Note: Not all runs will be successful
 
 ## Install 
 
