@@ -580,7 +580,7 @@ class NemoAgent:
 
         if self.validate_implementation(proposed_improvements):
             print("Executing validated improvements:")
-            success = self.process_file_changes(proposed_improvements)
+            self.process_file_changes(proposed_improvements)
 
     def validate_file_content(self, file_path, content):
         if file_path.endswith(".py"):
