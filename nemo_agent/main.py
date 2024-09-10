@@ -14,7 +14,6 @@ import zipfile
 import click
 import requests
 import openai
-from anthropic import Anthropic
 
 
 class OllamaAPI:
@@ -46,7 +45,7 @@ class OllamaAPI:
 
 class OpenAIAPI:
     def __init__(self, model):
-        if model == "mistral-nemo":
+        if model == "yi-coder":
             model = "gpt-4o-2024-08-06"
         self.model = model
         self.api_key = os.getenv("OPENAI_API_KEY")
@@ -73,43 +72,13 @@ class OpenAIAPI:
             raise Exception(f"OpenAI API error: {str(e)}")
 
 
-class ClaudeAPI:
-    def __init__(self, model):
-        if model == "mistral-nemo":
-            model = "claude-3-5-sonnet-20240620"
-        self.model = model
-        self.api_key = os.getenv("ANTHROPIC_API_KEY")
-        if not self.api_key:
-            raise ValueError("ANTHROPIC_API_KEY environment variable is not set")
-        self.client = Anthropic(api_key=self.api_key)
-
-    def generate(self, prompt):
-        try:
-            response = self.client.messages.create(
-                model=self.model,
-                messages=[{"role": "user", "content": prompt}],
-                stream=True,
-                max_tokens=1000,
-            )
-            full_response = ""
-            for completion in response:
-                if completion.type == "content_block_delta":
-                    chunk_text = completion.delta.text
-                    full_response += chunk_text
-                    print(chunk_text, end="", flush=True)
-            print()  # Print a newline at the end
-            return full_response
-        except Exception as e:
-            raise Exception(f"Claude API error: {str(e)}")
-
-
 class NemoAgent:
     MAX_IMPROVEMENT_ATTEMPTS = 3
     MAX_WRITE_ATTEMPTS = 3
     WRITE_RETRY_DELAY = 1  # second
 
     def __init__(
-        self, task: str, model: str = "mistral-nemo", provider: str = "ollama"
+        self, task: str, model: str = "yi-coder", provider: str = "ollama"
     ):
         self.task = task
         self.model = model
@@ -125,8 +94,6 @@ class NemoAgent:
             return OllamaAPI(self.model)
         elif self.provider == "openai":
             return OpenAIAPI(self.model)
-        elif self.provider == "claude":
-            return ClaudeAPI(self.model)
         else:
             raise ValueError(f"Unsupported provider: {self.provider}")
 
@@ -703,11 +670,11 @@ class NemoAgent:
 @click.command()
 @click.argument("task", required=False)
 @click.option( "--file", type=click.Path(exists=True), help="Path to a markdown file containing the task")
-@click.option("--model", default="mistral-nemo", help="The model to use for the LLM")
+@click.option("--model", default="yi-coder", help="The model to use for the LLM")
 @click.option(
     "--provider",
     default="ollama",
-    type=click.Choice(["ollama", "openai", "claude"]),
+    type=click.Choice(["ollama", "openai"]),
     help="The LLM provider to use",
 )
 @click.option(
@@ -716,7 +683,7 @@ class NemoAgent:
 def cli(
     task: str = None,
     file: str = None,
-    model: str = "mistral-nemo",
+    model: str = "yi-coder",
     provider: str = "ollama",
     zip: str = None,
 ):
@@ -730,8 +697,6 @@ def cli(
     # Check for API keys if using OpenAI or Anthropic
     if provider == "openai" and not os.getenv("OPENAI_API_KEY"):
         raise ValueError("OPENAI_API_KEY environment variable is not set")
-    elif provider == "claude" and not os.getenv("ANTHROPIC_API_KEY"):
-        raise ValueError("ANTHROPIC_API_KEY environment variable is not set")
 
     # Read task from file if provided
     if file:
