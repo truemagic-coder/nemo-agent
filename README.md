@@ -91,6 +91,11 @@ https://github.com/user-attachments/assets/51cf6ad1-196c-44ab-99ba-0035365f1bbd
 * `nemo-agent --file example.md` or 
 * `nemo-agent --file example.txt`
 
+### Run Generated Program
+* `cd generated_project_folder`
+* `source .venv/bin/activate`
+* `uv run main.py`
+
 ## Models 
 * `ollama` is `mistral-nemo`
 * `openai` is `gpt-4o-2024-08-06`
