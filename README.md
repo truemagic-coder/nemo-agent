@@ -15,7 +15,7 @@ https://github.com/user-attachments/assets/51cf6ad1-196c-44ab-99ba-0035365f1bbd
 * Generates Python project structures automatically using `uv`
 * Writes Python code based on task descriptions
 * Executes development tasks using AI-generated commands
-* Utilizes the `Ollama`, `OpenAI`, or `Claude` language models for intelligent code generation
+* Utilizes the `mistral-nemo`, `OpenAI`, or `Claude` language models for intelligent code generation
 * Implements best practices in Python development automatically
 * Writes and runs passing tests using `pytest` up to 80%+ test coverage 
 * Automatically fixes and styles code using `pylint` up to 7+/10
