@@ -437,12 +437,9 @@ class NemoAgent:
                 7. CRITICAL: Only create 1 file for the python code: main.py
                 8. CRITICAL: Only create 1 file for the python tests: tests/test_main.py
                 9. CRITICAL: Create a main method to run the app in main.py and if a web app run the app on port 8080.
-                10. IMPORTANT: Only use pytest fixtures for Flask and FastAPI servers.
-                11. IMPORTANT: Always pytest parameterize tests for different cases.
-                12. CRITICAL: Always use `import main` to import the main.py file in the test file.
-                13. IMPORTANT: Only mock external services or APIs in tests.
-                14. CRITICAL: Enclose your entire response between ^^^start^^^ and ^^^end^^^ markers.
-                15. IMPORTANT: Use the reference material provided to guide your implementation including the required dependencies.
+                10. CRITICAL: Always use `import main` to import the main.py file in the test file.
+                11. CRITICAL: Enclose your entire response between ^^^start^^^ and ^^^end^^^ markers.
+                12. IMPORTANT: Use the reference material provided to guide your implementation including the required dependencies.
             Working directory: {self.pwd}
             Reference material: {self.reference_material}
             """
@@ -598,9 +595,8 @@ class NemoAgent:
         Follow these rules strictly:
         1. CRITICAL: Only suggest changes to the test file (tests/test_main.py)
         2. Do not change the code file in main.py
-        3. Focus on fixing failing tests or obvious errors
-        4. Do not rewrite entire test functions unless absolutely necessary
-        5. CRITICAL: Use the following code block format for specifying file content:
+        3. Focus on fixing failing tests or obvious errors in the test file
+        4. CRITICAL: Use the following code block format for specifying file content:
             For test files, use:
             <<<tests/test_main.py>>>
             # Test file content here
@@ -610,13 +606,10 @@ class NemoAgent:
             ***uv_start***
             package_name, package_name, package_name
             ***uv_end***
-        6. CRITICAL: Do not explain the task only implement the required functionality in the code blocks.
-        7. IMPORTANT: Only use pytest fixtures for Flask and FastAPI servers.
-        8. IMPORTANT: Always pytest parameterize tests for different cases.
-        9. CRITICAL: Always use `import main` to import the main.py file in the test file.
-        10. IMPORTANT: Only mock external services or APIs in tests.
-        11. CRITICAL: Enclose your entire response between ^^^start^^^ and ^^^end^^^ markers.
-        12. CRITICAL: Your response should ONLY contain the code blocks and the pip dependencies required for both the test and code files. Do not include any additional information.
+        5. CRITICAL: Do not explain the task only implement the required functionality in the code blocks.
+        6. CRITICAL: Always use `import main` to import the main.py file in the test file.
+        7. CRITICAL: Enclose your entire response between ^^^start^^^ and ^^^end^^^ markers.
+        8. CRITICAL: Your response should ONLY contain the code blocks and the pip dependencies required for both the test and code files. Do not include any additional information.
         Working directory: {self.pwd}
         """
         proposed_improvements = self.get_response(prompt)
