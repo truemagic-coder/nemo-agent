@@ -31,37 +31,25 @@ class OllamaAPI:
     def generate(self, prompt):
         url = f"{self.base_url}/generate"
         full_response = ""
-        max_iterations = 5  # Adjust this value as needed
-        continuation_prompt = prompt
-
-        for iteration in range(max_iterations):
-            data = {"model": self.model, "prompt": continuation_prompt, "stream": True}
-            response = requests.post(url, json=data, stream=True)
-            if response.status_code == 200:
-                chunk_response = ""
-                for line in response.iter_lines():
-                    if line:
-                        decoded_line = line.decode("utf-8")
-                        try:
-                            json_line = json.loads(decoded_line)
-                            chunk = json_line.get("response", "")
-                            chunk_response += chunk
-                            print(chunk, end="", flush=True)
-                        except json.JSONDecodeError:
-                            print(f"Error decoding JSON: {decoded_line}")
-
-                full_response += chunk_response
-
-                if "^^^end^^^" in full_response:
-                    break
-
-                continuation_prompt = f"Continue from where you left off. Previous response: {chunk_response}."
-            else:
-                raise Exception(f"Ollama API error: {response.text}")
+        data = {"model": self.model, "prompt": prompt, "stream": True}
+        response = requests.post(url, json=data, stream=True)
+        if response.status_code == 200:
+            for line in response.iter_lines():
+                if line:
+                    decoded_line = line.decode("utf-8")
+                    try:
+                        json_line = json.loads(decoded_line)
+                        chunk = json_line.get("response", "")
+                        full_response += chunk
+                        print(chunk, end="", flush=True)
+                    except json.JSONDecodeError:
+                        print(f"Error decoding JSON: {decoded_line}")
+        else:
+            raise Exception(f"Ollama API error: {response.text}")
 
         print()  # Print a newline at the end
 
-        # Extract content between markers
+        # Extract content between markers if needed
         start_marker = "^^^start^^^"
         end_marker = "^^^end^^^"
         start_index = full_response.find(start_marker)
@@ -452,9 +440,9 @@ class NemoAgent:
                     <<<end>>>
 
                     For pip dependencies, use:
-                    ***start***
+                    ***uv_start***
                     package_name, package_name, package_name
-                    ***end***
+                    ***uv_end***
                 3. IMPORTANT: Do not add any code comments to the files.
                 4. IMPORTANT: Always follow PEP8 style guide, follow best practices for Python, use snake_case naming, and provide meaningful docstrings.
                 5. IMPORTANT: Do not redefine built-in functions or use reserved keywords as variable names.
@@ -629,9 +617,9 @@ class NemoAgent:
             <<<end>>>
             
             For pip dependencies, use:
-            ***start***
+            ***uv_start***
             package_name, package_name, package_name
-            ***end***
+            ***uv_end***
         6. CRITICAL: Do not explain the task only implement the required functionality in the code blocks.
         7. IMPORTANT: Only use pytest fixtures for Flask and FastAPI servers.
         8. IMPORTANT: Always pytest parameterize tests for different cases.
@@ -670,12 +658,12 @@ class NemoAgent:
         Returns:
         bool: True if packages were found and installation was attempted, False otherwise.
         """
-        pip_start = content.find("***start***")
-        pip_end = content.find("***end***")
+        pip_start = content.find("***uv_start***")
+        pip_end = content.find("***uv_end***")
 
         if pip_start != -1 and pip_end != -1:
             pip_packages = (
-                content[pip_start + len("***start***") : pip_end].strip().split(",")
+                content[pip_start + len("***uv_start***") : pip_end].strip().split(",")
             )
             pip_packages = [pkg.strip() for pkg in pip_packages if pkg.strip()]
 
