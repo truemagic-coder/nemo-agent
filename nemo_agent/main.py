@@ -15,6 +15,7 @@ import click
 import requests
 import openai
 from anthropic import Anthropic
+import tiktoken
 
 
 class OllamaAPI:
@@ -22,6 +23,10 @@ class OllamaAPI:
         self.model = model
         self.base_url = "http://localhost:11434/api"
 
+    def count_tokens(self, text):
+        # Ollama doesn't provide a built-in token counter, so we'll use tiktoken as an approximation
+        return len(tiktoken.encoding_for_model("gpt-3.5-turbo").encode(text))
+    
     def generate(self, prompt):
         url = f"{self.base_url}/generate"
         data = {"model": self.model, "prompt": prompt, "stream": True}
@@ -39,6 +44,15 @@ class OllamaAPI:
                     except json.JSONDecodeError:
                         print(f"Error decoding JSON: {decoded_line}")
             print()  # Print a newline at the end
+            
+            # Extract content between markers
+            start_marker = "^^^start^^^"
+            end_marker = "^^^end^^^"
+            start_index = full_response.find(start_marker)
+            end_index = full_response.find(end_marker)
+            if start_index != -1 and end_index != -1:
+                full_response = full_response[start_index + len(start_marker):end_index].strip()
+            
             return full_response
         else:
             raise Exception(f"Ollama API error: {response.text}")
@@ -54,6 +68,9 @@ class OpenAIAPI:
             raise ValueError("OPENAI_API_KEY environment variable is not set")
         openai.api_key = self.api_key
 
+    def count_tokens(self, text):
+        return len(tiktoken.encoding_for_model(self.model).encode(text))
+
     def generate(self, prompt):
         try:
             response = openai.chat.completions.create(
@@ -68,9 +85,19 @@ class OpenAIAPI:
                     full_response += chunk_text
                     print(chunk_text, end="", flush=True)
             print()  # Print a newline at the end
+            
+            # Extract content between markers
+            start_marker = "^^^start^^^"
+            end_marker = "^^^end^^^"
+            start_index = full_response.find(start_marker)
+            end_index = full_response.find(end_marker)
+            if start_index != -1 and end_index != -1:
+                full_response = full_response[start_index + len(start_marker):end_index].strip()
+            
             return full_response
         except Exception as e:
             raise Exception(f"OpenAI API error: {str(e)}")
+
 
 
 class ClaudeAPI:
@@ -83,21 +110,48 @@ class ClaudeAPI:
             raise ValueError("ANTHROPIC_API_KEY environment variable is not set")
         self.client = Anthropic(api_key=self.api_key)
 
+    def count_tokens(self, text):
+        # Ollama doesn't provide a built-in token counter, so we'll use tiktoken as an approximation
+        return len(tiktoken.encoding_for_model("gpt-3.5-turbo").encode(text))
+
     def generate(self, prompt):
         try:
-            response = self.client.messages.create(
-                model=self.model,
-                messages=[{"role": "user", "content": prompt}],
-                stream=True,
-                max_tokens=1000,
-            )
             full_response = ""
-            for completion in response:
-                if completion.type == "content_block_delta":
-                    chunk_text = completion.delta.text
-                    full_response += chunk_text
-                    print(chunk_text, end="", flush=True)
+            max_iterations = 5  # Adjust this value as needed
+            continuation_prompt = prompt
+
+            for iteration in range(max_iterations):
+                response = self.client.messages.create(
+                    model=self.model,
+                    messages=[{"role": "user", "content": continuation_prompt}],
+                    stream=True,
+                    max_tokens=1000,
+                )
+
+                chunk_response = ""
+                for completion in response:
+                    if completion.type == "content_block_delta":
+                        chunk_text = completion.delta.text
+                        chunk_response += chunk_text
+                        print(chunk_text, end="", flush=True)
+
+                full_response += chunk_response
+
+                if "^^^end^^^" in chunk_response:
+                    break
+
+                continuation_prompt = f"Continue from where you left off. Previous response: {chunk_response}"
+
             print()  # Print a newline at the end
+
+            # Extract content between markers
+            start_marker = "^^^start^^^"
+            end_marker = "^^^end^^^"
+            start_index = full_response.find(start_marker)
+            end_index = full_response.find(end_marker)
+            if start_index != -1 and end_index != -1:
+                full_response = full_response[start_index + len(start_marker):end_index].strip()
+
             return full_response
         except Exception as e:
             raise Exception(f"Claude API error: {str(e)}")
@@ -119,6 +173,11 @@ class NemoAgent:
         self.pwd = os.getcwd() + "/" + self.project_name
         self.llm = self.setup_llm()
         self.previous_suggestions = set()
+        self.token_counts = {}
+
+    def count_tokens(self, text):
+        encoding = tiktoken.encoding_for_model("gpt-3.5-turbo")
+        return len(encoding.encode(text))
 
     def setup_llm(self):
         if self.provider == "ollama":
@@ -172,6 +231,14 @@ class NemoAgent:
         print(
             "Task completed. Please review the output and make any necessary manual adjustments."
         )
+        # At the end of the run_task method, print the token counts
+        print("\nToken counts for each prompt:")
+        for prompt, count in self.token_counts.items():
+            print(f"{prompt}...: {count} tokens")
+
+        # Calculate and print total token count
+        total_tokens = sum(self.token_counts.values())
+        print(f"\nTotal tokens used: {total_tokens}")
 
     def ensure_uv_installed(self):
         try:
@@ -303,7 +370,7 @@ class NemoAgent:
         prompt = f"""
             Create a comprehensive implementation for the task: {self.task}.
             You must follow these rules strictly:
-                1, IMPORTANT: Never use pass statements in your code or tests. Always provide a meaningful implementation.
+                1. IMPORTANT: Never use pass statements in your code or tests. Always provide a meaningful implementation.
                 2. CRITICAL: Use the following code block format for specifying file content:                
                     For code files, use:
                     <<<main.py>>>
@@ -332,6 +399,7 @@ class NemoAgent:
                 13. IMPORTANT: Always pytest parameterize tests for different cases.
                 14. CRITICAL: Always use `import main` to import the main.py file in the test file.
                 15. IMPORTANT: Only mock external services or APIs in tests.
+                16. IMPORTANT: Enclose your entire response between ^^^start^^^ and ^^^end^^^ markers.
             Working directory: {self.pwd}
             """
 
@@ -339,6 +407,14 @@ class NemoAgent:
             self.logger.info(f"Attempt {attempt + 1} to implement solution")
             solution = self.get_response(prompt)
             self.logger.info(f"Received solution:\n{solution}")
+
+            # Extract content between markers
+            start_marker = "^^^start^^^"
+            end_marker = "^^^end^^^"
+            start_index = solution.find(start_marker)
+            end_index = solution.find(end_marker)
+            if start_index != -1 and end_index != -1:
+                solution = solution[start_index + len(start_marker):end_index].strip()
 
             # Parse and execute any uv add commands
             uv_commands = [
@@ -392,11 +468,14 @@ class NemoAgent:
 
     def get_response(self, prompt):
         try:
-            return self.llm.generate(prompt)
+            response = self.llm.generate(prompt)
+            prompt_key = prompt[:50]  # Use first 50 characters as a key
+            self.token_counts[prompt_key] = self.llm.token_count
+            return response
         except Exception as e:
             self.logger.error(f"Error getting response from {self.provider}: {str(e)}")
             return ""
-
+        
     def code_check(self, file_path):
         try:
             # Run autopep8 to automatically fix style issues
@@ -498,6 +577,7 @@ class NemoAgent:
         8. IMPORTANT: Always pytest parameterize tests for different cases.
         9. CRITICAL: Always use `import main` to import the main.py file in the test file.
         10. IMPORTANT: Only mock external services or APIs in tests.
+        11. IMPORTANT: Enclose your entire response between ^^^start^^^ and ^^^end^^^ markers.
         Working directory: {self.pwd}
         """
         proposed_improvements = self.get_response(prompt)
@@ -522,6 +602,7 @@ class NemoAgent:
         If the implementation is correct or mostly correct, respond with 'VALID'.
         If the implementation is completely unrelated or fundamentally flawed, respond with 'INVALID'.
         Do not provide any additional information or explanations.
+        IMPORTANT: Enclose your entire response between ^^^start^^^ and ^^^end^^^ markers.
         """
         response = self.get_response(prompt)
 
@@ -567,6 +648,7 @@ class NemoAgent:
                 # File content here
                 <<<end>>>
         7. CRITICAL: Do not explain the task only implement the required functionality in the code blocks.
+        8. IMPORTANT: Enclose your entire response between ^^^start^^^ and ^^^end^^^ markers.
         Working directory: {self.pwd}
         """
         proposed_improvements = self.get_response(prompt)
