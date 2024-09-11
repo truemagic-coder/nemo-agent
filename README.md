@@ -33,7 +33,7 @@ https://github.com/user-attachments/assets/51cf6ad1-196c-44ab-99ba-0035365f1bbd
 * `flask` web apps
 * `streamlit` apps
 * `tkinter` apps
-* `jupiter notebooks`
+* `jupyter notebook`
 * Note: `OpenAI` > `Claude` > `mistral-nemo` for most coding projects
 * Note: Not all runs will be successful with all models
 
