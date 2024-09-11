@@ -16,6 +16,7 @@ https://github.com/user-attachments/assets/51cf6ad1-196c-44ab-99ba-0035365f1bbd
 * Writes Python code based on task descriptions
 * Executes development tasks using AI-generated commands
 * Utilizes the `mistral-nemo`, `OpenAI`, or `Claude` language models for intelligent code generation
+* Ability to import reference documents to guide the AI solution implementation
 * Implements best practices in Python development automatically
 * Writes and runs passing tests using `pytest` up to 80%+ test coverage 
 * Automatically fixes and styles code using `pylint` up to 7+/10
@@ -74,21 +75,21 @@ https://github.com/user-attachments/assets/51cf6ad1-196c-44ab-99ba-0035365f1bbd
 * `openai`: `nemo-agent --provider openai`
 * `claude`: `nemo-agent --provider claude`
 
+### Reference Documentation
+* Docs must be markdown (.md) or text files (.txt) and be located in a folder
+* `nemo-agent --docs example_folder`
+
 ### Prompting
 
-### CLI
+#### CLI
 * `nemo-agent "create a fizzbuzz script"`
 
-### OR
+#### OR
 
-### File Prompt
+#### File Prompt
 * Prompt file must be markdown (.md) or text files (.txt)
 * `nemo-agent --file example.md` or 
 * `nemo-agent --file example.txt`
-
-### Docs Directory Reference
-* Docs must be markdown (.md) or text files (.txt) and be located in a folder
-* `nemo-agent --docs example_folder`
 
 ## Model overrides
 
