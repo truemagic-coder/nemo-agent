@@ -33,7 +33,7 @@ https://github.com/user-attachments/assets/51cf6ad1-196c-44ab-99ba-0035365f1bbd
 * `flask` web apps (app works - tests pass)
 * `streamlit` apps (app works - tests fail)  
 * `tkinter` apps (app works - tests fail)
-* Note: `Claude` > `OpenAI` > `mistral-nemo` in coding success
+* Note: `Claude` > `OpenAI` > `mistral-nemo` for most coding projects
 * Note: Not all runs will be successful with all models
 
 ## Install 
@@ -91,12 +91,10 @@ https://github.com/user-attachments/assets/51cf6ad1-196c-44ab-99ba-0035365f1bbd
 * `nemo-agent --file example.md` or 
 * `nemo-agent --file example.txt`
 
-## Model overrides
-
-* You can pass the `--model` flag to override the default model for the provider.
-* The default model for `ollama` is `mistral-nemo`
-* The default model for `openai` is `gpt-4o-2024-08-06`
-* The default model for `claude` is `claude-3-5-sonnet-20240620`
+## Models 
+* `ollama` is `mistral-nemo`
+* `openai` is `gpt-4o-2024-08-06`
+* `claude` is `claude-3-5-sonnet-20240620`
 
 ## Contributing
 Contributions to Nemo Agent are welcome! Please feel free to submit a Pull Request.

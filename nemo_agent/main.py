@@ -24,6 +24,7 @@ class OllamaAPI:
         self.model = model
         self.base_url = "http://localhost:11434/api"
         self.token_count = 0
+        self.max_tokens = 128000  # Max tokens for Mistral-Nemo
 
     def count_tokens(self, text):
         return len(tiktoken.encoding_for_model("gpt-4o").encode(text))
@@ -31,6 +32,7 @@ class OllamaAPI:
     def generate(self, prompt):
         url = f"{self.base_url}/generate"
         full_response = ""
+        remaining_tokens = self.max_tokens - self.count_tokens(prompt)
         data = {"model": self.model, "prompt": prompt, "stream": True}
         response = requests.post(url, json=data, stream=True)
         if response.status_code == 200:
@@ -42,6 +44,9 @@ class OllamaAPI:
                         chunk = json_line.get("response", "")
                         full_response += chunk
                         print(chunk, end="", flush=True)
+                        remaining_tokens -= self.count_tokens(chunk)
+                        if remaining_tokens <= 0 or "^^^end^^^" in full_response:
+                            break
                     except json.JSONDecodeError:
                         print(f"Error decoding JSON: {decoded_line}")
         else:
@@ -55,9 +60,7 @@ class OllamaAPI:
         start_index = full_response.find(start_marker)
         end_index = full_response.find(end_marker)
         if start_index != -1 and end_index != -1:
-            full_response = full_response[
-                start_index + len(start_marker) : end_index
-            ].strip()
+            full_response = full_response[start_index + len(start_marker) : end_index].strip()
 
         self.token_count = self.count_tokens(full_response)
         print(f"Token count: {self.token_count}")
@@ -75,6 +78,7 @@ class OpenAIAPI:
             raise ValueError("OPENAI_API_KEY environment variable is not set")
         openai.api_key = self.api_key
         self.token_count = 0
+        self.max_tokens = 16384  # Max tokens for GPT-4
 
     def count_tokens(self, text):
         return len(tiktoken.encoding_for_model(self.model).encode(text))
@@ -82,29 +86,22 @@ class OpenAIAPI:
     def generate(self, prompt):
         try:
             full_response = ""
-            max_iterations = 5  # Adjust this value as needed
-            continuation_prompt = prompt
+            remaining_tokens = self.max_tokens - self.count_tokens(prompt)
+            response = openai.chat.completions.create(
+                model=self.model,
+                messages=[{"role": "user", "content": prompt}],
+                max_tokens=remaining_tokens,
+                stream=True,
+            )
 
-            for iteration in range(max_iterations):
-                response = openai.chat.completions.create(
-                    model=self.model,
-                    messages=[{"role": "user", "content": continuation_prompt}],
-                    stream=True,
-                )
-
-                chunk_response = ""
-                for chunk in response:
-                    if chunk.choices[0].delta.content:
-                        chunk_text = chunk.choices[0].delta.content
-                        chunk_response += chunk_text
-                        print(chunk_text, end="", flush=True)
-
-                full_response += chunk_response
-
-                if "^^^end^^^" in full_response:
-                    break
-
-                continuation_prompt = f"Continue from where you left off. Previous response: {chunk_response}."
+            for chunk in response:
+                if chunk.choices[0].delta.content:
+                    chunk_text = chunk.choices[0].delta.content
+                    full_response += chunk_text
+                    print(chunk_text, end="", flush=True)
+                    remaining_tokens -= self.count_tokens(chunk_text)
+                    if remaining_tokens <= 0 or "^^^end^^^" in full_response:
+                        break
 
             print()  # Print a newline at the end
 
@@ -114,9 +111,7 @@ class OpenAIAPI:
             start_index = full_response.find(start_marker)
             end_index = full_response.find(end_marker)
             if start_index != -1 and end_index != -1:
-                full_response = full_response[
-                    start_index + len(start_marker) : end_index
-                ].strip()
+                full_response = full_response[start_index + len(start_marker) : end_index].strip()
 
             self.token_count = self.count_tokens(full_response)
             print(f"Token count: {self.token_count}")
@@ -136,6 +131,7 @@ class ClaudeAPI:
             raise ValueError("ANTHROPIC_API_KEY environment variable is not set")
         self.client = Anthropic(api_key=self.api_key)
         self.token_count = 0
+        self.max_tokens = 8192  # Max tokens for Claude
 
     def count_tokens(self, text):
         return len(tiktoken.encoding_for_model("gpt-4o").encode(text))
@@ -143,30 +139,22 @@ class ClaudeAPI:
     def generate(self, prompt):
         try:
             full_response = ""
-            max_iterations = 5  # Adjust this value as needed
-            continuation_prompt = prompt
+            remaining_tokens = self.max_tokens - self.count_tokens(prompt)
+            response = self.client.messages.create(
+                model=self.model,
+                messages=[{"role": "user", "content": prompt}],
+                max_tokens=remaining_tokens,
+                stream=True,
+            )
 
-            for iteration in range(max_iterations):
-                response = self.client.messages.create(
-                    model=self.model,
-                    messages=[{"role": "user", "content": continuation_prompt}],
-                    stream=True,
-                    max_tokens=1000,
-                )
-
-                chunk_response = ""
-                for completion in response:
-                    if completion.type == "content_block_delta":
-                        chunk_text = completion.delta.text
-                        chunk_response += chunk_text
-                        print(chunk_text, end="", flush=True)
-
-                full_response += chunk_response
-
-                if "^^^end^^^" in full_response:
-                    break
-
-                continuation_prompt = f"Continue from where you left off. Previous response: {chunk_response}."
+            for completion in response:
+                if completion.type == "content_block_delta":
+                    chunk_text = completion.delta.text
+                    full_response += chunk_text
+                    print(chunk_text, end="", flush=True)
+                    remaining_tokens -= self.count_tokens(chunk_text)
+                    if remaining_tokens <= 0 or "^^^end^^^" in full_response:
+                        break
 
             print()  # Print a newline at the end
 
@@ -176,9 +164,7 @@ class ClaudeAPI:
             start_index = full_response.find(start_marker)
             end_index = full_response.find(end_marker)
             if start_index != -1 and end_index != -1:
-                full_response = full_response[
-                    start_index + len(start_marker) : end_index
-                ].strip()
+                full_response = full_response[start_index + len(start_marker) : end_index].strip()
 
             self.token_count = self.count_tokens(full_response)
             print(f"Token count: {self.token_count}")
@@ -206,6 +192,7 @@ class NemoAgent:
         self.previous_suggestions = set()
         self.token_counts = {}
         self.reference_material = ""
+        self.previous_prompt = ""
 
     def count_tokens(self, text):
         encoding = tiktoken.encoding_for_model("gpt-3.5-turbo")
@@ -511,9 +498,15 @@ class NemoAgent:
 
     def get_response(self, prompt):
         try:
-            response = self.llm.generate(prompt)
+            full_prompt = (
+                f"{self.previous_prompt}\n\n{prompt}"
+                if self.previous_prompt
+                else prompt
+            )
+            response = self.llm.generate(full_prompt)
             prompt_key = prompt[:50]  # Use first 50 characters as a key
             self.token_counts[prompt_key] = self.llm.token_count
+            self.previous_prompt = full_prompt
             return response
         except Exception as e:
             self.logger.error(f"Error getting response from {self.provider}: {str(e)}")
@@ -567,7 +560,7 @@ class NemoAgent:
             score_match = re.search(pattern, complexipy_output, re.DOTALL)
             print(score_match)
             print(complexipy_output)
-            complexipy_score = int(score_match.group(1)) if score_match else None
+            complexipy_score = int(score_match.group(1)) if score_match else 0
 
             print(f"Pylint score for {file_path}: {pylint_score}/10")
             print(f"Complexipy score for {file_path}: {complexipy_score}")
@@ -596,9 +589,6 @@ class NemoAgent:
 
     def improve_test_file(self, test_output):
         prompt = f"""
-        The current test file needs minor improvements. Please analyze the test output and suggest small, specific changes to fix any issues in the test file.
-        Do not modify the main implementation file, only suggest minimal improvements to the tests but write out the full test file content.
-
         Test output:
         {test_output}
 
@@ -687,8 +677,7 @@ class NemoAgent:
         Review the proposed improvements: {proposed_improvements} and confirm if it correctly addresses the original task: {self.task}
         If the implementation is correct or mostly correct, respond with 'VALID'.
         If the implementation is completely unrelated or fundamentally flawed, respond with 'INVALID'.
-        Do not provide any additional information or explanations.
-        IMPORTANT: Enclose your entire response between ^^^start^^^ and ^^^end^^^ markers.
+        Do not provide any additional information or explanations beyond 'VALID' or 'INVALID'.
         """
         response = self.get_response(prompt)
 
