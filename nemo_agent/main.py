@@ -432,14 +432,11 @@ class NemoAgent:
                     ***uv_end***
                 3. IMPORTANT: Do not add any code comments to the files.
                 4. IMPORTANT: Always follow PEP8 style guide, follow best practices for Python, use snake_case naming, and provide meaningful docstrings.
-                5. IMPORTANT: Do not redefine built-in functions or use reserved keywords as variable names.
-                6. CRITICAL: Your response should ONLY contain the code blocks and the pip dependencies required for both the test and code files. Do not include any additional information.
-                7. CRITICAL: Only create 1 file for the python code: main.py
-                8. CRITICAL: Only create 1 file for the python tests: tests/test_main.py
-                9. CRITICAL: Create a main method to run the app in main.py and if a web app run the app on port 8080.
-                10. CRITICAL: Always use `import main` to import the main.py file in the test file.
-                11. CRITICAL: Enclose your entire response between ^^^start^^^ and ^^^end^^^ markers.
-                12. IMPORTANT: Use the reference material provided to guide your implementation including the required dependencies.
+                5. CRITICAL: Your response should ONLY contain the code blocks and the pip dependencies required for both the test and code files. Do not include any additional information.
+                6. CRITICAL: Create a main method to run the app in main.py and if a web app run the app on port 8080.
+
+                7. CRITICAL: Enclose your entire response between ^^^start^^^ and ^^^end^^^ markers.
+                8. IMPORTANT: Use the reference material provided to guide your implementation including the required dependencies.
             Working directory: {self.pwd}
             Reference material: {self.reference_material}
             """
@@ -593,10 +590,8 @@ class NemoAgent:
 
         Provide specific, minimal code changes to improve the test file, addressing only the failing tests or obvious issues.
         Follow these rules strictly:
-        1. CRITICAL: Only suggest changes to the test file (tests/test_main.py)
-        2. Do not change the code file in main.py
-        3. Focus on fixing failing tests or obvious errors in the test file
-        4. CRITICAL: Use the following code block format for specifying file content:
+        1. CRITICAL: Only suggest changes to the test file.
+        2. CRITICAL: Use the following code block format for specifying file content:
             For test files, use:
             <<<tests/test_main.py>>>
             # Test file content here
@@ -606,10 +601,8 @@ class NemoAgent:
             ***uv_start***
             package_name, package_name, package_name
             ***uv_end***
-        5. CRITICAL: Do not explain the task only implement the required functionality in the code blocks.
-        6. CRITICAL: Always use `import main` to import the main.py file in the test file.
-        7. CRITICAL: Enclose your entire response between ^^^start^^^ and ^^^end^^^ markers.
-        8. CRITICAL: Your response should ONLY contain the code blocks and the pip dependencies required for both the test and code files. Do not include any additional information.
+        3. CRITICAL: Enclose your entire response between ^^^start^^^ and ^^^end^^^ markers.
+        4. CRITICAL: Your response should ONLY contain the code blocks and the pip dependencies required for both the test and code files. Do not include any additional information.
         Working directory: {self.pwd}
         """
         proposed_improvements = self.get_response(prompt)
