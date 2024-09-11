@@ -475,7 +475,6 @@ class NemoAgent:
         for attempt in range(max_attempts):
             self.logger.info(f"Attempt {attempt + 1} to implement solution")
             solution = self.get_response(prompt)
-            self.logger.info(f"Received solution:\n{solution}")
 
             # Extract content between markers
             start_marker = "^^^start^^^"
