@@ -22,10 +22,11 @@ class OllamaAPI:
     def __init__(self, model):
         self.model = model
         self.base_url = "http://localhost:11434/api"
+        self.token_count = 0
 
     def count_tokens(self, text):
         # Ollama doesn't provide a built-in token counter, so we'll use tiktoken as an approximation
-        return len(tiktoken.encoding_for_model("gpt-3.5-turbo").encode(text))
+        return len(tiktoken.encoding_for_model("gpt-4o").encode(text))
     
     def generate(self, prompt):
         url = f"{self.base_url}/generate"
@@ -53,6 +54,9 @@ class OllamaAPI:
             if start_index != -1 and end_index != -1:
                 full_response = full_response[start_index + len(start_marker):end_index].strip()
             
+            self.token_count = self.count_tokens(full_response)
+            print(f"Token count: {self.token_count}")
+
             return full_response
         else:
             raise Exception(f"Ollama API error: {response.text}")
@@ -67,6 +71,7 @@ class OpenAIAPI:
         if not self.api_key:
             raise ValueError("OPENAI_API_KEY environment variable is not set")
         openai.api_key = self.api_key
+        self.token_count = 0
 
     def count_tokens(self, text):
         return len(tiktoken.encoding_for_model(self.model).encode(text))
@@ -94,6 +99,9 @@ class OpenAIAPI:
             if start_index != -1 and end_index != -1:
                 full_response = full_response[start_index + len(start_marker):end_index].strip()
             
+            self.token_count = self.count_tokens(full_response)
+            print(f"Token count: {self.token_count}")
+
             return full_response
         except Exception as e:
             raise Exception(f"OpenAI API error: {str(e)}")
@@ -109,10 +117,11 @@ class ClaudeAPI:
         if not self.api_key:
             raise ValueError("ANTHROPIC_API_KEY environment variable is not set")
         self.client = Anthropic(api_key=self.api_key)
+        self.token_count = 0
 
     def count_tokens(self, text):
         # Ollama doesn't provide a built-in token counter, so we'll use tiktoken as an approximation
-        return len(tiktoken.encoding_for_model("gpt-3.5-turbo").encode(text))
+        return len(tiktoken.encoding_for_model("gpt-4o").encode(text))
 
     def generate(self, prompt):
         try:
@@ -151,6 +160,9 @@ class ClaudeAPI:
             end_index = full_response.find(end_marker)
             if start_index != -1 and end_index != -1:
                 full_response = full_response[start_index + len(start_marker):end_index].strip()
+
+            self.token_count = self.count_tokens(full_response)
+            print(f"Token count: {self.token_count}")
 
             return full_response
         except Exception as e:
@@ -228,17 +240,12 @@ class NemoAgent:
                 break
             test_check_attempts += 1
 
+        total_tokens = sum(self.token_counts.values())
+        print(f"\nTotal tokens used: {total_tokens}")
+
         print(
             "Task completed. Please review the output and make any necessary manual adjustments."
         )
-        # At the end of the run_task method, print the token counts
-        print("\nToken counts for each prompt:")
-        for prompt, count in self.token_counts.items():
-            print(f"{prompt}...: {count} tokens")
-
-        # Calculate and print total token count
-        total_tokens = sum(self.token_counts.values())
-        print(f"\nTotal tokens used: {total_tokens}")
 
     def ensure_uv_installed(self):
         try:
