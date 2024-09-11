@@ -27,39 +27,54 @@ class OllamaAPI:
 
     def count_tokens(self, text):
         return len(tiktoken.encoding_for_model("gpt-4o").encode(text))
-    
+
     def generate(self, prompt):
         url = f"{self.base_url}/generate"
-        data = {"model": self.model, "prompt": prompt, "stream": True}
-        response = requests.post(url, json=data, stream=True)
-        if response.status_code == 200:
-            full_response = ""
-            for line in response.iter_lines():
-                if line:
-                    decoded_line = line.decode("utf-8")
-                    try:
-                        json_line = json.loads(decoded_line)
-                        chunk = json_line.get("response", "")
-                        full_response += chunk
-                        print(chunk, end="", flush=True)
-                    except json.JSONDecodeError:
-                        print(f"Error decoding JSON: {decoded_line}")
-            print()  # Print a newline at the end
-            
-            # Extract content between markers
-            start_marker = "^^^start^^^"
-            end_marker = "^^^end^^^"
-            start_index = full_response.find(start_marker)
-            end_index = full_response.find(end_marker)
-            if start_index != -1 and end_index != -1:
-                full_response = full_response[start_index + len(start_marker):end_index].strip()
-            
-            self.token_count = self.count_tokens(full_response)
-            print(f"Token count: {self.token_count}")
+        full_response = ""
+        max_iterations = 5  # Adjust this value as needed
+        continuation_prompt = prompt
 
-            return full_response
-        else:
-            raise Exception(f"Ollama API error: {response.text}")
+        for iteration in range(max_iterations):
+            data = {"model": self.model, "prompt": continuation_prompt, "stream": True}
+            response = requests.post(url, json=data, stream=True)
+            if response.status_code == 200:
+                chunk_response = ""
+                for line in response.iter_lines():
+                    if line:
+                        decoded_line = line.decode("utf-8")
+                        try:
+                            json_line = json.loads(decoded_line)
+                            chunk = json_line.get("response", "")
+                            chunk_response += chunk
+                            print(chunk, end="", flush=True)
+                        except json.JSONDecodeError:
+                            print(f"Error decoding JSON: {decoded_line}")
+
+                full_response += chunk_response
+
+                if "^^^end^^^" in full_response:
+                    break
+
+                continuation_prompt = f"Continue from where you left off. Previous response: {chunk_response}."
+            else:
+                raise Exception(f"Ollama API error: {response.text}")
+
+        print()  # Print a newline at the end
+
+        # Extract content between markers
+        start_marker = "^^^start^^^"
+        end_marker = "^^^end^^^"
+        start_index = full_response.find(start_marker)
+        end_index = full_response.find(end_marker)
+        if start_index != -1 and end_index != -1:
+            full_response = full_response[
+                start_index + len(start_marker) : end_index
+            ].strip()
+
+        self.token_count = self.count_tokens(full_response)
+        print(f"Token count: {self.token_count}")
+
+        return full_response
 
 
 class OpenAIAPI:
@@ -78,34 +93,49 @@ class OpenAIAPI:
 
     def generate(self, prompt):
         try:
-            response = openai.chat.completions.create(
-                model=self.model,
-                messages=[{"role": "user", "content": prompt}],
-                stream=True,
-            )
             full_response = ""
-            for chunk in response:
-                if chunk.choices[0].delta.content:
-                    chunk_text = chunk.choices[0].delta.content
-                    full_response += chunk_text
-                    print(chunk_text, end="", flush=True)
+            max_iterations = 5  # Adjust this value as needed
+            continuation_prompt = prompt
+
+            for iteration in range(max_iterations):
+                response = openai.chat.completions.create(
+                    model=self.model,
+                    messages=[{"role": "user", "content": continuation_prompt}],
+                    stream=True,
+                )
+
+                chunk_response = ""
+                for chunk in response:
+                    if chunk.choices[0].delta.content:
+                        chunk_text = chunk.choices[0].delta.content
+                        chunk_response += chunk_text
+                        print(chunk_text, end="", flush=True)
+
+                full_response += chunk_response
+
+                if "^^^end^^^" in full_response:
+                    break
+
+                continuation_prompt = f"Continue from where you left off. Previous response: {chunk_response}."
+
             print()  # Print a newline at the end
-            
+
             # Extract content between markers
             start_marker = "^^^start^^^"
             end_marker = "^^^end^^^"
             start_index = full_response.find(start_marker)
             end_index = full_response.find(end_marker)
             if start_index != -1 and end_index != -1:
-                full_response = full_response[start_index + len(start_marker):end_index].strip()
-            
+                full_response = full_response[
+                    start_index + len(start_marker) : end_index
+                ].strip()
+
             self.token_count = self.count_tokens(full_response)
             print(f"Token count: {self.token_count}")
 
             return full_response
         except Exception as e:
             raise Exception(f"OpenAI API error: {str(e)}")
-
 
 
 class ClaudeAPI:
@@ -145,10 +175,10 @@ class ClaudeAPI:
 
                 full_response += chunk_response
 
-                if "^^^end^^^" in chunk_response:
+                if "^^^end^^^" in full_response:
                     break
 
-                continuation_prompt = f"Continue from where you left off. Previous response: {chunk_response}"
+                continuation_prompt = f"Continue from where you left off. Previous response: {chunk_response}."
 
             print()  # Print a newline at the end
 
@@ -158,7 +188,9 @@ class ClaudeAPI:
             start_index = full_response.find(start_marker)
             end_index = full_response.find(end_marker)
             if start_index != -1 and end_index != -1:
-                full_response = full_response[start_index + len(start_marker):end_index].strip()
+                full_response = full_response[
+                    start_index + len(start_marker) : end_index
+                ].strip()
 
             self.token_count = self.count_tokens(full_response)
             print(f"Token count: {self.token_count}")
@@ -215,11 +247,13 @@ class NemoAgent:
 
     def ingest_docs(self, docs_path):
         docs_content = ""
-        for ext in ('*.txt', '*.md'):
-            for file_path in glob.glob(os.path.join(docs_path, '**', ext), recursive=True):
-                with open(file_path, 'r') as f:
+        for ext in ("*.txt", "*.md"):
+            for file_path in glob.glob(
+                os.path.join(docs_path, "**", ext), recursive=True
+            ):
+                with open(file_path, "r") as f:
                     docs_content += f.read() + "\n\n"
-        
+
         if docs_content:
             self.reference_material = docs_content
             print(f"Documentation from {docs_path} has been ingested.")
@@ -232,17 +266,27 @@ class NemoAgent:
         self.create_project_with_uv()
         self.implement_solution()
 
-        pylint_score, complexipy_score, pylint_output, complexipy_output = self.code_check("main.py")
+        pylint_score, complexipy_score, pylint_output, complexipy_output = (
+            self.code_check("main.py")
+        )
 
         code_check_attempts = 1
         while code_check_attempts < self.MAX_IMPROVEMENT_ATTEMPTS:
             if pylint_score < 7 and complexipy_score > 15:
-                self.improve_code("main.py", pylint_score, complexipy_score, pylint_output, complexipy_output)
-                pylint_score, complexipy_score, pylint_output, complexipy_output = self.code_check("main.py")
+                self.improve_code(
+                    "main.py",
+                    pylint_score,
+                    complexipy_score,
+                    pylint_output,
+                    complexipy_output,
+                )
+                pylint_score, complexipy_score, pylint_output, complexipy_output = (
+                    self.code_check("main.py")
+                )
             else:
                 break
             code_check_attempts += 1
-        
+
         test_check_attempts = 1
         while test_check_attempts < self.MAX_IMPROVEMENT_ATTEMPTS:
             tests_passed, coverage, test_output = self.run_tests()
@@ -300,20 +344,20 @@ class NemoAgent:
                     check=True,
                     cwd=self.pwd,
                 )
-                print(
-                    "Added dev dependencies with latest versions."
-                )
+                print("Added dev dependencies with latest versions.")
             except subprocess.CalledProcessError as e:
                 print(f"Error adding development dependencies: {e}")
-        
+
             try:
                 # Create the __init__.py file in the tests directory
                 tests_dir = os.path.join(self.pwd, "tests")
                 os.makedirs(tests_dir)
                 os.remove(f"{self.pwd}/hello.py")
-                init_file_path = os.path.join(tests_dir, '__init__.py')
-                with open(init_file_path, 'w') as f:
-                    f.write("# This file is required to make Python treat the directories as containing packages.\n")
+                init_file_path = os.path.join(tests_dir, "__init__.py")
+                with open(init_file_path, "w") as f:
+                    f.write(
+                        "# This file is required to make Python treat the directories as containing packages.\n"
+                    )
 
             except Exception as e:
                 print(f"Error creating tests/__init__.py: {str(e)}")
@@ -422,7 +466,7 @@ class NemoAgent:
                 11. IMPORTANT: Always pytest parameterize tests for different cases.
                 12. CRITICAL: Always use `import main` to import the main.py file in the test file.
                 13. IMPORTANT: Only mock external services or APIs in tests.
-                14. IMPORTANT: Enclose your entire response between ^^^start^^^ and ^^^end^^^ markers.
+                14. CRITICAL: Enclose your entire response between ^^^start^^^ and ^^^end^^^ markers.
                 15. IMPORTANT: Use the reference material provided to guide your implementation including the required dependencies.
             Working directory: {self.pwd}
             Reference material: {self.reference_material}
@@ -439,7 +483,7 @@ class NemoAgent:
             start_index = solution.find(start_marker)
             end_index = solution.find(end_marker)
             if start_index != -1 and end_index != -1:
-                solution = solution[start_index + len(start_marker):end_index].strip()
+                solution = solution[start_index + len(start_marker) : end_index].strip()
 
             self.install_dependencies(solution)
 
@@ -487,7 +531,7 @@ class NemoAgent:
         except Exception as e:
             self.logger.error(f"Error getting response from {self.provider}: {str(e)}")
             return ""
-        
+
     def code_check(self, file_path):
         try:
             # Run autopep8 to automatically fix style issues
@@ -594,7 +638,7 @@ class NemoAgent:
         8. IMPORTANT: Always pytest parameterize tests for different cases.
         9. CRITICAL: Always use `import main` to import the main.py file in the test file.
         10. IMPORTANT: Only mock external services or APIs in tests.
-        11. IMPORTANT: Enclose your entire response between ^^^start^^^ and ^^^end^^^ markers.
+        11. CRITICAL: Enclose your entire response between ^^^start^^^ and ^^^end^^^ markers.
         12. CRITICAL: Your response should ONLY contain the code blocks and the pip dependencies required for both the test and code files. Do not include any additional information.
         Working directory: {self.pwd}
         """
@@ -629,22 +673,26 @@ class NemoAgent:
         """
         pip_start = content.find("***start***")
         pip_end = content.find("***end***")
-        
+
         if pip_start != -1 and pip_end != -1:
-            pip_packages = content[pip_start + len("***start***"):pip_end].strip().split(",")
+            pip_packages = (
+                content[pip_start + len("***start***") : pip_end].strip().split(",")
+            )
             pip_packages = [pkg.strip() for pkg in pip_packages if pkg.strip()]
-            
+
             if pip_packages:
                 try:
                     command = ["uv", "add"] + pip_packages
                     subprocess.run(command, check=True, cwd=self.pwd)
-                    self.logger.info(f"Executed command: uv add {' '.join(pip_packages)}")
+                    self.logger.info(
+                        f"Executed command: uv add {' '.join(pip_packages)}"
+                    )
                     return True
                 except subprocess.CalledProcessError as e:
                     self.logger.error(
                         f"Failed to execute command: uv add {' '.join(pip_packages)}. Error: {str(e)}"
                     )
-        
+
         return False
 
     def validate_implementation(self, proposed_improvements):
@@ -783,7 +831,7 @@ class NemoAgent:
                     "--cov=" + self.pwd,
                     "--cov-config=.coveragerc",
                     "--cov-report=term-missing",
-                    "-vv"
+                    "-vv",
                 ],
                 capture_output=True,
                 text=True,
@@ -835,7 +883,11 @@ class NemoAgent:
 
 @click.command()
 @click.argument("task", required=False)
-@click.option("--file", type=click.Path(exists=True), help="Path to a markdown file containing the task")
+@click.option(
+    "--file",
+    type=click.Path(exists=True),
+    help="Path to a markdown file containing the task",
+)
 @click.option("--model", default="mistral-nemo", help="The model to use for the LLM")
 @click.option(
     "--provider",
@@ -847,7 +899,9 @@ class NemoAgent:
     "--zip", type=click.Path(), help="Path to save the zip file of the agent run"
 )
 @click.option(
-    "--docs", type=click.Path(exists=True), help="Path to the docs folder containing reference material"
+    "--docs",
+    type=click.Path(exists=True),
+    help="Path to the docs folder containing reference material",
 )
 def cli(
     task: str = None,
@@ -873,19 +927,21 @@ def cli(
     # Read task from file if provided
     if file:
         file_extension = os.path.splitext(file)[1].lower()
-        if file_extension not in ['.md', '.txt']:
-            raise ValueError("The task file must be either a markdown (.md) or text (.txt) file.")
-        with open(file, 'r') as f:
+        if file_extension not in [".md", ".txt"]:
+            raise ValueError(
+                "The task file must be either a markdown (.md) or text (.txt) file."
+            )
+        with open(file, "r") as f:
             task = f.read().strip()
     elif not task:
         task = click.prompt("Please enter your task")
 
     nemo_agent = NemoAgent(task=task, model=model, provider=provider)
-    
+
     # Ingest docs if provided
     if docs:
         nemo_agent.ingest_docs(docs)
-    
+
     nemo_agent.run_task()
 
     project_dir = nemo_agent.pwd
@@ -908,6 +964,7 @@ def cli(
         print(f"Project directory {project_dir} has been deleted.")
     else:
         print(f"Task completed. Project files are in: {nemo_agent.pwd}")
+
 
 if __name__ == "__main__":
     cli()
