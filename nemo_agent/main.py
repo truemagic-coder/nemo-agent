@@ -411,7 +411,7 @@ class NemoAgent:
             You must follow these rules strictly:
                 1. IMPORTANT: Never use pass statements in your code or tests. Always provide a meaningful implementation.
                 2. CRITICAL: Use the following code block format for specifying file content:                
-                    For code files, use:
+                    For code or notebook files, use:
                     <<<main.py>>>
                     # File content here
                     <<<end>>>

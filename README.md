@@ -28,12 +28,13 @@ https://github.com/user-attachments/assets/51cf6ad1-196c-44ab-99ba-0035365f1bbd
 * Join our community - [Nemo Agent Telegram Group](https://t.me/+f-6nu2mUpgtiOGUx)
 
 ## Coding Ability
-* `leetcode` hards (app works - tests pass)
-* `fastapi` or `flask` APIs (app works - tests pass)
-* `flask` web apps (app works - tests pass)
-* `streamlit` apps (app works - tests fail)  
-* `tkinter` apps (app works - tests fail)
-* Note: `Claude` > `OpenAI` > `mistral-nemo` for most coding projects
+* `leetcode` hards
+* `fastapi` or `flask` APIs
+* `flask` web apps
+* `streamlit` apps
+* `tkinter` apps
+* `jupiter notebooks`
+* Note: `OpenAI` > `Claude` > `mistral-nemo` for most coding projects
 * Note: Not all runs will be successful with all models
 
 ## Install 
