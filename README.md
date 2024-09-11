@@ -95,7 +95,7 @@ https://github.com/user-attachments/assets/51cf6ad1-196c-44ab-99ba-0035365f1bbd
 ### Run Generated Program
 * `cd generated_project_folder`
 * `source .venv/bin/activate`
-* `uv run main.py`
+* `python main.py`
 
 ## Models 
 * `ollama` is `mistral-nemo`
