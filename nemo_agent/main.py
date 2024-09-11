@@ -2,6 +2,7 @@ import ast
 from contextlib import contextmanager
 from datetime import time
 import fcntl
+import glob
 import json
 import logging
 import os
@@ -25,7 +26,6 @@ class OllamaAPI:
         self.token_count = 0
 
     def count_tokens(self, text):
-        # Ollama doesn't provide a built-in token counter, so we'll use tiktoken as an approximation
         return len(tiktoken.encoding_for_model("gpt-4o").encode(text))
     
     def generate(self, prompt):
@@ -120,7 +120,6 @@ class ClaudeAPI:
         self.token_count = 0
 
     def count_tokens(self, text):
-        # Ollama doesn't provide a built-in token counter, so we'll use tiktoken as an approximation
         return len(tiktoken.encoding_for_model("gpt-4o").encode(text))
 
     def generate(self, prompt):
@@ -186,6 +185,7 @@ class NemoAgent:
         self.llm = self.setup_llm()
         self.previous_suggestions = set()
         self.token_counts = {}
+        self.reference_material = ""
 
     def count_tokens(self, text):
         encoding = tiktoken.encoding_for_model("gpt-3.5-turbo")
@@ -212,6 +212,19 @@ class NemoAgent:
         project_name = f"project_{random_number}"
 
         return project_name
+
+    def ingest_docs(self, docs_path):
+        docs_content = ""
+        for ext in ('*.txt', '*.md'):
+            for file_path in glob.glob(os.path.join(docs_path, '**', ext), recursive=True):
+                with open(file_path, 'r') as f:
+                    docs_content += f.read() + "\n\n"
+        
+        if docs_content:
+            self.reference_material = docs_content
+            print(f"Documentation from {docs_path} has been ingested.")
+        else:
+            print(f"No documentation files found in {docs_path}.")
 
     def run_task(self):
         print(f"Current working directory: {os.getcwd()}")
@@ -393,21 +406,26 @@ class NemoAgent:
                     <<<templates/template_name.html>>>
                     <!-- HTML content here -->
                     <<<end>>>
+
+                    For pip dependencies, use:
+                    ***start***
+                    package_name, package_name, package_name
+                    ***end***
                 3. IMPORTANT: Do not add any code comments to the files.
                 4. IMPORTANT: Always follow PEP8 style guide, follow best practices for Python, use snake_case naming, and provide meaningful docstrings.
                 5. IMPORTANT: Do not redefine built-in functions or use reserved keywords as variable names.
-                6. CRITICAL: Create any non-existent directories or files as needed that are not Python files.
-                7. CRITICAL: Your response should ONLY contain the code blocks and `uv add package_names` command at the end after all the code blocks. Do not include any explanations or additional text.
-                8. IMPORTANT: Do not modify the existing uv dependencies. Only add new ones if necessary.
-                9. CRITICAL: Only create 1 file for the python code: main.py
-                10. CRITICAL: Only create 1 file for the python tests: tests/test_main.py
-                11. CRITICAL: Create a main method to run the app in main.py and if a web app run the app on port 8080.
-                12. IMPORTANT: Only use pytest fixtures for Flask and FastAPI servers.
-                13. IMPORTANT: Always pytest parameterize tests for different cases.
-                14. CRITICAL: Always use `import main` to import the main.py file in the test file.
-                15. IMPORTANT: Only mock external services or APIs in tests.
-                16. IMPORTANT: Enclose your entire response between ^^^start^^^ and ^^^end^^^ markers.
+                6. CRITICAL: Your response should ONLY contain the code blocks and the pip dependencies required for both the test and code files. Do not include any additional information.
+                7. CRITICAL: Only create 1 file for the python code: main.py
+                8. CRITICAL: Only create 1 file for the python tests: tests/test_main.py
+                9. CRITICAL: Create a main method to run the app in main.py and if a web app run the app on port 8080.
+                10. IMPORTANT: Only use pytest fixtures for Flask and FastAPI servers.
+                11. IMPORTANT: Always pytest parameterize tests for different cases.
+                12. CRITICAL: Always use `import main` to import the main.py file in the test file.
+                13. IMPORTANT: Only mock external services or APIs in tests.
+                14. IMPORTANT: Enclose your entire response between ^^^start^^^ and ^^^end^^^ markers.
+                15. IMPORTANT: Use the reference material provided to guide your implementation including the required dependencies.
             Working directory: {self.pwd}
+            Reference material: {self.reference_material}
             """
 
         for attempt in range(max_attempts):
@@ -423,20 +441,7 @@ class NemoAgent:
             if start_index != -1 and end_index != -1:
                 solution = solution[start_index + len(start_marker):end_index].strip()
 
-            # Parse and execute any uv add commands
-            uv_commands = [
-                line.strip()
-                for line in solution.split("\n")
-                if line.strip().strip('.').startswith("uv add")
-            ]
-            for command in uv_commands:
-                try:
-                    subprocess.run(command, shell=True, check=True, cwd=self.pwd)
-                    self.logger.info(f"Executed command: {command}")
-                except subprocess.CalledProcessError as e:
-                    self.logger.error(
-                        f"Failed to execute command: {command}. Error: {str(e)}"
-                    )
+            self.install_dependencies(solution)
 
             success = self.process_file_changes(solution)
 
@@ -579,18 +584,27 @@ class NemoAgent:
             <<<tests/test_main.py>>>
             # Test file content here
             <<<end>>>
+            
+            For pip dependencies, use:
+            ***start***
+            package_name, package_name, package_name
+            ***end***
         6. CRITICAL: Do not explain the task only implement the required functionality in the code blocks.
         7. IMPORTANT: Only use pytest fixtures for Flask and FastAPI servers.
         8. IMPORTANT: Always pytest parameterize tests for different cases.
         9. CRITICAL: Always use `import main` to import the main.py file in the test file.
         10. IMPORTANT: Only mock external services or APIs in tests.
         11. IMPORTANT: Enclose your entire response between ^^^start^^^ and ^^^end^^^ markers.
+        12. CRITICAL: Your response should ONLY contain the code blocks and the pip dependencies required for both the test and code files. Do not include any additional information.
         Working directory: {self.pwd}
         """
         proposed_improvements = self.get_response(prompt)
 
         if self.validate_implementation(proposed_improvements):
             print("Executing validated test improvements:")
+
+            self.install_dependencies(proposed_improvements)
+
             success = self.process_file_changes(proposed_improvements)
             if success:
                 print(
@@ -602,6 +616,36 @@ class NemoAgent:
             print(
                 "Proposed test improvements do not align with the original task. No changes were made."
             )
+
+    def install_dependencies(self, content):
+        """
+        Parse the content for pip packages and install them using uv.
+
+        Args:
+        content (str): The string content containing the pip packages block.
+
+        Returns:
+        bool: True if packages were found and installation was attempted, False otherwise.
+        """
+        pip_start = content.find("***start***")
+        pip_end = content.find("***end***")
+        
+        if pip_start != -1 and pip_end != -1:
+            pip_packages = content[pip_start + len("***start***"):pip_end].strip().split(",")
+            pip_packages = [pkg.strip() for pkg in pip_packages if pkg.strip()]
+            
+            if pip_packages:
+                try:
+                    command = ["uv", "add"] + pip_packages
+                    subprocess.run(command, check=True, cwd=self.pwd)
+                    self.logger.info(f"Executed command: uv add {' '.join(pip_packages)}")
+                    return True
+                except subprocess.CalledProcessError as e:
+                    self.logger.error(
+                        f"Failed to execute command: uv add {' '.join(pip_packages)}. Error: {str(e)}"
+                    )
+        
+        return False
 
     def validate_implementation(self, proposed_improvements):
         prompt = f"""
@@ -791,7 +835,7 @@ class NemoAgent:
 
 @click.command()
 @click.argument("task", required=False)
-@click.option( "--file", type=click.Path(exists=True), help="Path to a markdown file containing the task")
+@click.option("--file", type=click.Path(exists=True), help="Path to a markdown file containing the task")
 @click.option("--model", default="mistral-nemo", help="The model to use for the LLM")
 @click.option(
     "--provider",
@@ -802,12 +846,16 @@ class NemoAgent:
 @click.option(
     "--zip", type=click.Path(), help="Path to save the zip file of the agent run"
 )
+@click.option(
+    "--docs", type=click.Path(exists=True), help="Path to the docs folder containing reference material"
+)
 def cli(
     task: str = None,
     file: str = None,
     model: str = "mistral-nemo",
     provider: str = "ollama",
     zip: str = None,
+    docs: str = None,
 ):
     """
     Run Nemo Agent tasks to create Python projects using uv and pytest.
@@ -824,12 +872,20 @@ def cli(
 
     # Read task from file if provided
     if file:
+        file_extension = os.path.splitext(file)[1].lower()
+        if file_extension not in ['.md', '.txt']:
+            raise ValueError("The task file must be either a markdown (.md) or text (.txt) file.")
         with open(file, 'r') as f:
             task = f.read().strip()
     elif not task:
         task = click.prompt("Please enter your task")
 
     nemo_agent = NemoAgent(task=task, model=model, provider=provider)
+    
+    # Ingest docs if provided
+    if docs:
+        nemo_agent.ingest_docs(docs)
+    
     nemo_agent.run_task()
 
     project_dir = nemo_agent.pwd
@@ -852,7 +908,6 @@ def cli(
         print(f"Project directory {project_dir} has been deleted.")
     else:
         print(f"Task completed. Project files are in: {nemo_agent.pwd}")
-
 
 if __name__ == "__main__":
     cli()

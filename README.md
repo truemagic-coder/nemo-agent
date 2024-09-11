@@ -32,8 +32,8 @@ https://github.com/user-attachments/assets/51cf6ad1-196c-44ab-99ba-0035365f1bbd
 * `flask` web apps (app works - tests pass)
 * `streamlit` apps (app works - tests fail)  
 * `tkinter` apps (app works - tests fail)
-* Note: `OpenAI` or `Claude` succeed more often the `mistral-nemo` in their runs
-* Note: Not all runs will be successful
+* Note: `Claude` > `OpenAI` > `mistral-nemo` in coding success
+* Note: Not all runs will be successful with all models
 
 ## Install 
 
@@ -69,15 +69,26 @@ https://github.com/user-attachments/assets/51cf6ad1-196c-44ab-99ba-0035365f1bbd
 
 ## Usage
 
-### Prompt
-* `mistral-nemo`: `nemo-agent "create a fizzbuzz script"`
-* `openai`: `nemo-agent "create a fizzbuzz script" --provider openai`
-* `claude`: `nemo-agent "create a fizzbuzz script" --provider claude`
+### Providers
+* `mistral-nemo`: `nemo-agent`
+* `openai`: `nemo-agent --provider openai`
+* `claude`: `nemo-agent --provider claude`
 
-### Markdown File
-* `mistral-nemo`: `nemo-agent --file example.md`
-* `openai`: `nemo-agent --file example.md --provider openai`
-* `claude`: `nemo-agent --file example.md --provider claude`
+### Prompting
+
+### CLI
+* `nemo-agent "create a fizzbuzz script"`
+
+### OR
+
+### File Prompt
+* Prompt file must be markdown (.md) or text files (.txt)
+* `nemo-agent --file example.md` or 
+* `nemo-agent --file example.txt`
+
+### Docs Directory Reference
+* Docs must be markdown (.md) or text files (.txt) and be located in a folder
+* `nemo-agent --docs example_folder`
 
 ## Model overrides
 
