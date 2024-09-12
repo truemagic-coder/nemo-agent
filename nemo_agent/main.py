@@ -81,7 +81,7 @@ class OpenAIAPI:
         self.max_tokens = 16384  # Max tokens for GPT-4
 
     def count_tokens(self, text):
-        return len(tiktoken.encoding_for_model(self.model).encode(text))
+        return len(tiktoken.encoding_for_model("gpt-4o").encode(text))
 
     def generate(self, prompt):
         try:
