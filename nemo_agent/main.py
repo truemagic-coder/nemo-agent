@@ -67,7 +67,6 @@ class OllamaAPI:
 
         return full_response
 
-
 class OpenAIAPI:
     def __init__(self, model):
         if model == "mistral-nemo":
@@ -78,7 +77,8 @@ class OpenAIAPI:
             raise ValueError("OPENAI_API_KEY environment variable is not set")
         openai.api_key = self.api_key
         self.token_count = 0
-        self.max_tokens = 16384  # Max tokens for GPT-4
+        self.max_tokens = 16384  # Max tokens for GPT-4o
+        self.non_streaming_models = ["o1-preview", "o1-mini"]  # Add non-streaming models here
 
     def count_tokens(self, text):
         return len(tiktoken.encoding_for_model("gpt-4o").encode(text))
@@ -87,23 +87,36 @@ class OpenAIAPI:
         try:
             full_response = ""
             remaining_tokens = self.max_tokens - self.count_tokens(prompt)
-            response = openai.chat.completions.create(
-                model=self.model,
-                messages=[{"role": "user", "content": prompt}],
-                max_tokens=remaining_tokens,
-                stream=True,
-            )
 
-            for chunk in response:
-                if chunk.choices[0].delta.content:
-                    chunk_text = chunk.choices[0].delta.content
-                    full_response += chunk_text
-                    print(chunk_text, end="", flush=True)
-                    remaining_tokens -= self.count_tokens(chunk_text)
-                    if remaining_tokens <= 0 or "^^^end^^^" in full_response:
-                        break
+            if self.model in self.non_streaming_models:
+                # Non-streaming approach
+                response = openai.chat.completions.create(
+                    model=self.model,
+                    messages=[{"role": "user", "content": prompt}],
+                    max_completion_tokens=remaining_tokens,
+                    stream=False,
+                )
+                full_response = response.choices[0].message.content
+                print(full_response)
+            else:
+                # Streaming approach
+                response = openai.chat.completions.create(
+                    model=self.model,
+                    messages=[{"role": "user", "content": prompt}],
+                    max_tokens=remaining_tokens,
+                    stream=True,
+                )
 
-            print()  # Print a newline at the end
+                for chunk in response:
+                    if chunk.choices[0].delta.content:
+                        chunk_text = chunk.choices[0].delta.content
+                        full_response += chunk_text
+                        print(chunk_text, end="", flush=True)
+                        remaining_tokens -= self.count_tokens(chunk_text)
+                        if remaining_tokens <= 0 or "^^^end^^^" in full_response:
+                            break
+
+                print()  # Print a newline at the end
 
             # Extract content between markers
             start_marker = "^^^start^^^"
