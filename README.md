@@ -102,9 +102,10 @@ https://github.com/user-attachments/assets/51cf6ad1-196c-44ab-99ba-0035365f1bbd
 * `openai` is `gpt-4o-2024-08-06`
 * `claude` is `claude-3-5-sonnet-20240620`
 
-## OpenAI Model Preview
+## OpenAI o1 Support
 * Supports `o1-mini` and `o1-preview`
-* `nemo-agent "my prompt" --provider openai --model o1-preview`
+* `nemo-agent "my prompt" --provider openai --model o1-mini`
+* Note: `o1-mini` is the best coding model currently
 
 ## Contributing
 Contributions to Nemo Agent are welcome! Please feel free to submit a Pull Request.
