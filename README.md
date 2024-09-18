@@ -104,7 +104,7 @@ https://github.com/user-attachments/assets/51cf6ad1-196c-44ab-99ba-0035365f1bbd
 
 ## OpenAI Model Preview
 * Supports `o1-mini` and `o1-preview`
-* `nemo-agent "my prompt" --provider openai --model o1-model`
+* `nemo-agent "my prompt" --provider openai --model o1-preview`
 
 ## Contributing
 Contributions to Nemo Agent are welcome! Please feel free to submit a Pull Request.
