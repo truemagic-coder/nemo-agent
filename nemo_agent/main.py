@@ -77,7 +77,8 @@ class OpenAIAPI:
             raise ValueError("OPENAI_API_KEY environment variable is not set")
         openai.api_key = self.api_key
         self.token_count = 0
-        self.max_tokens = 16384  # Max tokens for GPT-4o
+        self.max_tokens = 128000
+        self.max_output_tokens = 16384
         self.non_streaming_models = ["o1-preview", "o1-mini"]  # Add non-streaming models here
 
     def count_tokens(self, text):
@@ -86,14 +87,21 @@ class OpenAIAPI:
     def generate(self, prompt):
         try:
             full_response = ""
-            remaining_tokens = self.max_tokens - self.count_tokens(prompt)
+            prompt_tokens = self.count_tokens(prompt)
+            
+            if prompt_tokens >= self.max_tokens:
+                print(f"Warning: Prompt exceeds maximum token limit ({prompt_tokens}/{self.max_tokens})")
+                return "Error: Prompt too long"
+
+            # Use the predefined max output tokens, or adjust if prompt is very long
+            max_completion_tokens = min(self.max_output_tokens, self.max_tokens - prompt_tokens)
 
             if self.model in self.non_streaming_models:
                 # Non-streaming approach
                 response = openai.chat.completions.create(
                     model=self.model,
                     messages=[{"role": "user", "content": prompt}],
-                    max_completion_tokens=remaining_tokens,
+                    max_completion_tokens=max_completion_tokens,
                     stream=False,
                 )
                 full_response = response.choices[0].message.content
@@ -103,7 +111,7 @@ class OpenAIAPI:
                 response = openai.chat.completions.create(
                     model=self.model,
                     messages=[{"role": "user", "content": prompt}],
-                    max_tokens=remaining_tokens,
+                    max_tokens=max_completion_tokens,
                     stream=True,
                 )
 
@@ -112,8 +120,7 @@ class OpenAIAPI:
                         chunk_text = chunk.choices[0].delta.content
                         full_response += chunk_text
                         print(chunk_text, end="", flush=True)
-                        remaining_tokens -= self.count_tokens(chunk_text)
-                        if remaining_tokens <= 0 or "^^^end^^^" in full_response:
+                        if "^^^end^^^" in full_response:
                             break
 
                 print()  # Print a newline at the end
@@ -144,7 +151,8 @@ class ClaudeAPI:
             raise ValueError("ANTHROPIC_API_KEY environment variable is not set")
         self.client = Anthropic(api_key=self.api_key)
         self.token_count = 0
-        self.max_tokens = 8192  # Max tokens for Claude
+        self.max_tokens = 200000
+        self.max_output_tokens = 8192
 
     def count_tokens(self, text):
         return len(tiktoken.encoding_for_model("gpt-4o").encode(text))
@@ -152,11 +160,19 @@ class ClaudeAPI:
     def generate(self, prompt):
         try:
             full_response = ""
-            remaining_tokens = self.max_tokens - self.count_tokens(prompt)
+            prompt_tokens = self.count_tokens(prompt)
+            
+            if prompt_tokens >= self.max_tokens:
+                print(f"Warning: Prompt exceeds maximum token limit ({prompt_tokens}/{self.max_tokens})")
+                return "Error: Prompt too long"
+
+            # Use the predefined max output tokens, or adjust if prompt is very long
+            max_completion_tokens = min(self.max_output_tokens, self.max_tokens - prompt_tokens)
+
             response = self.client.messages.create(
                 model=self.model,
                 messages=[{"role": "user", "content": prompt}],
-                max_tokens=remaining_tokens,
+                max_tokens=max_completion_tokens,
                 stream=True,
             )
 
@@ -165,8 +181,7 @@ class ClaudeAPI:
                     chunk_text = completion.delta.text
                     full_response += chunk_text
                     print(chunk_text, end="", flush=True)
-                    remaining_tokens -= self.count_tokens(chunk_text)
-                    if remaining_tokens <= 0 or "^^^end^^^" in full_response:
+                    if "^^^end^^^" in full_response:
                         break
 
             print()  # Print a newline at the end
