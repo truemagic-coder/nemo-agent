@@ -70,7 +70,7 @@ class OllamaAPI:
 class OpenAIAPI:
     def __init__(self, model):
         if model == "mistral-nemo":
-            model = "gpt-4o-2024-08-06"
+            model = "gpt-4o"
         self.model = model
         self.api_key = os.getenv("OPENAI_API_KEY")
         if not self.api_key:

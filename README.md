@@ -99,7 +99,7 @@ https://github.com/user-attachments/assets/51cf6ad1-196c-44ab-99ba-0035365f1bbd
 
 ## Default Models 
 * `ollama` is `mistral-nemo`
-* `openai` is `gpt-4o-2024-08-06`
+* `openai` is `gpt-4o`
 * `claude` is `claude-3-5-sonnet-20240620`
 
 ## OpenAI o1 Support
