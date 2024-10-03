@@ -456,7 +456,7 @@ class NemoAgent:
 
                     For pip dependencies, use:
                     ***uv_start***
-                    package_name, package_name, package_name
+                    package_name[optional_extra, optional_extra]; package_name; package_name
                     ***uv_end***
                 3. IMPORTANT: Do not add any code comments to the files.
                 4. IMPORTANT: Always follow PEP8 style guide, follow best practices for Python, use snake_case naming, and provide meaningful docstrings.
@@ -627,7 +627,7 @@ class NemoAgent:
             
             For pip dependencies, use:
             ***uv_start***
-            package_name, package_name, package_name
+            package_name[optional_extra, optional_extra]; package_name; package_name
             ***uv_end***
         3. CRITICAL: Enclose your entire response between ^^^start^^^ and ^^^end^^^ markers.
         4. CRITICAL: Your response should ONLY contain the code blocks and the pip dependencies required for both the test and code files. Do not include any additional information.
@@ -667,17 +667,18 @@ class NemoAgent:
 
         if pip_start != -1 and pip_end != -1:
             pip_packages = (
-                content[pip_start + len("***uv_start***") : pip_end].strip().split(",")
+                content[pip_start + len("***uv_start***") : pip_end].strip().split(";")
             )
             pip_packages = [pkg.strip() for pkg in pip_packages if pkg.strip()]
 
             if pip_packages:
                 try:
-                    command = ["uv", "add"] + pip_packages
-                    subprocess.run(command, check=True, cwd=self.pwd)
-                    self.logger.info(
-                        f"Executed command: uv add {' '.join(pip_packages)}"
-                    )
+                    for pip_package in pip_packages:
+                        command = ["uv", "add", pip_package] 
+                        subprocess.run(command, check=True, cwd=self.pwd)
+                        self.logger.info(
+                            f"Executed command: uv pip install {pip_package}"
+                        )
                     return True
                 except subprocess.CalledProcessError as e:
                     self.logger.error(
