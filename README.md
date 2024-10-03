@@ -16,7 +16,7 @@ https://github.com/user-attachments/assets/51cf6ad1-196c-44ab-99ba-0035365f1bbd
 * Writes Python code based on task descriptions
 * Executes development tasks using AI-generated commands
 * Utilizes the `mistral-nemo`, `OpenAI`, or `Claude` language models for intelligent code generation
-* Ability to import reference documents to guide the AI solution implementation
+* Ability to import reference documents to guide the task implementation
 * Allows importing existing code projects in multiple languages to serve as a reference for the task
 * Enables the importation of csv data files to populate databases or graphs
 * Implements best practices in Python development automatically
