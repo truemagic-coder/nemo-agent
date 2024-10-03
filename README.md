@@ -16,7 +16,9 @@ https://github.com/user-attachments/assets/51cf6ad1-196c-44ab-99ba-0035365f1bbd
 * Writes Python code based on task descriptions
 * Executes development tasks using AI-generated commands
 * Utilizes the `mistral-nemo`, `OpenAI`, or `Claude` language models for intelligent code generation
-* Ability to import reference documents to guide the AI solution implementation
+* Ability to importation of reference documents to guide the AI solution implementation
+* Allows the importation of existing code projects in multiple languages to serve as a reference for the task
+* Enables the importation of csv data files to populate databases or graphs
 * Implements best practices in Python development automatically
 * Writes and runs passing tests using `pytest` up to 80%+ test coverage 
 * Automatically fixes and styles code using `pylint` up to 7+/10
@@ -76,9 +78,17 @@ https://github.com/user-attachments/assets/51cf6ad1-196c-44ab-99ba-0035365f1bbd
 * `openai`: `nemo-agent --provider openai`
 * `claude`: `nemo-agent --provider claude`
 
-### Reference Documentation
-* Docs must be markdown (.md) or text files (.txt) and be located in a folder
+### Import Reference Documentation Into Prompt
+* Documentation files must be either: .md (Markdown) or .txt (Text) and be located in a folder
 * `nemo-agent --docs example_folder`
+
+### Import Existing Code Projects Into Prompt
+* Code files must be either: .py (Python), .php (PHP), .rs (Rust), .js (JavaScript), .ts (TypeScript), .toml (TOML), .json (JSON), .rb (Ruby), or .yaml (YAML) and be located in a folder
+* `nemo-agent --code example_folder`
+
+### Import Data Into Prompt
+* Data files must be .csv (CSV) and be located in a folder
+* `nemo-agent --data example_folder`
 
 ### Prompting
 

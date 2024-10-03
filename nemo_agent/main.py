@@ -220,6 +220,8 @@ class NemoAgent:
         self.previous_suggestions = set()
         self.token_counts = {}
         self.reference_material = ""
+        self.code_content = ""
+        self.data_content = ""
         self.previous_prompt = ""
 
     def count_tokens(self, text):
@@ -262,6 +264,37 @@ class NemoAgent:
             print(f"Documentation from {docs_path} has been ingested.")
         else:
             print(f"No documentation files found in {docs_path}.")
+
+    def ingest_code(self, docs_path):
+        docs_content = ""
+        for ext in ("*.php", "*.rs", "*.py", "*.js", "*.ts", "*.toml", "*.json", "*.rb", "*.yaml"):
+            for file_path in glob.glob(
+                os.path.join(docs_path, "**", ext), recursive=True
+            ):
+                with open(file_path, "r") as f:
+                    docs_content += f.read() + "\n\n"
+
+        if docs_content:
+            self.code_content = docs_content
+            print(f"Code files from {docs_path} has been ingested.")
+        else:
+            print(f"No code files found in {docs_path}.")
+
+    def ingest_data(self, docs_path):
+        docs_content = ""
+        for ext in ("*.csv"):
+            for file_path in glob.glob(
+                os.path.join(docs_path, "**", ext), recursive=True
+            ):
+                if os.path.isfile(file_path):
+                    with open(file_path, "r") as f:
+                        docs_content += f.read() + "\n\n"
+
+        if docs_content:
+            self.data_content = docs_content
+            print(f"Data files from {docs_path} has been ingested.")
+        else:
+            print(f"No data files found in {docs_path}.")
 
     def run_task(self):
         print(f"Current working directory: {os.getcwd()}")
@@ -464,9 +497,13 @@ class NemoAgent:
                 6. CRITICAL: Create a main method to run the app in main.py and if a web app run the app on port 8080.
 
                 7. CRITICAL: Enclose your entire response between ^^^start^^^ and ^^^end^^^ markers.
-                8. IMPORTANT: Use the reference material provided to guide your implementation including the required dependencies.
+                8. IMPORTANT: Use the reference documentation provided to guide your implementation including the required dependencies.
+                9. IMPORTANT: Use the code content as a reference to build a working solution based on the task provided by the user in Python.
+                10. IMPORTANT: Use the CSV content to load data for your implementation of the task.
             Working directory: {self.pwd}
-            Reference material: {self.reference_material}
+            Reference documentation: {self.reference_material}
+            Code content: {self.code_content}
+            CSV content: {self.data_content}
             """
 
         for attempt in range(max_attempts):
@@ -894,6 +931,16 @@ class NemoAgent:
     type=click.Path(exists=True),
     help="Path to the docs folder containing reference material",
 )
+@click.option(
+    "--code",
+    type=click.Path(exists=True),
+    help="Path to the import folder containing code files",
+)
+@click.option(
+    "--data",
+    type=click.Path(exists=True),
+    help="Path to the import folder containing data files",
+)
 def cli(
     task: str = None,
     file: str = None,
@@ -901,6 +948,8 @@ def cli(
     provider: str = "ollama",
     zip: str = None,
     docs: str = None,
+    code: str = None,
+    data: str = None,
 ):
     """
     Run Nemo Agent tasks to create Python projects using uv and pytest.
@@ -932,6 +981,14 @@ def cli(
     # Ingest docs if provided
     if docs:
         nemo_agent.ingest_docs(docs)
+
+    # Ingest code if provided
+    if code:
+        nemo_agent.ingest_code(code)
+
+    # Ingest data if provided
+    if data:
+        nemo_agent.ingest_data(data)
 
     nemo_agent.run_task()
 
