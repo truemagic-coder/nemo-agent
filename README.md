@@ -74,7 +74,7 @@ https://github.com/user-attachments/assets/51cf6ad1-196c-44ab-99ba-0035365f1bbd
 ## Usage
 
 ### Providers
-* `mistral-nemo`: `nemo-agent`
+* `ollama`: `nemo-agent --provider ollama`
 * `openai`: `nemo-agent --provider openai`
 * `claude`: `nemo-agent --provider claude`
 
@@ -108,9 +108,12 @@ https://github.com/user-attachments/assets/51cf6ad1-196c-44ab-99ba-0035365f1bbd
 * `python main.py`
 
 ## Default Models 
-* `ollama` is `mistral-nemo`
+* `ollama` is `mistral-nemo` (default model)
 * `openai` is `gpt-4o`
 * `claude` is `claude-3-5-sonnet-20240620`
+
+## Select Models
+* `nemo-agent "my_prompt" --provider ollama --model nemotron`
 
 ## OpenAI o1 Support
 * Supports `o1-mini` and `o1-preview`
