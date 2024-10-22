@@ -144,7 +144,7 @@ class OpenAIAPI:
 class ClaudeAPI:
     def __init__(self, model):
         if model == "mistral-nemo":
-            model = "claude-3-5-sonnet-20240620"
+            model = "claude-3-5-sonnet-20241022"
         self.model = model
         self.api_key = os.getenv("ANTHROPIC_API_KEY")
         if not self.api_key:
