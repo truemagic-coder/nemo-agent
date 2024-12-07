@@ -95,26 +95,15 @@ class OpenAIAPI:
 
             # Use the predefined max output tokens, or adjust if prompt is very long
             max_completion_tokens = min(self.max_output_tokens, self.max_tokens - prompt_tokens)
-
+            
             if self.model in self.special_models:
-                # Non-streaming approach
                 response = self.openai.chat.completions.create(
                     model=self.model,
                     messages=[{"role": "user", "content": prompt}],
                     max_completion_tokens=max_completion_tokens,
                     stream=True,
                 )
-                for chunk in response:
-                    if chunk.choices[0].delta.content:
-                        chunk_text = chunk.choices[0].delta.content
-                        full_response += chunk_text
-                        print(chunk_text, end="", flush=True)
-                        if "^^^end^^^" in full_response:
-                            break
-
-                print()  # Print a newline at the end
             else:
-                # Streaming approach
                 response = self.openai.chat.completions.create(
                     model=self.model,
                     messages=[{"role": "user", "content": prompt}],
@@ -122,15 +111,15 @@ class OpenAIAPI:
                     stream=True,
                 )
 
-                for chunk in response:
-                    if chunk.choices[0].delta.content:
-                        chunk_text = chunk.choices[0].delta.content
-                        full_response += chunk_text
-                        print(chunk_text, end="", flush=True)
-                        if "^^^end^^^" in full_response:
-                            break
+            for chunk in response:
+                if chunk.choices[0].delta.content:
+                    chunk_text = chunk.choices[0].delta.content
+                    full_response += chunk_text
+                    print(chunk_text, end="", flush=True)
+                    if "^^^end^^^" in full_response:
+                        break
 
-                print()  # Print a newline at the end
+            print()  # Print a newline at the end
 
             # Extract content between markers
             start_marker = "^^^start^^^"
