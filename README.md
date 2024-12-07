@@ -58,7 +58,7 @@ https://github.com/user-attachments/assets/51cf6ad1-196c-44ab-99ba-0035365f1bbd
 
 ### OR
 
-### Mistral-Nemo Install
+### Ollama Install
 
 #### Requirements
 * Python 3.9 or higher
