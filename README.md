@@ -46,7 +46,7 @@ https://github.com/user-attachments/assets/51cf6ad1-196c-44ab-99ba-0035365f1bbd
 * Python 3.9 or higher
 * OpenAI, Claude, or Gemini API KEY
 * Mac or Linux
-* GTX 4090 for default Ollama model or no GPU for non-Ollama models
+* No GPU requirement
 
 #### Requirements Installation
 * Install OpenAI or Claude API KEY for `zsh` shell
