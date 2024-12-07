@@ -62,7 +62,7 @@ https://github.com/user-attachments/assets/51cf6ad1-196c-44ab-99ba-0035365f1bbd
 
 #### Requirements
 * Python 3.9 or higher
-* Ollama running `mistral-nemo`
+* Ollama running `qwen2.5-coder:32b`
 * Linux with minimum specs of Ubuntu 24.04 with RTX 4090
   
 #### Requirements Installation
