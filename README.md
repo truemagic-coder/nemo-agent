@@ -49,7 +49,7 @@ https://github.com/user-attachments/assets/51cf6ad1-196c-44ab-99ba-0035365f1bbd
 * No GPU requirement
 
 #### Requirements Installation
-* Install OpenAI or Claude API KEY for `zsh` shell
+* Install OpenAI, Claude, or GEMINI API KEY for `zsh` shell
     * `echo 'export OPENAI_API_KEY="YOUR_API_KEY"' >> ~/.zshrc` or
     * `echo 'export ANTHROPIC_API_KEY="YOUR_API_KEY"' >> ~/.zshrc` or
     * `echo 'export GEMINI_API_KEY="YOUR_API_KEY"' >> ~/.zshrc`
