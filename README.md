@@ -15,7 +15,7 @@ https://github.com/user-attachments/assets/51cf6ad1-196c-44ab-99ba-0035365f1bbd
 * Generates Python project structures automatically using `uv`
 * Writes Python code based on task descriptions
 * Executes development tasks using AI-generated commands
-* Utilizes the `mistral-nemo`, `OpenAI`, or `Claude` language models for intelligent code generation
+* Utilizes the `Ollama`, `OpenAI`, `Claude`, or `Gemini` language models for intelligent code generation
 * Ability to import reference documents to guide the task implementation
 * Allows importing existing code projects in multiple languages to serve as a reference for the task
 * Enables the importation of csv data files to populate databases or graphs
@@ -36,22 +36,23 @@ https://github.com/user-attachments/assets/51cf6ad1-196c-44ab-99ba-0035365f1bbd
 * `streamlit` apps
 * `tkinter` apps
 * `jupyter notebook`
-* Note: `OpenAI` > `Claude` > `mistral-nemo` for most coding projects
 * Note: Not all runs will be successful with all models
 
 ## Install 
 
-### OpenAI or Claude Install
+### OpenAI, Claude, or Gemini Install
 
 #### Requirements
 * Python 3.9 or higher
-* OpenAI or Claude API KEY
+* OpenAI, Claude, or Gemini API KEY
 * Mac or Linux
+* GTX 4090 for default Ollama model or no GPU for non-Ollama models
 
 #### Requirements Installation
 * Install OpenAI or Claude API KEY for `zsh` shell
     * `echo 'export OPENAI_API_KEY="YOUR_API_KEY"' >> ~/.zshrc` or
-    * `echo 'export ANTHROPIC_API_KEY="YOUR_API_KEY"' >> ~/.zshrc`
+    * `echo 'export ANTHROPIC_API_KEY="YOUR_API_KEY"' >> ~/.zshrc` or
+    * `echo 'export GEMINI_API_KEY="YOUR_API_KEY"' >> ~/.zshrc`
 * `pip install nemo-agent`
 * You are ready to use `nemo-agent`
 
@@ -67,7 +68,8 @@ https://github.com/user-attachments/assets/51cf6ad1-196c-44ab-99ba-0035365f1bbd
 #### Requirements Installation
 * Ollama install instructions:
     * `curl -fsSL https://ollama.com/install.sh | sh`
-    * `ollama pull mistral-nemo`
+    * `ollama pull qwen2.5-coder:32b`
+* Requires at least a GTX 4090
 * `pip install nemo-agent`
 * You are ready to use `nemo-agent`
 
@@ -77,6 +79,7 @@ https://github.com/user-attachments/assets/51cf6ad1-196c-44ab-99ba-0035365f1bbd
 * `ollama`: `nemo-agent --provider ollama`
 * `openai`: `nemo-agent --provider openai`
 * `claude`: `nemo-agent --provider claude`
+* `gemini`: `nemo-agent --provider gemini`
 
 ### Import Reference Documentation Into Prompt
 * Documentation files must be either: .md (Markdown) or .txt (Text) and be located in a folder
@@ -108,9 +111,10 @@ https://github.com/user-attachments/assets/51cf6ad1-196c-44ab-99ba-0035365f1bbd
 * `python main.py`
 
 ## Default Models 
-* `ollama` is `mistral-nemo` (default model)
+* `ollama` is `qwen2.5-coder:32b` (default model)
 * `openai` is `gpt-4o`
 * `claude` is `claude-3-5-sonnet-20241022`
+* `gemini` is `gemini-1.5-pro`
 
 ## Select Models
 * `nemo-agent "my_prompt" --provider ollama --model nemotron`

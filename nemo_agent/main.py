@@ -14,7 +14,7 @@ import sys
 import zipfile
 import click
 import requests
-import openai
+from openai import OpenAI
 from anthropic import Anthropic
 import tiktoken
 
@@ -24,7 +24,7 @@ class OllamaAPI:
         self.model = model
         self.base_url = "http://localhost:11434/api"
         self.token_count = 0
-        self.max_tokens = 128000  # Max tokens for Mistral-Nemo
+        self.max_tokens = 131072
 
     def count_tokens(self, text):
         return len(tiktoken.encoding_for_model("gpt-4o").encode(text))
@@ -69,13 +69,13 @@ class OllamaAPI:
 
 class OpenAIAPI:
     def __init__(self, model):
-        if model == "mistral-nemo":
+        if model == "qwen2.5-coder:32b":
             model = "gpt-4o"
         self.model = model
         self.api_key = os.getenv("OPENAI_API_KEY")
         if not self.api_key:
             raise ValueError("OPENAI_API_KEY environment variable is not set")
-        openai.api_key = self.api_key
+        self.openai = OpenAI(api_key=self.api_key)
         self.token_count = 0
         self.max_tokens = 128000
         self.max_output_tokens = 16384
@@ -98,7 +98,7 @@ class OpenAIAPI:
 
             if self.model in self.special_models:
                 # Non-streaming approach
-                response = openai.chat.completions.create(
+                response = self.openai.chat.completions.create(
                     model=self.model,
                     messages=[{"role": "user", "content": prompt}],
                     max_completion_tokens=max_completion_tokens,
@@ -115,7 +115,7 @@ class OpenAIAPI:
                 print()  # Print a newline at the end
             else:
                 # Streaming approach
-                response = openai.chat.completions.create(
+                response = self.openai.chat.completions.create(
                     model=self.model,
                     messages=[{"role": "user", "content": prompt}],
                     max_tokens=max_completion_tokens,
@@ -148,9 +148,77 @@ class OpenAIAPI:
             raise Exception(f"OpenAI API error: {str(e)}")
 
 
+class GeminiAPI:
+    def __init__(self, model):
+        if model == "qwen2.5-coder:32b":
+            model="gemini-1.5-pro"
+        self.model = model
+        self.api_key = os.getenv("GEMINI_API_KEY")
+        self.base_url="https://generativelanguage.googleapis.com/v1beta/openai/"
+        if not self.api_key:
+            raise ValueError("GEMINI_API_KEY environment variable is not set")
+        self.openai = OpenAI(api_key=self.api_key, base_url=self.base_url)
+        self.token_count = 0
+        if model == "gemini-1.5-pro":
+            self.max_tokens = 2097152
+        else:
+            self.max_tokens = 1048576
+        self.max_output_tokens = 8192
+
+        print(model)
+
+    def count_tokens(self, text):
+        return len(tiktoken.encoding_for_model("gpt-4o").encode(text))
+
+    def generate(self, prompt):
+        try:
+            full_response = ""
+            prompt_tokens = self.count_tokens(prompt)
+            
+            if prompt_tokens >= self.max_tokens:
+                print(f"Warning: Prompt exceeds maximum token limit ({prompt_tokens}/{self.max_tokens})")
+                return "Error: Prompt too long"
+
+            # Use the predefined max output tokens, or adjust if prompt is very long
+            max_completion_tokens = min(self.max_output_tokens, self.max_tokens - prompt_tokens)
+
+            # Streaming approach
+            response = self.openai.chat.completions.create(
+                model=self.model,
+                messages=[{"role": "user", "content": prompt}],
+                max_tokens=max_completion_tokens,
+                stream=True,
+            )
+
+            for chunk in response:
+                if chunk.choices[0].delta.content:
+                    chunk_text = chunk.choices[0].delta.content
+                    full_response += chunk_text
+                    print(chunk_text, end="", flush=True)
+                    if "^^^end^^^" in full_response:
+                        break
+
+            print()  # Print a newline at the end
+
+            # Extract content between markers
+            start_marker = "^^^start^^^"
+            end_marker = "^^^end^^^"
+            start_index = full_response.find(start_marker)
+            end_index = full_response.find(end_marker)
+            if start_index != -1 and end_index != -1:
+                full_response = full_response[start_index + len(start_marker) : end_index].strip()
+
+            self.token_count = self.count_tokens(full_response)
+            print(f"Token count: {self.token_count}")
+
+            return full_response
+        except Exception as e:
+            raise Exception(f"OpenAI API error: {str(e)}")
+
+
 class ClaudeAPI:
     def __init__(self, model):
-        if model == "mistral-nemo":
+        if model == "qwen2.5-coder:32b":
             model = "claude-3-5-sonnet-20241022"
         self.model = model
         self.api_key = os.getenv("ANTHROPIC_API_KEY")
@@ -215,7 +283,7 @@ class NemoAgent:
     WRITE_RETRY_DELAY = 1  # second
 
     def __init__(
-        self, task: str, model: str = "mistral-nemo", provider: str = "ollama"
+        self, task: str, model: str = "qwen2.5-coder:32b", provider: str = "ollama"
     ):
         self.task = task
         self.model = model
@@ -242,6 +310,8 @@ class NemoAgent:
             return OpenAIAPI(self.model)
         elif self.provider == "claude":
             return ClaudeAPI(self.model)
+        elif self.provider == "gemini":
+            return GeminiAPI(self.model)
         else:
             raise ValueError(f"Unsupported provider: {self.provider}")
 
@@ -923,11 +993,11 @@ class NemoAgent:
     type=click.Path(exists=True),
     help="Path to a markdown file containing the task",
 )
-@click.option("--model", default="mistral-nemo", help="The model to use for the LLM")
+@click.option("--model", default="qwen2.5-coder:32b", help="The model to use for the LLM")
 @click.option(
     "--provider",
     default="ollama",
-    type=click.Choice(["ollama", "openai", "claude"]),
+    type=click.Choice(["ollama", "openai", "claude", "gemini"]),
     help="The LLM provider to use",
 )
 @click.option(
@@ -951,7 +1021,7 @@ class NemoAgent:
 def cli(
     task: str = None,
     file: str = None,
-    model: str = "mistral-nemo",
+    model: str = "qwen2.5-coder:32b",
     provider: str = "ollama",
     zip: str = None,
     docs: str = None,
@@ -970,6 +1040,8 @@ def cli(
         raise ValueError("OPENAI_API_KEY environment variable is not set")
     elif provider == "claude" and not os.getenv("ANTHROPIC_API_KEY"):
         raise ValueError("ANTHROPIC_API_KEY environment variable is not set")
+    elif provider == "gemini" and not os.getenv("GEMINI_API_KEY"):
+        raise ValueError("GEMINI_API_KEY environment variable is not set")
 
     # Read task from file if provided
     if file:
