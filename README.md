@@ -63,13 +63,12 @@ https://github.com/user-attachments/assets/51cf6ad1-196c-44ab-99ba-0035365f1bbd
 #### Requirements
 * Python 3.9 or higher
 * Ollama running `mistral-nemo`
-* Linux with minimum specs of Ubuntu 24.04 with RTX 4070
+* Linux with minimum specs of Ubuntu 24.04 with RTX 4090
   
 #### Requirements Installation
 * Ollama install instructions:
     * `curl -fsSL https://ollama.com/install.sh | sh`
     * `ollama pull qwen2.5-coder:32b`
-* Requires at least a GTX 4090
 * `pip install nemo-agent`
 * You are ready to use `nemo-agent`
 
