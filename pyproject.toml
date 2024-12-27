@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "nemo-agent"
-version = "3.0.2"
+version = "3.0.3"
 description = "Your Python AI Coder"
 authors = ["Bevan Hunt <bevan@bevanhunt.com>"]
 license = "MIT"
@@ -18,10 +18,10 @@ packages = [{include = "nemo_agent"}]
 
 [tool.poetry.dependencies]
 python = "<4.0,>=3.9"
-click = "^8.1.7"
+click = "^8.1.8"
 requests = "^2.32.3"
-openai = "^1.57.0"
-anthropic = "^0.40.0"
+openai = "^1.58.1"
+anthropic = "^0.42.0"
 tiktoken = "^0.8.0"
 
 
