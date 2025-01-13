@@ -79,7 +79,7 @@ class OpenAIAPI:
         self.token_count = 0
         self.max_tokens = 128000
         self.max_output_tokens = 16384
-        self.special_models = ["o1-preview", "o1-mini", "o1"]  # Add special models here
+        self.special_models = ["o1-preview", "o1-mini"]
 
     def count_tokens(self, text):
         return len(tiktoken.encoding_for_model("gpt-4o").encode(text))
@@ -96,13 +96,29 @@ class OpenAIAPI:
             # Use the predefined max output tokens, or adjust if prompt is very long
             max_completion_tokens = min(self.max_output_tokens, self.max_tokens - prompt_tokens)
             
-            if self.model in self.special_models:
+            if self.model == "o1":
+                response = self.openai.chat.completions.create(
+                    model=self.model,
+                    messages=[{"role": "user", "content": prompt}],
+                    max_completion_tokens=max_completion_tokens,
+                )
+                full_response = response.choices[0].message.content
+                print(full_response)
+            elif self.model in self.special_models:
                 response = self.openai.chat.completions.create(
                     model=self.model,
                     messages=[{"role": "user", "content": prompt}],
                     max_completion_tokens=max_completion_tokens,
                     stream=True,
                 )
+
+                for chunk in response:
+                    if chunk.choices[0].delta.content:
+                        chunk_text = chunk.choices[0].delta.content
+                        full_response += chunk_text
+                        print(chunk_text, end="", flush=True)
+                        if "^^^end^^^" in full_response:
+                            break
             else:
                 response = self.openai.chat.completions.create(
                     model=self.model,
@@ -111,13 +127,13 @@ class OpenAIAPI:
                     stream=True,
                 )
 
-            for chunk in response:
-                if chunk.choices[0].delta.content:
-                    chunk_text = chunk.choices[0].delta.content
-                    full_response += chunk_text
-                    print(chunk_text, end="", flush=True)
-                    if "^^^end^^^" in full_response:
-                        break
+                for chunk in response:
+                    if chunk.choices[0].delta.content:
+                        chunk_text = chunk.choices[0].delta.content
+                        full_response += chunk_text
+                        print(chunk_text, end="", flush=True)
+                        if "^^^end^^^" in full_response:
+                            break
 
             print()  # Print a newline at the end
 
