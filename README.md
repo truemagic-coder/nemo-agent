@@ -62,13 +62,14 @@ https://github.com/user-attachments/assets/51cf6ad1-196c-44ab-99ba-0035365f1bbd
 
 #### Requirements
 * Python 3.9 or higher
-* Ollama running `qwen2.5-coder:32b`
-* Linux with minimum specs of Ubuntu 24.04 with RTX 4090
+* Ollama running `qwen2.5-coder:14b`
+* Linux with minimum spec of Ubuntu 24.04 with RTX 4070 or;
+* Mac with minimum spec of Mac Mini M2 Pro with 16MB 
   
 #### Requirements Installation
 * Ollama install instructions:
     * `curl -fsSL https://ollama.com/install.sh | sh`
-    * `ollama pull qwen2.5-coder:32b`
+    * `ollama pull qwen2.5-coder:14b`
 * `pip install nemo-agent`
 * You are ready to use `nemo-agent`
 
@@ -110,7 +111,7 @@ https://github.com/user-attachments/assets/51cf6ad1-196c-44ab-99ba-0035365f1bbd
 * `python main.py`
 
 ## Default Models 
-* `ollama` is `qwen2.5-coder:32b` (default model)
+* `ollama` is `qwen2.5-coder:14b` (default model)
 * `openai` is `gpt-4o`
 * `claude` is `claude-3-5-sonnet-20241022`
 * `gemini` is `gemini-1.5-pro`

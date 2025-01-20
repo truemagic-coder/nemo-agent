@@ -13,13 +13,13 @@ files = [
 
 [[package]]
 name = "anthropic"
-version = "0.42.0"
+version = "0.43.1"
 description = "The official Python library for the anthropic API"
 optional = false
 python-versions = ">=3.8"
 files = [
-    {file = "anthropic-0.42.0-py3-none-any.whl", hash = "sha256:46775f65b723c078a2ac9e9de44a46db5c6a4fabeacfd165e5ea78e6817f4eff"},
-    {file = "anthropic-0.42.0.tar.gz", hash = "sha256:bf8b0ed8c8cb2c2118038f29c58099d2f99f7847296cafdaa853910bfff4edf4"},
+    {file = "anthropic-0.43.1-py3-none-any.whl", hash = "sha256:20759c25cd0f4072eb966b0180a41c061c156473bbb674da6a3f1e92e1ad78f8"},
+    {file = "anthropic-0.43.1.tar.gz", hash = "sha256:c7f13e4b7b515ac4a3111142310b214527c0fc561485e5bc9b582e49fe3adba2"},
 ]
 
 [package.dependencies]
@@ -376,13 +376,13 @@ files = [
 
 [[package]]
 name = "openai"
-version = "1.59.6"
+version = "1.59.9"
 description = "The official Python library for the openai API"
 optional = false
 python-versions = ">=3.8"
 files = [
-    {file = "openai-1.59.6-py3-none-any.whl", hash = "sha256:b28ed44eee3d5ebe1a3ea045ee1b4b50fea36ecd50741aaa5ce5a5559c900cb6"},
-    {file = "openai-1.59.6.tar.gz", hash = "sha256:c7670727c2f1e4473f62fea6fa51475c8bc098c9ffb47bfb9eef5be23c747934"},
+    {file = "openai-1.59.9-py3-none-any.whl", hash = "sha256:61a0608a1313c08ddf92fe793b6dbd1630675a1fe3866b2f96447ce30050c448"},
+    {file = "openai-1.59.9.tar.gz", hash = "sha256:ec1a20b0351b4c3e65c6292db71d8233515437c6065efd4fd50edeb55df5f5d2"},
 ]
 
 [package.dependencies]
@@ -765,4 +765,4 @@ zstd = ["zstandard (>=0.18.0)"]
 [metadata]
 lock-version = "2.0"
 python-versions = "<4.0,>=3.9"
-content-hash = "1ffc1119b7e6c8593cca07a051a36b3f19d6cf3286dfc3f7c345cee1d7fcb047"
+content-hash = "fbfb8e3193f2a779c9290e0f4265a01e0aedaad4d776c23aaf5f78a4d0aa9dce"

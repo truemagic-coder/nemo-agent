@@ -69,7 +69,7 @@ class OllamaAPI:
 
 class OpenAIAPI:
     def __init__(self, model):
-        if model == "qwen2.5-coder:32b":
+        if model == "qwen2.5-coder:14b":
             model = "gpt-4o"
         self.model = model
         self.api_key = os.getenv("OPENAI_API_KEY")
@@ -155,7 +155,7 @@ class OpenAIAPI:
 
 class GeminiAPI:
     def __init__(self, model):
-        if model == "qwen2.5-coder:32b":
+        if model == "qwen2.5-coder:14b":
             model="gemini-1.5-pro"
         self.model = model
         self.api_key = os.getenv("GEMINI_API_KEY")
@@ -223,7 +223,7 @@ class GeminiAPI:
 
 class ClaudeAPI:
     def __init__(self, model):
-        if model == "qwen2.5-coder:32b":
+        if model == "qwen2.5-coder:14b":
             model = "claude-3-5-sonnet-20241022"
         self.model = model
         self.api_key = os.getenv("ANTHROPIC_API_KEY")
@@ -288,7 +288,7 @@ class NemoAgent:
     WRITE_RETRY_DELAY = 1  # second
 
     def __init__(
-        self, task: str, model: str = "qwen2.5-coder:32b", provider: str = "ollama"
+        self, task: str, model: str = "qwen2.5-coder:14b", provider: str = "ollama"
     ):
         self.task = task
         self.model = model
@@ -576,8 +576,7 @@ class NemoAgent:
                 3. IMPORTANT: Do not add any code comments to the files.
                 4. IMPORTANT: Always follow PEP8 style guide, follow best practices for Python, use snake_case naming, and provide meaningful docstrings.
                 5. CRITICAL: Your response should ONLY contain the code blocks and the pip dependencies required for both the test and code files. Do not include any additional information.
-                6. CRITICAL: Create a main method to run the app in main.py and if a web app run the app on port 8080.
-
+                6. CRITICAL: Create a main method to run the app in main.py.
                 7. CRITICAL: Enclose your entire response between ^^^start^^^ and ^^^end^^^ markers.
                 8. IMPORTANT: Use the reference documentation provided to guide your implementation including the required dependencies.
                 9. IMPORTANT: Use the code content as a reference to build a working solution based on the task provided by the user in Python.
@@ -998,7 +997,7 @@ class NemoAgent:
     type=click.Path(exists=True),
     help="Path to a markdown file containing the task",
 )
-@click.option("--model", default="qwen2.5-coder:32b", help="The model to use for the LLM")
+@click.option("--model", default="qwen2.5-coder:14b", help="The model to use for the LLM")
 @click.option(
     "--provider",
     default="ollama",
@@ -1026,7 +1025,7 @@ class NemoAgent:
 def cli(
     task: str = None,
     file: str = None,
-    model: str = "qwen2.5-coder:32b",
+    model: str = "qwen2.5-coder:14b",
     provider: str = "ollama",
     zip: str = None,
     docs: str = None,
