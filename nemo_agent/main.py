@@ -79,7 +79,7 @@ class OpenAIAPI:
         self.token_count = 0
         self.max_tokens = 128000
         self.max_output_tokens = 16384
-        self.special_models = ["o1-preview", "o1-mini"]
+        self.special_models = ["o1-preview", "o1-mini", "o3-mini"]
 
     def count_tokens(self, text):
         return len(tiktoken.encoding_for_model("gpt-4o").encode(text))
@@ -96,6 +96,7 @@ class OpenAIAPI:
             # Use the predefined max output tokens, or adjust if prompt is very long
             max_completion_tokens = min(self.max_output_tokens, self.max_tokens - prompt_tokens)
             
+            # o1 doesn't support streaming
             if self.model == "o1":
                 response = self.openai.chat.completions.create(
                     model=self.model,

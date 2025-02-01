@@ -119,9 +119,9 @@ https://github.com/user-attachments/assets/51cf6ad1-196c-44ab-99ba-0035365f1bbd
 ## Select Models
 * `nemo-agent "my_prompt" --provider ollama --model nemotron`
 
-## OpenAI o1 Support
-* Supports `o1-mini`, `o1-preview`, and `o1`
-* `nemo-agent "my prompt" --provider openai --model o1-mini`
+## OpenAI o-series Support
+* Supports `o3-mini`, `o1-mini`, `o1-preview`, and `o1`
+* `nemo-agent "my prompt" --provider openai --model o3-mini`
 
 ## Contributing
 Contributions to Nemo Agent are welcome! Please feel free to submit a Pull Request.
