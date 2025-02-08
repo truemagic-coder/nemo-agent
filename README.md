@@ -25,6 +25,7 @@ https://github.com/user-attachments/assets/51cf6ad1-196c-44ab-99ba-0035365f1bbd
 * Calculates and improves the complexity score using `complexipy` to be under 15
 * Auto-formats the code with `autopep8`
 * Shows the token count used for the responses
+* Run via UV (uvx)
 
 ## Coding Ability
 * `leetcode` hards
@@ -50,8 +51,8 @@ https://github.com/user-attachments/assets/51cf6ad1-196c-44ab-99ba-0035365f1bbd
     * `echo 'export OPENAI_API_KEY="YOUR_API_KEY"' >> ~/.zshrc` or
     * `echo 'export ANTHROPIC_API_KEY="YOUR_API_KEY"' >> ~/.zshrc` or
     * `echo 'export GEMINI_API_KEY="YOUR_API_KEY"' >> ~/.zshrc`
-* `pip install nemo-agent`
-* You are ready to use `nemo-agent`
+* `pip install uv`
+* `uvx nemo-agent` - to run nemo-agent
 
 ### OR
 
@@ -67,40 +68,40 @@ https://github.com/user-attachments/assets/51cf6ad1-196c-44ab-99ba-0035365f1bbd
 * Ollama install instructions:
     * `curl -fsSL https://ollama.com/install.sh | sh`
     * `ollama pull qwen2.5-coder:14b`
-* `pip install nemo-agent`
-* You are ready to use `nemo-agent`
+* `pip install uv`
+* `uvx nemo-agent` - to run nemo-agent
 
 ## Usage
 
 ### Providers
-* `ollama`: `nemo-agent --provider ollama`
-* `openai`: `nemo-agent --provider openai`
-* `claude`: `nemo-agent --provider claude`
-* `gemini`: `nemo-agent --provider gemini`
+* `ollama`: `uvx nemo-agent --provider ollama`
+* `openai`: `uvx nemo-agent --provider openai`
+* `claude`: `uvx nemo-agent --provider claude`
+* `gemini`: `uvx nemo-agent --provider gemini`
 
 ### Import Reference Documentation Into Prompt
 * Documentation files must be either: .md (Markdown) or .txt (Text) and be located in a folder
-* `nemo-agent --docs example_folder`
+* `uvx nemo-agent --docs example_folder`
 
 ### Import Existing Code Projects Into Prompt
 * Code files must be either: .py (Python), .php (PHP), .rs (Rust), .js (JavaScript), .ts (TypeScript), .toml (TOML), .json (JSON), .rb (Ruby), or .yaml (YAML) and be located in a folder
-* `nemo-agent --code example_folder`
+* `uvx nemo-agent --code example_folder`
 
 ### Import Data Into Prompt
 * Data files must be .csv (CSV) and be located in a folder
-* `nemo-agent --data example_folder`
+* `uvx nemo-agent --data example_folder`
 
 ### Prompting
 
 #### CLI
-* `nemo-agent "create a fizzbuzz script"`
+* `uvx nemo-agent "create a fizzbuzz script"`
 
 #### OR
 
 #### File Prompt
 * Prompt file must be markdown (.md) or text files (.txt)
-* `nemo-agent --file example.md` or 
-* `nemo-agent --file example.txt`
+* `uvx nemo-agent --file example.md` or 
+* `uvx nemo-agent --file example.txt`
 
 ### Run Generated Program
 * `cd generated_project_folder`
@@ -115,7 +116,7 @@ Tests are automatically created and run.
 
 You many want to skip tests especially if you are generating a UI application.
 
-* `nemo-agent "create a fizzbuzz script" --tests False`
+* `uvx nemo-agent "create a fizzbuzz script" --tests False`
 
 ## Models
 
@@ -126,7 +127,7 @@ You many want to skip tests especially if you are generating a UI application.
 * `gemini` is `gemini-2.0-flash`
 
 ### Select Models
-* `nemo-agent "my_prompt" --provider openai --model o3-mini`
+* `uvx nemo-agent "my_prompt" --provider openai --model o3-mini`
 
 ### Supported Models
 
