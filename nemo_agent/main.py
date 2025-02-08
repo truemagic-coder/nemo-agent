@@ -24,7 +24,7 @@ class OllamaAPI:
         self.model = model
         self.base_url = "http://localhost:11434/api"
         self.token_count = 0
-        self.max_tokens = 131072
+        self.max_tokens = 128000
 
     def count_tokens(self, text):
         return len(tiktoken.encoding_for_model("gpt-4o").encode(text))
@@ -77,8 +77,21 @@ class OpenAIAPI:
             raise ValueError("OPENAI_API_KEY environment variable is not set")
         self.openai = OpenAI(api_key=self.api_key)
         self.token_count = 0
-        self.max_tokens = 128000
-        self.max_output_tokens = 16384
+
+        if model == "o1-mini":
+            self.max_tokens = 128000
+            self.max_output_tokens = 65536
+        elif model == "o1-preview":
+            self.max_tokens = 128000
+            self.max_output_tokens = 32768
+        elif model == "gpt-4o" or model == "gpt-4o-mini":
+            self.max_tokens = 128000
+            self.max_output_tokens = 16384
+        else:
+            # Default to o3-mini or o1
+            self.max_tokens = 200000
+            self.max_output_tokens = 100000
+       
         self.special_models = ["o1-preview", "o1-mini", "o3-mini"]
 
     def count_tokens(self, text):
@@ -157,7 +170,7 @@ class OpenAIAPI:
 class GeminiAPI:
     def __init__(self, model):
         if model == "qwen2.5-coder:14b":
-            model="gemini-1.5-pro"
+            model="gemini-2.0-flash"
         self.model = model
         self.api_key = os.getenv("GEMINI_API_KEY")
         self.base_url="https://generativelanguage.googleapis.com/v1beta/openai/"

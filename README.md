@@ -110,18 +110,29 @@ https://github.com/user-attachments/assets/51cf6ad1-196c-44ab-99ba-0035365f1bbd
 * `source .venv/bin/activate`
 * `python main.py`
 
-## Default Models 
+
+## Models
+
+### Default Models 
 * `ollama` is `qwen2.5-coder:14b` (default model)
 * `openai` is `gpt-4o`
 * `claude` is `claude-3-5-sonnet-20241022`
-* `gemini` is `gemini-1.5-pro`
+* `gemini` is `gemini-2.0-flash`
 
-## Select Models
+### Select Models
 * `nemo-agent "my_prompt" --provider ollama --model nemotron`
 
-## OpenAI o-series Support
-* Supports `o3-mini`, `o1-mini`, `o1-preview`, and `o1`
-* `nemo-agent "my prompt" --provider openai --model o3-mini`
+### Ollama Supported Models
+* Supports any 128k input token models
+
+### OpenAI Supported Models
+* Supports `o3-mini`, `o1-mini`, `o1-preview`, `o1`, `gpt-4o`, and `gpt-4o-mini`
+
+### Claude Supported Models
+* Supports `claude-3-5-sonnet-20241022`
+
+### Gemini Supported Models
+* Supports `gemini-2.0-flash`, `gemini-1.5-pro`, `gemini-1.5-flash`
 
 ## Contributing
 Contributions to Nemo Agent are welcome! Please feel free to submit a Pull Request.
