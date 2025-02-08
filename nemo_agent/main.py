@@ -302,7 +302,7 @@ class NemoAgent:
     WRITE_RETRY_DELAY = 1  # second
 
     def __init__(
-        self, task: str, model: str = "qwen2.5-coder:14b", provider: str = "ollama"
+        self, task: str, model: str = "qwen2.5-coder:14b", provider: str = "ollama", tests: bool = True
     ):
         self.task = task
         self.model = model
@@ -317,6 +317,7 @@ class NemoAgent:
         self.code_content = ""
         self.data_content = ""
         self.previous_prompt = ""
+        self.tests = tests
 
     def count_tokens(self, text):
         encoding = tiktoken.encoding_for_model("gpt-3.5-turbo")
@@ -419,15 +420,16 @@ class NemoAgent:
                 break
             code_check_attempts += 1
 
-        test_check_attempts = 1
-        while test_check_attempts < self.MAX_IMPROVEMENT_ATTEMPTS:
-            tests_passed, coverage, test_output = self.run_tests()
-            if not tests_passed or coverage < 80:
-                self.improve_test_file(test_output)
+        if self.tests:
+            test_check_attempts = 1
+            while test_check_attempts < self.MAX_IMPROVEMENT_ATTEMPTS:
                 tests_passed, coverage, test_output = self.run_tests()
-            else:
-                break
-            test_check_attempts += 1
+                if not tests_passed or coverage < 80:
+                    self.improve_test_file(test_output)
+                    tests_passed, coverage, test_output = self.run_tests()
+                else:
+                    break
+                test_check_attempts += 1
 
         total_tokens = sum(self.token_counts.values())
         print(f"\nTotal tokens used: {total_tokens}")
@@ -1011,7 +1013,7 @@ class NemoAgent:
     type=click.Path(exists=True),
     help="Path to a markdown file containing the task",
 )
-@click.option("--model", default="qwen2.5-coder:14b", help="The model to use for the LLM")
+@click.option("--model", default="qwen2.5-coder:14b", help="The model to use for Nemo Agent")
 @click.option(
     "--provider",
     default="ollama",
@@ -1036,6 +1038,12 @@ class NemoAgent:
     type=click.Path(exists=True),
     help="Path to the import folder containing data files",
 )
+@click.option(
+    "--tests",
+    default=True,
+    type=click.BOOL,
+    help="Whether to run tests after implementing the solution",
+)
 def cli(
     task: str = None,
     file: str = None,
@@ -1045,6 +1053,7 @@ def cli(
     docs: str = None,
     code: str = None,
     data: str = None,
+    tests: bool = True,
 ):
     """
     Run Nemo Agent tasks to create Python projects using uv and pytest.
@@ -1073,7 +1082,7 @@ def cli(
     elif not task:
         task = click.prompt("Please enter your task")
 
-    nemo_agent = NemoAgent(task=task, model=model, provider=provider)
+    nemo_agent = NemoAgent(task=task, model=model, provider=provider, tests=tests)
 
     # Ingest docs if provided
     if docs:

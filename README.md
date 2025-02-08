@@ -26,9 +26,6 @@ https://github.com/user-attachments/assets/51cf6ad1-196c-44ab-99ba-0035365f1bbd
 * Auto-formats the code with `autopep8`
 * Shows the token count used for the responses
 
-## Community
-* Join our community - [Nemo Agent Telegram Group](https://t.me/+f-6nu2mUpgtiOGUx)
-
 ## Coding Ability
 * `leetcode` hards
 * `fastapi` or `flask` APIs
@@ -110,6 +107,15 @@ https://github.com/user-attachments/assets/51cf6ad1-196c-44ab-99ba-0035365f1bbd
 * `source .venv/bin/activate`
 * `python main.py`
 
+### Tests
+
+Tests are automatically created and run.
+
+### Skipping Tests
+
+You many want to skip tests especially if you are generating a UI application.
+
+* `nemo-agent "create a fizzbuzz script" --tests False`
 
 ## Models
 
@@ -122,16 +128,18 @@ https://github.com/user-attachments/assets/51cf6ad1-196c-44ab-99ba-0035365f1bbd
 ### Select Models
 * `nemo-agent "my_prompt" --provider openai --model o3-mini`
 
-### Ollama Supported Models
+### Supported Models
+
+#### Ollama
 * Supports any 128k input token models
 
-### OpenAI Supported Models
+#### OpenAI
 * Supports `o3-mini`, `o1-mini`, `o1-preview`, `o1`, `gpt-4o`, and `gpt-4o-mini`
 
-### Claude Supported Models
+#### Claude
 * Supports `claude-3-5-sonnet-20241022`
 
-### Gemini Supported Models
+#### Gemini
 * Supports `gemini-2.0-flash`, `gemini-1.5-pro`, `gemini-1.5-flash`
 
 ## Contributing
