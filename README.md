@@ -123,7 +123,7 @@ You many want to skip tests especially if you are generating a UI application.
 ### Default Models 
 * `ollama` is `qwen2.5-coder:14b`
 * `openai` is `gpt-4o`
-* `claude` is `claude-3-5-sonnet-20241022`
+* `claude` is `claude-3-7-sonnet-20250219`
 * `gemini` is `gemini-2.0-flash`
 
 ### Select Models
@@ -138,7 +138,7 @@ You many want to skip tests especially if you are generating a UI application.
 * Supports `o3-mini`, `o1-mini`, `o1-preview`, `o1`, `gpt-4o`, and `gpt-4o-mini`
 
 #### Claude
-* Supports `claude-3-5-sonnet-20241022`
+* Supports `claude-3-7-sonnet-20250219` and `claude-3-5-sonnet-20241022`
 
 #### Gemini
 * Supports `gemini-2.0-flash`, `gemini-1.5-pro`, `gemini-1.5-flash`

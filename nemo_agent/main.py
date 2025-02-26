@@ -229,15 +229,19 @@ class GeminiAPI:
 class ClaudeAPI:
     def __init__(self, model):
         if model == "qwen2.5-coder:14b":
-            model = "claude-3-5-sonnet-20241022"
+            model = "claude-3-7-sonnet-20250219"
         self.model = model
         self.api_key = os.getenv("ANTHROPIC_API_KEY")
         if not self.api_key:
             raise ValueError("ANTHROPIC_API_KEY environment variable is not set")
         self.client = Anthropic(api_key=self.api_key)
         self.token_count = 0
-        self.max_tokens = 200000
-        self.max_output_tokens = 8192
+        if model == "claude-3-5-sonnet-20241022":
+            self.max_tokens = 200000
+            self.max_output_tokens = 8192
+        else:
+            self.max_tokens = 200000
+            self.max_output_tokens = 64000
 
     def count_tokens(self, text):
         return len(tiktoken.encoding_for_model("gpt-4o").encode(text))
