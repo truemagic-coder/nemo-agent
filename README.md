@@ -124,7 +124,7 @@ You many want to skip tests especially if you are generating a UI application.
 * `ollama` is `qwen2.5-coder:14b`
 * `openai` is `gpt-4o`
 * `claude` is `claude-3-7-sonnet-20250219`
-* `gemini` is `gemini-2.0-flash`
+* `gemini` is `gemini-2.5-pro-exp-03-25`
 
 ### Select Models
 * `uvx nemo-agent "my_prompt" --provider openai --model o3-mini`
@@ -141,7 +141,7 @@ You many want to skip tests especially if you are generating a UI application.
 * Supports `claude-3-7-sonnet-20250219` and `claude-3-5-sonnet-20241022`
 
 #### Gemini
-* Supports `gemini-2.0-flash`, `gemini-1.5-pro`, `gemini-1.5-flash`
+* Supports `gemini-2.5-pro-exp-03-25`, `gemini-2.0-flash`, `gemini-1.5-pro`, `gemini-1.5-flash`
 
 ## Contributing
 Contributions to Nemo Agent are welcome! Please feel free to submit a Pull Request.
