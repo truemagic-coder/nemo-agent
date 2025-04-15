@@ -70,7 +70,7 @@ class OllamaAPI:
 class OpenAIAPI:
     def __init__(self, model):
         if model == "qwen2.5-coder:14b":
-            model = "gpt-4o"
+            model = "gpt-4.1"
         self.model = model
         self.api_key = os.getenv("OPENAI_API_KEY")
         if not self.api_key:
@@ -78,18 +78,18 @@ class OpenAIAPI:
         self.openai = OpenAI(api_key=self.api_key)
         self.token_count = 0
 
-        if model == "o1-mini":
-            self.max_tokens = 128000
-            self.max_output_tokens = 65536
-        elif model == "o1-preview":
-            self.max_tokens = 128000
+        if model == "gpt-4.1" or model == "gpt-4.1-mini" or model == "gpt-4.1-nano":
+            self.max_tokens = 32768
             self.max_output_tokens = 32768
+        elif model == "o1-mini":
+            self.max_tokens = 65536
+            self.max_output_tokens = 65536
         elif model == "gpt-4o" or model == "gpt-4o-mini":
-            self.max_tokens = 128000
+            self.max_tokens = 16384
             self.max_output_tokens = 16384
         else:
             # Default to o3-mini or o1
-            self.max_tokens = 200000
+            self.max_tokens = 100000
             self.max_output_tokens = 100000
        
         self.special_models = ["o1", "o1-preview", "o1-mini", "o3-mini"]
