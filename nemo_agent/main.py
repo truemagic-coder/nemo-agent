@@ -88,11 +88,11 @@ class OpenAIAPI:
             self.max_tokens = 16384
             self.max_output_tokens = 16384
         else:
-            # Default to o3-mini or o1
+            # Default to other o-models
             self.max_tokens = 100000
             self.max_output_tokens = 100000
        
-        self.special_models = ["o1", "o1-preview", "o1-mini", "o3-mini"]
+        self.special_models = ["o1", "o1-mini", "o3-mini", "o4-mini"]
 
     def count_tokens(self, text):
         return len(tiktoken.encoding_for_model("gpt-4o").encode(text))

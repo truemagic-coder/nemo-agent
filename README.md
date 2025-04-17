@@ -1,6 +1,10 @@
 # Nemo Agent
 
 [![PyPI - Version](https://img.shields.io/pypi/v/nemo-agent)](https://pypi.org/project/nemo-agent/)
+[![Python 3.12+](https://img.shields.io/badge/python-3.12+-blue.svg)](https://www.python.org/downloads/)
+[![PyPI - Downloads](https://img.shields.io/pypi/dm/nemo-agent)](https://pypi.org/project/nemo-agent/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](https://opensource.org/licenses/MIT)
+[![Libraries.io dependency status for GitHub repo](https://img.shields.io/librariesio/github/truemagic-coder/nemo-agent)](https://libraries.io/pypi/nemo-agent)
 
 [![Nemo Agent](https://cdn.cometheart.com/nemo-agent-2.png)](https://cdn.cometheart.com/nemo-agent.mp4)
 
@@ -135,7 +139,8 @@ You many want to skip tests especially if you are generating a UI application.
 * Supports any 128k input token models
 
 #### OpenAI
-* Supports `gpt-4.1`, `gpt-4.1-mini`, `gpt-4.1-nano`, `o3-mini`, `o1-mini`, `o1`, `gpt-4o`, and `gpt-4o-mini`
+* Supports standard models: `gpt-4.1`, `gpt-4.1-mini`, `gpt-4.1-nano`, `gpt-4o`, and `gpt-4o-mini`
+* Supports reasoning models: `o4-mini`, `o3-mini`, `o1-mini`, and `o1`
 
 #### Claude
 * Supports `claude-3-7-sonnet-20250219` and `claude-3-5-sonnet-20241022`
