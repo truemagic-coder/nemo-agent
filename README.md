@@ -11,15 +11,12 @@
 ## Nemo Agent is your Python AI Coder!
 
 
-https://github.com/user-attachments/assets/51cf6ad1-196c-44ab-99ba-0035365f1bbd
-
-
 ## Features
 * Runs blazing fast
 * Generates Python project structures automatically using `uv`
 * Writes Python code based on task descriptions
 * Executes development tasks using AI-generated commands
-* Utilizes the `Ollama`, `OpenAI`, `Claude`, or `Gemini` language models for intelligent code generation
+* Utilizes the `OpenAI` or `Gemini` language models for intelligent code generation
 * Ability to import reference documents to guide the task implementation
 * Allows importing existing code projects in multiple languages to serve as a reference for the task
 * Enables the importation of csv data files to populate databases or graphs
@@ -42,45 +39,23 @@ https://github.com/user-attachments/assets/51cf6ad1-196c-44ab-99ba-0035365f1bbd
 
 ## Install 
 
-### OpenAI, Claude, or Gemini Install
-
-#### Requirements
+### Requirements
 * Python 3.9 or higher
-* OpenAI, Claude, or Gemini API KEY
+* OpenAI or Gemini API key
 * Mac or Linux
 * No GPU requirement
 
-#### Requirements Installation
-* Install OpenAI, Claude, or Gemini for `zsh` shell
+### Requirements Installation
+* Install OpenAI or Gemini for `zsh` shell
     * `echo 'export OPENAI_API_KEY="YOUR_API_KEY"' >> ~/.zshrc` or
-    * `echo 'export ANTHROPIC_API_KEY="YOUR_API_KEY"' >> ~/.zshrc` or
     * `echo 'export GEMINI_API_KEY="YOUR_API_KEY"' >> ~/.zshrc`
-* `pip install uv`
-* `uvx nemo-agent` - to run nemo-agent
-
-### OR
-
-### Ollama Install
-
-#### Requirements
-* Python 3.9 or higher
-* Ollama running `qwen2.5-coder:14b`
-* Linux with minimum spec of Ubuntu 24.04 with RTX 4070 or;
-* Mac with minimum spec of Mac Mini M2 Pro with 16MB 
-  
-#### Requirements Installation
-* Ollama install instructions:
-    * `curl -fsSL https://ollama.com/install.sh | sh`
-    * `ollama pull qwen2.5-coder:14b`
 * `pip install uv`
 * `uvx nemo-agent` - to run nemo-agent
 
 ## Usage
 
 ### Providers
-* `ollama`: `uvx nemo-agent --provider ollama`
 * `openai`: `uvx nemo-agent --provider openai`
-* `claude`: `uvx nemo-agent --provider claude`
 * `gemini`: `uvx nemo-agent --provider gemini`
 
 ### Import Reference Documentation Into Prompt
@@ -125,28 +100,20 @@ You many want to skip tests especially if you are generating a UI application.
 ## Models
 
 ### Default Models 
-* `ollama` is `qwen2.5-coder:14b`
 * `openai` is `gpt-4.1`
-* `claude` is `claude-3-7-sonnet-20250219`
-* `gemini` is `gemini-2.5-pro-exp-03-25`
+* `gemini` is `gemini-2.5-flash-preview-04-17`
 
 ### Select Models
-* `uvx nemo-agent "my_prompt" --provider openai --model o3-mini`
+* `uvx nemo-agent "my-prompt" --provider openai --model o4-mini`
 
 ### Supported Models
-
-#### Ollama
-* Supports any 128k input token models
 
 #### OpenAI
 * Supports standard models: `gpt-4.1`, `gpt-4.1-mini`, `gpt-4.1-nano`, `gpt-4o`, and `gpt-4o-mini`
 * Supports reasoning models: `o4-mini`, `o3-mini`, `o1-mini`, and `o1`
 
-#### Claude
-* Supports `claude-3-7-sonnet-20250219` and `claude-3-5-sonnet-20241022`
-
 #### Gemini
-* Supports `gemini-2.5-pro-exp-03-25`, `gemini-2.0-flash`, `gemini-1.5-pro`, `gemini-1.5-flash`
+* Supports `gemini-2.5-flash-preview-04-17`, `gemini-2.5-pro-preview-03-25`
 
 ## Contributing
 Contributions to Nemo Agent are welcome! Please feel free to submit a Pull Request.

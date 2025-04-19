@@ -3,7 +3,6 @@ from contextlib import contextmanager
 from datetime import time
 import fcntl
 import glob
-import json
 import logging
 import os
 import random
@@ -13,64 +12,11 @@ import subprocess
 import sys
 import zipfile
 import click
-import requests
 from openai import OpenAI
-from anthropic import Anthropic
 import tiktoken
-
-
-class OllamaAPI:
-    def __init__(self, model):
-        self.model = model
-        self.base_url = "http://localhost:11434/api"
-        self.token_count = 0
-        self.max_tokens = 128000
-
-    def count_tokens(self, text):
-        return len(tiktoken.encoding_for_model("gpt-4o").encode(text))
-
-    def generate(self, prompt):
-        url = f"{self.base_url}/generate"
-        full_response = ""
-        remaining_tokens = self.max_tokens - self.count_tokens(prompt)
-        data = {"model": self.model, "prompt": prompt, "stream": True}
-        response = requests.post(url, json=data, stream=True)
-        if response.status_code == 200:
-            for line in response.iter_lines():
-                if line:
-                    decoded_line = line.decode("utf-8")
-                    try:
-                        json_line = json.loads(decoded_line)
-                        chunk = json_line.get("response", "")
-                        full_response += chunk
-                        print(chunk, end="", flush=True)
-                        remaining_tokens -= self.count_tokens(chunk)
-                        if remaining_tokens <= 0 or "^^^end^^^" in full_response:
-                            break
-                    except json.JSONDecodeError:
-                        print(f"Error decoding JSON: {decoded_line}")
-        else:
-            raise Exception(f"Ollama API error: {response.text}")
-
-        print()  # Print a newline at the end
-
-        # Extract content between markers if needed
-        start_marker = "^^^start^^^"
-        end_marker = "^^^end^^^"
-        start_index = full_response.find(start_marker)
-        end_index = full_response.find(end_marker)
-        if start_index != -1 and end_index != -1:
-            full_response = full_response[start_index + len(start_marker) : end_index].strip()
-
-        self.token_count = self.count_tokens(full_response)
-        print(f"Token count: {self.token_count}")
-
-        return full_response
 
 class OpenAIAPI:
     def __init__(self, model):
-        if model == "qwen2.5-coder:14b":
-            model = "gpt-4.1"
         self.model = model
         self.api_key = os.getenv("OPENAI_API_KEY")
         if not self.api_key:
@@ -160,8 +106,8 @@ class OpenAIAPI:
 
 class GeminiAPI:
     def __init__(self, model):
-        if model == "qwen2.5-coder:14b":
-            model="gemini-2.5-pro-exp-03-25"
+        if model == "gpt-4.1":
+            model="gemini-2.5-flash-preview-04-17"
         self.model = model
         self.api_key = os.getenv("GEMINI_API_KEY")
         self.base_url="https://generativelanguage.googleapis.com/v1beta/openai/"
@@ -169,13 +115,8 @@ class GeminiAPI:
             raise ValueError("GEMINI_API_KEY environment variable is not set")
         self.openai = OpenAI(api_key=self.api_key, base_url=self.base_url)
         self.token_count = 0
-        if model == "gemini-1.5-pro":
-            self.max_tokens = 2097152
-        else:
-            self.max_tokens = 1048576
-        self.max_output_tokens = 8192
-
-        print(model)
+        self.max_tokens = 65536
+        self.max_output_tokens = 65536
 
     def count_tokens(self, text):
         return len(tiktoken.encoding_for_model("gpt-4o").encode(text))
@@ -225,79 +166,13 @@ class GeminiAPI:
         except Exception as e:
             raise Exception(f"OpenAI API error: {str(e)}")
 
-
-class ClaudeAPI:
-    def __init__(self, model):
-        if model == "qwen2.5-coder:14b":
-            model = "claude-3-7-sonnet-20250219"
-        self.model = model
-        self.api_key = os.getenv("ANTHROPIC_API_KEY")
-        if not self.api_key:
-            raise ValueError("ANTHROPIC_API_KEY environment variable is not set")
-        self.client = Anthropic(api_key=self.api_key)
-        self.token_count = 0
-        if model == "claude-3-5-sonnet-20241022":
-            self.max_tokens = 200000
-            self.max_output_tokens = 8192
-        else:
-            self.max_tokens = 200000
-            self.max_output_tokens = 64000
-
-    def count_tokens(self, text):
-        return len(tiktoken.encoding_for_model("gpt-4o").encode(text))
-
-    def generate(self, prompt):
-        try:
-            full_response = ""
-            prompt_tokens = self.count_tokens(prompt)
-            
-            if prompt_tokens >= self.max_tokens:
-                print(f"Warning: Prompt exceeds maximum token limit ({prompt_tokens}/{self.max_tokens})")
-                return "Error: Prompt too long"
-
-            # Use the predefined max output tokens, or adjust if prompt is very long
-            max_completion_tokens = min(self.max_output_tokens, self.max_tokens - prompt_tokens)
-
-            response = self.client.messages.create(
-                model=self.model,
-                messages=[{"role": "user", "content": prompt}],
-                max_tokens=max_completion_tokens,
-                stream=True,
-            )
-
-            for completion in response:
-                if completion.type == "content_block_delta":
-                    chunk_text = completion.delta.text
-                    full_response += chunk_text
-                    print(chunk_text, end="", flush=True)
-                    if "^^^end^^^" in full_response:
-                        break
-
-            print()  # Print a newline at the end
-
-            # Extract content between markers
-            start_marker = "^^^start^^^"
-            end_marker = "^^^end^^^"
-            start_index = full_response.find(start_marker)
-            end_index = full_response.find(end_marker)
-            if start_index != -1 and end_index != -1:
-                full_response = full_response[start_index + len(start_marker) : end_index].strip()
-
-            self.token_count = self.count_tokens(full_response)
-            print(f"Token count: {self.token_count}")
-
-            return full_response
-        except Exception as e:
-            raise Exception(f"Claude API error: {str(e)}")
-
-
 class NemoAgent:
     MAX_IMPROVEMENT_ATTEMPTS = 3
     MAX_WRITE_ATTEMPTS = 3
     WRITE_RETRY_DELAY = 1  # second
 
     def __init__(
-        self, task: str, model: str = "qwen2.5-coder:14b", provider: str = "ollama", tests: bool = True
+        self, task: str, model: str = "gpt-4.1", provider: str = "openai", tests: bool = True
     ):
         self.task = task
         self.model = model
@@ -315,16 +190,12 @@ class NemoAgent:
         self.tests = tests
 
     def count_tokens(self, text):
-        encoding = tiktoken.encoding_for_model("gpt-3.5-turbo")
+        encoding = tiktoken.encoding_for_model("gpt-4o")
         return len(encoding.encode(text))
 
     def setup_llm(self):
-        if self.provider == "ollama":
-            return OllamaAPI(self.model)
-        elif self.provider == "openai":
+        if self.provider == "openai":
             return OpenAIAPI(self.model)
-        elif self.provider == "claude":
-            return ClaudeAPI(self.model)
         elif self.provider == "gemini":
             return GeminiAPI(self.model)
         else:
@@ -1008,11 +879,11 @@ class NemoAgent:
     type=click.Path(exists=True),
     help="Path to a markdown file containing the task",
 )
-@click.option("--model", default="qwen2.5-coder:14b", help="The model to use for Nemo Agent")
+@click.option("--model", default="gpt-4.1", help="The model to use for Nemo Agent")
 @click.option(
     "--provider",
-    default="ollama",
-    type=click.Choice(["ollama", "openai", "claude", "gemini"]),
+    default="openai",
+    type=click.Choice(["openai", "gemini"]),
     help="The LLM provider to use",
 )
 @click.option(
@@ -1042,8 +913,8 @@ class NemoAgent:
 def cli(
     task: str = None,
     file: str = None,
-    model: str = "qwen2.5-coder:14b",
-    provider: str = "ollama",
+    model: str = "gpt-4.1",
+    provider: str = "openai",
     zip: str = None,
     docs: str = None,
     code: str = None,
@@ -1060,8 +931,6 @@ def cli(
     # Check for API keys if using OpenAI or Anthropic
     if provider == "openai" and not os.getenv("OPENAI_API_KEY"):
         raise ValueError("OPENAI_API_KEY environment variable is not set")
-    elif provider == "claude" and not os.getenv("ANTHROPIC_API_KEY"):
-        raise ValueError("ANTHROPIC_API_KEY environment variable is not set")
     elif provider == "gemini" and not os.getenv("GEMINI_API_KEY"):
         raise ValueError("GEMINI_API_KEY environment variable is not set")
 
