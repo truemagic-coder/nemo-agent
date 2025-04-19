@@ -35,7 +35,6 @@
 * `streamlit` apps
 * `tkinter` apps
 * `jupyter notebook`
-* Note: Not all runs will be successful with all models
 
 ## Install 
 
@@ -55,8 +54,12 @@
 ## Usage
 
 ### Providers
-* `openai`: `uvx nemo-agent --provider openai`
+* `openai`: `uvx nemo-agent` (default)
 * `gemini`: `uvx nemo-agent --provider gemini`
+
+### Supported Models 
+* `openai` is `gpt-4.1-mini` (default)
+* `gemini` is `gemini-2.5-flash-preview-04-17`
 
 ### Import Reference Documentation Into Prompt
 * Documentation files must be either: .md (Markdown) or .txt (Text) and be located in a folder
@@ -96,24 +99,6 @@ Tests are automatically created and run.
 You many want to skip tests especially if you are generating a UI application.
 
 * `uvx nemo-agent "create a fizzbuzz script" --tests False`
-
-## Models
-
-### Default Models 
-* `openai` is `gpt-4.1`
-* `gemini` is `gemini-2.5-flash-preview-04-17`
-
-### Select Models
-* `uvx nemo-agent "my-prompt" --provider openai --model o4-mini`
-
-### Supported Models
-
-#### OpenAI
-* Supports standard models: `gpt-4.1`, `gpt-4.1-mini`, `gpt-4.1-nano`, `gpt-4o`, and `gpt-4o-mini`
-* Supports reasoning models: `o4-mini`, `o3-mini`, `o1-mini`, and `o1`
-
-#### Gemini
-* Supports `gemini-2.5-flash-preview-04-17`, `gemini-2.5-pro-preview-03-25`
 
 ## Contributing
 Contributions to Nemo Agent are welcome! Please feel free to submit a Pull Request.

@@ -23,22 +23,14 @@ class OpenAIAPI:
             raise ValueError("OPENAI_API_KEY environment variable is not set")
         self.openai = OpenAI(api_key=self.api_key)
         self.token_count = 0
-
-        if model == "gpt-4.1" or model == "gpt-4.1-mini" or model == "gpt-4.1-nano":
+        if model == "gpt-4.1-mini":
             self.max_tokens = 32768
             self.max_output_tokens = 32768
-        elif model == "o1-mini":
-            self.max_tokens = 65536
-            self.max_output_tokens = 65536
-        elif model == "gpt-4o" or model == "gpt-4o-mini":
-            self.max_tokens = 16384
-            self.max_output_tokens = 16384
-        else:
-            # Default to other o-models
+        elif model == "o4-mini":
             self.max_tokens = 100000
             self.max_output_tokens = 100000
        
-        self.special_models = ["o1", "o1-mini", "o3-mini", "o4-mini"]
+        self.special_models = ["o4-mini"]
 
     def count_tokens(self, text):
         return len(tiktoken.encoding_for_model("gpt-4o").encode(text))
@@ -106,7 +98,7 @@ class OpenAIAPI:
 
 class GeminiAPI:
     def __init__(self, model):
-        if model == "gpt-4.1":
+        if model == "gpt-4.1-mini":
             model="gemini-2.5-flash-preview-04-17"
         self.model = model
         self.api_key = os.getenv("GEMINI_API_KEY")
@@ -172,7 +164,7 @@ class NemoAgent:
     WRITE_RETRY_DELAY = 1  # second
 
     def __init__(
-        self, task: str, model: str = "gpt-4.1", provider: str = "openai", tests: bool = True
+        self, task: str, model: str = "gpt-4.1-mini", provider: str = "openai", tests: bool = True
     ):
         self.task = task
         self.model = model
@@ -879,7 +871,7 @@ class NemoAgent:
     type=click.Path(exists=True),
     help="Path to a markdown file containing the task",
 )
-@click.option("--model", default="gpt-4.1", help="The model to use for Nemo Agent")
+@click.option("--model", default="gpt-4.1-mini", help="The model to use for Nemo Agent")
 @click.option(
     "--provider",
     default="openai",
@@ -913,7 +905,7 @@ class NemoAgent:
 def cli(
     task: str = None,
     file: str = None,
-    model: str = "gpt-4.1",
+    model: str = "gpt-4.1-mini",
     provider: str = "openai",
     zip: str = None,
     docs: str = None,
