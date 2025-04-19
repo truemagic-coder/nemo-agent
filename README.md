@@ -55,8 +55,11 @@
 * `gemini`: `uvx nemo-agent --provider gemini`
 
 ### Supported Models 
-* `openai` is `gpt-4.1-mini` (default)
-* `gemini` is `gemini-2.5-flash-preview-04-17`
+* `openai` is `gpt-4.1-mini` (default) and `o4-mini`
+* `gemini` is `gemini-2.5-flash-preview-04-17` (default)
+
+### Calling Non-Default Models
+* `uvx nemo-agent --model o4-mini`
 
 ### Import Reference Documentation Into Prompt
 * Documentation files must be either: .md (Markdown) or .txt (Text) and be located in a folder
