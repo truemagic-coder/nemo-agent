@@ -8,8 +8,6 @@
 
 [![Nemo Agent](https://cdn.cometheart.com/nemo-agent-2.png)](https://cdn.cometheart.com/nemo-agent.mp4)
 
-## Nemo Agent is your Python AI Coder!
-
 ## Features
 * Runs blazing fast
 * Generates Python project structures automatically using `uv`
