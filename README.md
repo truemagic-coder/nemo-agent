@@ -55,8 +55,8 @@
 * `gemini`: `uvx nemo-agent --provider gemini`
 
 ### Supported Models 
-* `openai` is `gpt-4.1-mini` (default) and `o4-mini`
-* `gemini` is `gemini-2.5-flash-preview-04-17` (default)
+* `openai` is `gpt-4.1-mini` (default), `o4-mini`, and `o3` (requires organization verification)
+* `gemini` is `gemini-2.5-pro-preview-03-25`(default) and `gemini-2.5-flash-preview-04-17`
 
 ### Calling Non-Default Models
 * `uvx nemo-agent --model o4-mini`

@@ -26,11 +26,11 @@ class OpenAIAPI:
         if model == "gpt-4.1-mini":
             self.max_tokens = 32768
             self.max_output_tokens = 32768
-        elif model == "o4-mini":
+        elif model == "o4-mini" or model == "o3":
             self.max_tokens = 100000
             self.max_output_tokens = 100000
        
-        self.special_models = ["o4-mini"]
+        self.special_models = ["o4-mini", "o3"]
 
     def count_tokens(self, text):
         return len(tiktoken.encoding_for_model("gpt-4o").encode(text))
@@ -99,7 +99,7 @@ class OpenAIAPI:
 class GeminiAPI:
     def __init__(self, model):
         if model == "gpt-4.1-mini":
-            model="gemini-2.5-flash-preview-04-17"
+            model="gemini-2.5-pro-preview-03-25"
         self.model = model
         self.api_key = os.getenv("GEMINI_API_KEY")
         self.base_url="https://generativelanguage.googleapis.com/v1beta/openai/"
