@@ -99,7 +99,7 @@ class OpenAIAPI:
 class GeminiAPI:
     def __init__(self, model):
         if model == "gpt-4.1-mini":
-            model="gemini-2.5-pro-preview-03-25"
+            model="gemini-2.5-pro-preview-05-06"
         self.model = model
         self.api_key = os.getenv("GEMINI_API_KEY")
         self.base_url="https://generativelanguage.googleapis.com/v1beta/openai/"
