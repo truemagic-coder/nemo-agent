@@ -23,7 +23,7 @@ class OpenAIAPI:
             raise ValueError("OPENAI_API_KEY environment variable is not set")
         self.openai = OpenAI(api_key=self.api_key)
         self.token_count = 0
-        if model == "gpt-4.1-mini":
+        if "4.1" in model:
             self.max_tokens = 32768
             self.max_output_tokens = 32768
         elif model == "o4-mini" or model == "o3":
@@ -98,7 +98,7 @@ class OpenAIAPI:
 
 class GeminiAPI:
     def __init__(self, model):
-        if model == "gpt-4.1-mini":
+        if model == "gpt-4.1":
             model="gemini-2.5-pro-preview-05-06"
         self.model = model
         self.api_key = os.getenv("GEMINI_API_KEY")
@@ -164,7 +164,7 @@ class NemoAgent:
     WRITE_RETRY_DELAY = 1  # second
 
     def __init__(
-        self, task: str, model: str = "gpt-4.1-mini", provider: str = "openai", tests: bool = True
+        self, task: str, model: str = "gpt-4.1", provider: str = "openai", tests: bool = True
     ):
         self.task = task
         self.model = model
@@ -871,7 +871,7 @@ class NemoAgent:
     type=click.Path(exists=True),
     help="Path to a markdown file containing the task",
 )
-@click.option("--model", default="gpt-4.1-mini", help="The model to use for Nemo Agent")
+@click.option("--model", default="gpt-4.1", help="The model to use for Nemo Agent")
 @click.option(
     "--provider",
     default="openai",
@@ -905,7 +905,7 @@ class NemoAgent:
 def cli(
     task: str = None,
     file: str = None,
-    model: str = "gpt-4.1-mini",
+    model: str = "gpt-4.1",
     provider: str = "openai",
     zip: str = None,
     docs: str = None,
