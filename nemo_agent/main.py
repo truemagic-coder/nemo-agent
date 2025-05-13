@@ -16,11 +16,9 @@ from openai import OpenAI
 import tiktoken
 
 class OpenAIAPI:
-    def __init__(self, model):
+    def __init__(self, model, api_key):
         self.model = model
-        self.api_key = os.getenv("OPENAI_API_KEY")
-        if not self.api_key:
-            raise ValueError("OPENAI_API_KEY environment variable is not set")
+        self.api_key = api_key
         self.openai = OpenAI(api_key=self.api_key)
         self.token_count = 0
         if "4.1" in model:
@@ -97,14 +95,12 @@ class OpenAIAPI:
 
 
 class GeminiAPI:
-    def __init__(self, model):
+    def __init__(self, model, api_key):
         if model == "gpt-4.1":
             model="gemini-2.5-pro-preview-05-06"
         self.model = model
-        self.api_key = os.getenv("GEMINI_API_KEY")
+        self.api_key = api_key
         self.base_url="https://generativelanguage.googleapis.com/v1beta/openai/"
-        if not self.api_key:
-            raise ValueError("GEMINI_API_KEY environment variable is not set")
         self.openai = OpenAI(api_key=self.api_key, base_url=self.base_url)
         self.token_count = 0
         self.max_tokens = 65536
@@ -164,10 +160,11 @@ class NemoAgent:
     WRITE_RETRY_DELAY = 1  # second
 
     def __init__(
-        self, task: str, model: str = "gpt-4.1", provider: str = "openai", tests: bool = True
+        self, task: str, api_key: str, model: str = "gpt-4.1", provider: str = "openai", tests: bool = True
     ):
         self.task = task
         self.model = model
+        self.api_key = api_key
         self.provider = provider
         self.setup_logging()
         self.project_name = self.generate_project_name()
@@ -187,9 +184,9 @@ class NemoAgent:
 
     def setup_llm(self):
         if self.provider == "openai":
-            return OpenAIAPI(self.model)
+            return OpenAIAPI(self.model, self.api_key)
         elif self.provider == "gemini":
-            return GeminiAPI(self.model)
+            return GeminiAPI(self.model, self.api_key)
         else:
             raise ValueError(f"Unsupported provider: {self.provider}")
 
@@ -925,6 +922,11 @@ def cli(
         raise ValueError("OPENAI_API_KEY environment variable is not set")
     elif provider == "gemini" and not os.getenv("GEMINI_API_KEY"):
         raise ValueError("GEMINI_API_KEY environment variable is not set")
+    
+    if provider == "gemini":
+        api_key = os.getenv("GEMINI_API_KEY")
+    else:
+        api_key = os.getenv("OPENAI_API_KEY")
 
     # Read task from file if provided
     if file:
@@ -938,7 +940,7 @@ def cli(
     elif not task:
         task = click.prompt("Please enter your task")
 
-    nemo_agent = NemoAgent(task=task, model=model, provider=provider, tests=tests)
+    nemo_agent = NemoAgent(task=task, model=model, provider=provider, tests=tests, api_key=api_key)
 
     # Ingest docs if provided
     if docs:
