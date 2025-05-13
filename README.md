@@ -1,7 +1,7 @@
 # Nemo Agent
 
 [![PyPI - Version](https://img.shields.io/pypi/v/nemo-agent)](https://pypi.org/project/nemo-agent/)
-[![Python 3.9+](https://img.shields.io/badge/python-3.9+-blue.svg)](https://www.python.org/downloads/)
+[![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
 [![PyPI - Downloads](https://img.shields.io/pypi/dm/nemo-agent)](https://pypi.org/project/nemo-agent/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](https://opensource.org/licenses/MIT)
 [![Libraries.io dependency status for GitHub repo](https://img.shields.io/librariesio/github/truemagic-coder/nemo-agent)](https://libraries.io/pypi/nemo-agent)
@@ -36,7 +36,7 @@
 ## Install 
 
 ### Requirements
-* Python 3.9 or higher
+* Python 3.10 or higher
 * OpenAI or Gemini API key
 * Mac or Linux
 * No GPU requirement
