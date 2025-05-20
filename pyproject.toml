@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "nemo-agent"
-version = "5.0.1"
+version = "5.0.2"
 description = "Your Python AI Coder"
 authors = ["Bevan Hunt <bevan@bevanhunt.com>"]
 license = "MIT"
@@ -18,9 +18,9 @@ packages = [{include = "nemo_agent"}]
 
 [tool.poetry.dependencies]
 python = ">=3.10,<4.0"
-click = "^8.2.0"
-openai = "^1.78.1"
-tiktoken = "^0.9.0"
+click = "*"
+openai = "*"
+tiktoken = "0.9.0"
 
 
 [build-system]
