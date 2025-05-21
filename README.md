@@ -56,7 +56,7 @@
 
 ### Supported Models 
 * `openai` is `gpt-4.1` (default), `o4-mini`, and `o3` (requires organization verification)
-* `gemini` is `gemini-2.5-pro-preview-05-06`(default) and `gemini-2.5-flash-preview-04-17`
+* `gemini` is `gemini-2.5-pro-preview-05-06`(default) and `gemini-2.5-flash-preview-05-20`
 
 ### Calling Non-Default Models
 * `uvx nemo-agent --model o4-mini`

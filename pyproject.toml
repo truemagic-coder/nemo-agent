@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "nemo-agent"
-version = "5.0.2"
+version = "5.0.3"
 description = "Your Python AI Coder"
 authors = ["Bevan Hunt <bevan@bevanhunt.com>"]
 license = "MIT"
